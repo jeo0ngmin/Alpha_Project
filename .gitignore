@@ -1,0 +1,29 @@
+# Gradle
+.gradle/
+**/build/
+
+# Android Studio
+.idea/
+*.iml
+
+# Local SDK path
+local.properties
+
+# APK / Bundle
+*.apk
+*.aab
+
+# Signing keys
+*.jks
+*.keystore
+
+# Native build
+.externalNativeBuild/
+.cxx/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
