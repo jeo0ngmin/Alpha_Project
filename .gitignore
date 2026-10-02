@@ -27,3 +27,13 @@ local.properties
 # OS
 .DS_Store
 Thumbs.db
+
+# Secrets (API keys)
+secrets.properties
+/captures
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Firebase config
+google-services.json
