@@ -13,6 +13,7 @@ gson = "2.14.0"
 lifecycle = "2.11.0"
 room = "2.8.5"
 ucrop = "2.2.10"  # 2.2.11은 JitPack에 aar 없음
+mlkitTextRecognitionKorean = "16.0.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -31,6 +32,7 @@ lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata"
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 ucrop = { group = "com.github.Yalantis", name = "uCrop", version.ref = "ucrop" }
+mlkit-text-recognition-korean = { group = "com.google.mlkit", name = "text-recognition-korean", version.ref = "mlkitTextRecognitionKorean" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
     implementation(libs.ucrop)
+    implementation(libs.mlkit.text.recognition.korean)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
