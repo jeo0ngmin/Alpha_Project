@@ -37,3 +37,4 @@ secrets.properties
 
 # Firebase config
 google-services.json
+.claude/prompts/

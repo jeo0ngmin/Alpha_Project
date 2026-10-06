@@ -25,6 +25,12 @@ dependencyResolutionManagement {
                 includeGroup("com.github.Yalantis")
             }
         }
+        // 카카오 SDK (README 7-5)
+        maven("https://devrepo.kakao.com/nexus/content/groups/public/") {
+            content {
+                includeGroup("com.kakao.sdk")
+            }
+        }
     }
 }
 

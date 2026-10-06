@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/login_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".ui.LoginActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:gravity="center"
+        android:text="@string/app_name"
+        android:textSize="32sp"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/button_phone"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:contentDescription="@string/login_phone_desc"
+        android:text="@string/login_phone"
+        android:textSize="22sp" />
+
+    <Button
+        android:id="@+id/button_google"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_marginTop="12dp"
+        android:contentDescription="@string/login_google_desc"
+        android:text="@string/login_google"
+        android:textSize="22sp" />
+
+    <Button
+        android:id="@+id/button_kakao"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_marginTop="12dp"
+        android:contentDescription="@string/login_kakao_desc"
+        android:text="@string/login_kakao"
+        android:textSize="22sp" />
+
+</LinearLayout>

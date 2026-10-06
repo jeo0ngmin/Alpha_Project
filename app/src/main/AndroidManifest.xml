@@ -6,7 +6,13 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- 카카오톡 설치 여부 확인용 (Android 11+) -->
+    <queries>
+        <package android:name="com.kakao.talk" />
+    </queries>
+
     <application
+        android:name=".MedimateApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -16,15 +22,21 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Medimate">
         <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:name=".ui.SplashActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.scan.ScanActivity"
             android:exported="false" />
@@ -34,6 +46,26 @@
         <activity
             android:name=".ui.drug.DrugDetailActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.recommend.RecommendChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- 카카오 로그인 리다이렉트. scheme은 secrets.properties의 키로 채운다 (README 7-5) -->
+        <activity
+            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="oauth"
+                    android:scheme="kakao${KAKAO_NATIVE_APP_KEY}" />
+            </intent-filter>
+        </activity>
 
         <!-- 촬영한 사진을 카메라 앱이 앱 캐시에 쓰게 한다 (ui/scan/ScanActivity) -->
         <provider

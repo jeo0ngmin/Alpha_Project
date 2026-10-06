@@ -31,9 +31,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY").forEach { key ->
+        listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY",
+               "KAKAO_NATIVE_APP_KEY").forEach { key ->
             buildConfigField("String", key, "\"${secrets.getProperty(key, "")}\"")
         }
+        // 카카오 AuthCodeHandlerActivity의 scheme(kakao{키})에 쓴다 (README 7-5)
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = secrets.getProperty("KAKAO_NATIVE_APP_KEY", "")
     }
 
     buildTypes {
@@ -46,6 +49,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    sourceSets {
+        // 단위 테스트가 규칙 표(assets/supplement_rules.json)를 사본 없이 읽는다
+        getByName("test").resources.srcDir("src/main/assets")
     }
 }
 
@@ -78,4 +85,5 @@ dependencies {
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
+    implementation(libs.kakao.user)
 }
