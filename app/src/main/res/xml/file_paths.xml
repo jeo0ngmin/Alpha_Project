@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 촬영한 약봉투 사진은 앱 캐시에만 둔다 -->
+    <cache-path name="images" path="images/" />
+</paths>

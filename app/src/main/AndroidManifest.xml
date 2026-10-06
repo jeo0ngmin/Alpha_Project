@@ -25,6 +25,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.scan.ScanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.drug.DrugListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.drug.DrugDetailActivity"
+            android:exported="false" />
+
+        <!-- 촬영한 사진을 카메라 앱이 앱 캐시에 쓰게 한다 (ui/scan/ScanActivity) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

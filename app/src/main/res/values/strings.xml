@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Medimate</string>
+    <string name="main_scan">약봉투 찍기</string>
+    <string name="scan_camera">사진 찍기</string>
+    <string name="scan_gallery">갤러리에서 고르기</string>
+    <string name="scan_reading">글자를 읽고 있어요</string>
+    <string name="scan_hint">약봉투를 찍거나 갤러리에서 고르면 약 정보를 찾아 줍니다.</string>
+    <string name="drug_list_title">약 목록</string>
+    <string name="detail_speak_all">전체 읽어 주기</string>
+    <string name="detail_dosage">복용법</string>
+    <string name="detail_storage">보관방법</string>
+    <string name="detail_description">효능</string>
+    <string name="detail_warning">주의사항</string>
 </resources>
