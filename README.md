@@ -124,6 +124,9 @@ CLOVA_OCR_SECRET=...
 # OpenAI (GPT 정리)
 OPENAI_API_KEY=sk-...
 
+# Anthropic Claude (영양제 챗봇의 증상 파악, 8-6)
+CLAUDE_API_KEY=sk-ant-...
+
 # 공공데이터포털 일반 인증키 (64자리, 3-4 참고)
 DATA_GO_KR_SERVICE_KEY=...
 
@@ -152,7 +155,7 @@ android {
         buildConfig = true
     }
     defaultConfig {
-        listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY", "KAKAO_NATIVE_APP_KEY").forEach { key ->
+        listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY", "KAKAO_NATIVE_APP_KEY", "CLAUDE_API_KEY").forEach { key ->
             buildConfigField("String", key, "\"${secrets.getProperty(key, "")}\"")
         }
     }
@@ -182,6 +185,7 @@ android {
 | 로컬 DB (캐시) | `androidx.room:room-runtime` + `annotationProcessor` `androidx.room:room-compiler` |
 | 자르기 | `com.github.yalantis:ucrop` (이전 버전에서 사용) |
 | OCR | `com.google.mlkit:text-recognition-korean` |
+| Claude (영양제 챗봇) | `com.anthropic:anthropic-java` (공식 Java SDK) |
 | 로그인·DB (B, D 단계에서 추가) | `firebase-bom`, `firebase-auth`, `firebase-firestore`, `androidx.credentials`, `googleid`, `com.kakao.sdk:v2-user` |
 
 ### 3-6. 권한 (`AndroidManifest.xml`)
@@ -625,19 +629,30 @@ Gradle: 플러그인 `com.google.gms.google-services`, 의존성 `firebase-bom`,
 
 ### 8-1. 원칙
 
-- **추천은 규칙 표로 결정합니다. GPT가 추천 성분을 정하지 않습니다.** 근거 없는 건강 정보가 나가지 않게 하기 위해서입니다.
-- GPT는 **사용자가 채팅으로 말한 증상을 규칙 표의 고민 항목으로 분류하는 데만** 씁니다. 규칙 표에 없는 항목은 만들지 않고, 성분·설명·조언을 쓰지 않습니다.
+- **추천은 규칙 표로 결정합니다. AI가 추천 성분을 정하지 않습니다.** 근거 없는 건강 정보가 나가지 않게 하기 위해서입니다.
+- AI(Claude, 8-6)는 **사용자 정보를 파악하는 데만** 씁니다.
+  - 사용자가 말한 내용을 정리해 규칙 표의 고민 항목으로 바꿉니다.
+  - 그 정보로 항목을 고를 수 있는지 판단합니다.
+  - 정보가 부족하면 증상을 묻는 추가 질문을 만듭니다.
+- 규칙 표에 없는 항목은 만들지 않습니다. 성분·설명·조언도 AI가 쓰지 않습니다. 추가 질문도 증상을 묻는 질문만 합니다.
 - 규칙 표의 **모든 항목에 근거 출처**(식약처 기능성 원료 인정 내용 등)를 함께 적습니다. 출처가 빈 규칙은 엔진이 읽을 때 버립니다.
 - 결과 화면과 낭독에 면책 문구를 항상 넣습니다: "이 정보는 의학적 조언이 아닙니다. 복용 전에 의사나 약사와 상담하세요."
 
-### 8-2. 흐름 (챗봇형, 2026-10-06 변경)
+### 8-2. 흐름 (챗봇형, 2026-10-06 변경 · 2026-10-28 Claude로 교체)
 
 ```
-[채팅 입력]                 "요즘 눈이 침침하고 피곤해요"      ui/recommend/RecommendChatActivity
+[채팅 입력]                 "요즘 좀 안 좋아요"                ui/recommend/RecommendChatActivity
       │
       ▼
-[고민 분류]                 GPT: 문장 → 규칙 표의 고민 이름    recommend/ConcernClassifier
-      │                     (예: ["눈 건강", "피로"])
+[증상 파악]                 Claude: 지금까지의 대화 → 판단      recommend/ClaudeSymptomAnalyzer
+      │                     { 고민 항목, 정보 부족 여부,
+      │                       추가 질문, 증상 요약 }
+      │
+      ├─ 정보 부족 ──▶ [추가 질문]  "어디가 어떻게 불편하세요?"  → 사용자 답 → 다시 [증상 파악]
+      │                (최대 2번. 넘으면 그때까지 고른 항목으로 진행)
+      ▼
+[규칙 표 매칭]              고민 → 추천 성분·설명·출처         recommend/RecommendEngine
+      │
       ▼
 [규칙 표 매칭]              고민 → 추천 성분·설명·출처         recommend/RecommendEngine
       │
@@ -653,20 +668,25 @@ Gradle: 플러그인 `com.google.gms.google-services`, 의존성 `firebase-bom`,
 
 입력은 텍스트 채팅입니다. 음성 입력은 2차에 검토합니다.
 
+- 추천을 한 번 내면 상담 하나가 끝납니다. 다음 입력은 새 상담으로 보고 대화 기록을 비웁니다.
+- 추가 질문을 2번 했는데도 고를 항목이 없으면, 규칙 표의 고민 목록을 읽어 주고 그중에서 말해 달라고 안내합니다.
+
 ### 8-3. 구성
 
 ```
 com.medimate.recommend
-├── RecommendEngine.java       // 고민 → 추천 성분 목록 (순수 자바, 네트워크 없음)
-├── RecommendRule.java         // concern, ingredient, reason, source
-├── ConcernClassifier.java     // GPT: 사용자 문장 → 규칙 표의 고민 이름 (JSON 모드)
-└── InteractionChecker.java    // 복용 약과 추천 성분 대조 (2차)
+├── RecommendEngine.java          // 고민 → 추천 성분 목록 (순수 자바, 네트워크 없음)
+├── RecommendRule.java            // concern, ingredient, reason, source
+├── SymptomAnalyzer.java          // 증상 파악 인터페이스. ViewModel은 이것만 참조한다
+├── SymptomAnalysis.java          // 파악 결과: concerns, needsMoreInfo, followUpQuestion, summary
+├── ClaudeSymptomAnalyzer.java    // SymptomAnalyzer의 Claude 구현 (8-6)
+└── InteractionChecker.java       // 복용 약과 추천 성분 대조 (2차)
 
 app/src/main/assets/supplement_rules.json   // 규칙 표 (팀이 작성, 출처 포함)
 
 com.medimate.ui.recommend
 ├── RecommendChatActivity      // 채팅 화면 (말풍선 목록 + 입력창), 봇 답변 낭독
-├── RecommendChatViewModel     // 분류 → 규칙 매칭 → 답변 문장 조립 (면책 문구 포함)
+├── RecommendChatViewModel     // 대화 기록 유지 → 증상 파악 → (추가 질문 | 규칙 매칭 → 답변 조립, 면책 문구 포함)
 └── ChatAdapter / ChatMessage
 ```
 
@@ -693,10 +713,56 @@ com.medimate.ui.recommend
 
 | 1차 뼈대 | 2차 다듬기 |
 |---|---|
-| 채팅 입력 + GPT 고민 분류 (고민 5~6개) | 고민 항목 확장, 대화 기록 저장, 음성 입력 |
+| 채팅 입력 + Claude 증상 파악·추가 질문 (고민 5~6개) | 고민 항목 확장, 대화 기록 저장, 음성 입력 |
 | 규칙 표 최소 5개 + 챗봇 답변 + 낭독 | 규칙 표 전체 작성 (출처 포함) |
 | — | 복용 약과의 상호작용 주의 표시 |
 | — | 건강기능식품 API로 실제 제품 표시 (활용신청 후 실제 응답으로 모델 작성) |
+| — | Claude 호출을 서버(Firebase Functions)로 옮겨 앱에서 키 제거 (8-6) |
+| — | 응급 증상(가슴 통증, 호흡 곤란 등)이면 추천 대신 병원 안내 고정 문구 |
+
+### 8-6. Claude 증상 파악 규격
+
+**호출**
+
+| 항목 | 값 |
+|---|---|
+| 라이브러리 | 공식 Java SDK `com.anthropic:anthropic-java` |
+| 모델 | `claude-opus-5-5` |
+| 생각 깊이 | `effort: low` (분류 작업이라 빠른 응답 우선) |
+| 출력 | 구조화된 출력(`output_config.format`, JSON 스키마). 고민 이름은 규칙 표 목록을 `enum`으로 넣어 **표에 없는 이름은 나올 수 없게** 합니다 |
+| 거절 대비 | `fallbacks: "default"` (베타 `server-side-fallback-2026-07-01`). 그래도 거절되면 "다시 말씀해 주세요"로 안내합니다 |
+| 키 | `BuildConfig.CLAUDE_API_KEY` (3-3) |
+
+**보내는 것**: 시스템 프롬프트(역할·규칙·고민 목록) + 이번 상담의 대화. 사용자 말은 `user`, 봇의 추가 질문은 `assistant`로 넣습니다.
+
+**받는 것**
+
+```json
+{
+  "concerns": ["눈 건강", "피로"],
+  "needs_more_info": false,
+  "follow_up_question": "",
+  "symptom_summary": "눈이 침침하고 오후에 쉽게 피곤함"
+}
+```
+
+| 필드 | 뜻 |
+|---|---|
+| `concerns` | 규칙 표의 고민 이름 중 해당하는 것 (없으면 빈 배열) |
+| `needs_more_info` | 항목을 고르기에 정보가 부족하면 `true` |
+| `follow_up_question` | `needs_more_info`가 `true`일 때 할 질문 한 개. 고령층이 알아듣기 쉬운 짧은 존댓말 |
+| `symptom_summary` | 사용자 말을 정리한 한 줄. 추천 기록 저장(D3)에 씁니다 |
+
+**시스템 프롬프트 규칙**
+
+- 고민 이름은 목록에 있는 것만 씁니다.
+- 한 항목이라도 분명히 해당하면 더 묻지 않고 바로 고릅니다.
+- 추가 질문은 증상(부위, 느낌, 언제부터)만 묻습니다. 진단·성분·제품·조언은 쓰지 않습니다.
+
+**보안**
+
+- 앱에 키가 들어 있으면 APK를 분석해 꺼낼 수 있습니다. 1차는 시연용으로 앱에서 바로 부르고, 배포 전에 서버로 옮깁니다(8-5).
+- 대화 본문은 로그에 남기지 않습니다. 실패 시 HTTP 코드와 오류 종류만 남깁니다.
 
 ---
 
@@ -757,7 +823,7 @@ com.medimate.data
 
 - 복약 정보와 건강 고민은 **민감정보**입니다. 첫 저장 전에 **별도 동의 화면**을 거칩니다 (동의 문구 낭독 포함).
 - 탈퇴하면 `users/{uid}` 아래 전체를 삭제합니다.
-- 개인정보처리방침에 수집 항목과 처리 위탁(Google Firebase, OpenAI)을 명시합니다.
+- 개인정보처리방침에 수집 항목과 처리 위탁(Google Firebase, OpenAI, Anthropic)을 명시합니다.
 
 ---
 
@@ -785,7 +851,7 @@ com.medimate.data
 | B3 | 전화번호 로그인 (7-4), 테스트용 번호 | 테스트 번호로 로그인 | 내부 기능만 완료(테스트 번호 확인됨), 번호·인증번호 입력 화면 없음 |
 | B4 | 카카오 로그인 (7-5), SDK 로그인까지 | 카카오 계정으로 로그인 후 Main 진입 | SDK 로그인 구현, 카카오 콘솔에 키 해시 등록 후 실기기 확인 대기 |
 | B5 | 로그아웃, 내 정보 화면 틀 | 로그아웃하면 Login으로 복귀 | |
-| C1 | 챗봇 입력 화면 (8-3) — 증상을 채팅으로 입력, GPT가 고민 항목으로 분류 | 입력한 증상이 규칙 표의 고민으로 분류됨 | 코드 완료, OpenAI 키 넣고 확인 대기 |
+| C1 | 챗봇 입력 화면 (8-3) — 증상을 채팅으로 입력, Claude가 증상 파악·추가 질문 (8-6) | 모호한 증상엔 추가 질문, 답하면 규칙 표의 고민으로 분류됨 | 코드 완료, Claude 요청 PC에서 확인됨, 에뮬레이터 확인 대기 |
 | C2 | 규칙 표(최소 5개) + 추천 엔진 + 챗봇 답변 + 낭독 (8-5) | 분류된 고민에 맞는 성분이 표시·낭독 | 완료 (규칙 표 10개, 출처는 팀 검토 필요) |
 | D1 | Firestore 연결, 프로필 저장 (9-2), 보안 규칙 (9-3) | 첫 로그인 정보가 콘솔에 보임 | |
 | D2 | 내 약 저장·목록 — A5 결과에 "내 약에 추가" | 앱을 다시 켜도 내 약이 남아 있음 | |
@@ -801,7 +867,7 @@ com.medimate.data
 |---|---|
 | A 약 인식 | 사진 자르기(UCrop) · 이름 정규화 전체 규칙 (6-1) · 여러 건일 때 후보 제시 + 음성 확인 (6-2) · e약은요 Room 캐시 (6-4) · 낭독 문장 변환 (6-3) · 낱알식별 전량 적재 (5-3) |
 | B 로그인 | 카카오–Firebase 정식 연결 (7-5) · 첫 로그인 프로필 입력 · 탈퇴 |
-| C 추천 | 규칙 표 전체 + 출처 · 복용 약 상호작용 주의 · 건강기능식품 API 제품 표시 (8-4) |
+| C 추천 | 규칙 표 전체 + 출처 · 복용 약 상호작용 주의 · 건강기능식품 API 제품 표시 (8-4) · Claude 호출 서버 이전 · 응급 증상 안내 (8-5) |
 | D DB | 민감정보 동의 화면 (9-5) · 탈퇴 시 데이터 삭제 · 오프라인 동작 확인 |
 | 공통 | 오류별 음성 안내 문구 · TalkBack 실기기 점검 · 화면 디자인 · HTTP 로그 정리 (13장) |
 | 보류 | CLOVA OCR 전환 (4-1 ~ 4-3) — 결제·증빙 정리 후, ML Kit 실측 결과를 보고 결정 |

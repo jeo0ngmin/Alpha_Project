@@ -32,7 +32,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY",
-               "KAKAO_NATIVE_APP_KEY").forEach { key ->
+               "KAKAO_NATIVE_APP_KEY", "CLAUDE_API_KEY").forEach { key ->
             buildConfigField("String", key, "\"${secrets.getProperty(key, "")}\"")
         }
         // 카카오 AuthCodeHandlerActivity의 scheme(kakao{키})에 쓴다 (README 7-5)
@@ -49,6 +49,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    packaging {
+        // anthropic-java가 가져오는 httpclient5 jar들이 같은 이름의 메타 파일을 가지고 있다
+        resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*")
     }
     sourceSets {
         // 단위 테스트가 규칙 표(assets/supplement_rules.json)를 사본 없이 읽는다
@@ -86,4 +90,5 @@ dependencies {
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.kakao.user)
+    implementation(libs.anthropic.java)
 }
