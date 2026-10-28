@@ -34,6 +34,19 @@ public class RecommendEngineTest {
         }
     }
 
+    /** 고민마다 범위 설명이 붙고, 같은 고민의 규칙 설명은 이어 붙는다 */
+    @Test
+    public void concernScopesJoinReasonsPerConcern() throws Exception {
+        RecommendEngine engine = loadAssets();
+        java.util.Map<String, String> scopes = engine.concernScopes();
+
+        assertEquals(engine.concerns(), new java.util.ArrayList<>(scopes.keySet()));
+        for (String scope : scopes.values()) {
+            assertFalse(scope.isEmpty());
+        }
+        assertTrue(scopes.get("눈 건강").contains(" / "));
+    }
+
     @Test
     public void matchesConcernsInTableOrder() throws Exception {
         List<RecommendRule> rules = loadAssets().recommend(Arrays.asList("피로", "눈 건강"));

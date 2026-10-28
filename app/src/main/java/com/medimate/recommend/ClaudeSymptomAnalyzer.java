@@ -45,17 +45,17 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
     private AnthropicClient client;
 
     @Override
-    public void analyze(List<Turn> conversation, List<String> concerns, Callback callback) {
+    public void analyze(List<Turn> conversation, Map<String, String> concerns, Callback callback) {
         if (BuildConfig.CLAUDE_API_KEY.isEmpty()) {
             Log.e(TAG, "secrets.properties에 CLAUDE_API_KEY가 없다");
             callback.onError(MSG_NO_KEY);
             return;
         }
         List<Turn> turns = new ArrayList<>(conversation);
-        List<String> allowed = new ArrayList<>(concerns);
+        Map<String, String> scopes = new LinkedHashMap<>(concerns);
         executor.execute(() -> {
             try {
-                SymptomAnalysis result = request(turns, allowed);
+                SymptomAnalysis result = request(turns, scopes);
                 main.post(() -> {
                     if (result == null) {
                         callback.onError(MSG_FAILED);
@@ -76,11 +76,12 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
         });
     }
 
-    private SymptomAnalysis request(List<Turn> turns, List<String> concerns) {
+    private SymptomAnalysis request(List<Turn> turns, Map<String, String> scopes) {
+        List<String> concerns = new ArrayList<>(scopes.keySet());
         MessageCreateParams.Builder params = MessageCreateParams.builder()
                 .model(MODEL)
                 .maxTokens(4096L)
-                .system(systemPrompt(concerns))
+                .system(systemPrompt(scopes))
                 .outputConfig(OutputConfig.builder()
                         .effort(OutputConfig.Effort.LOW)
                         .format(JsonOutputFormat.builder().schema(schema(concerns)).build())
@@ -117,21 +118,39 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
         return client;
     }
 
-    static String systemPrompt(List<String> concerns) {
-        return "너는 건강기능식품 추천 앱의 상담 도우미다. 사용자는 주로 고령층과 시각장애인이다.\n"
-                + "할 일: 대화에서 사용자의 증상을 파악해 아래 고민 목록의 항목으로 바꾼다. "
-                + "추천 성분은 앱이 규칙 표로 정하므로 너는 정하지 않는다.\n"
-                + "고민 목록: " + String.join(", ", concerns) + "\n"
-                + "규칙:\n"
-                + "- concerns에는 목록의 이름만 글자 그대로 넣는다. 해당하는 것이 여러 개면 모두 넣는다.\n"
-                + "- 한 항목이라도 분명히 해당하면 needs_more_info는 false로 두고 더 묻지 않는다.\n"
-                + "- 증상이 모호해서 어느 항목인지 고를 수 없을 때만 needs_more_info를 true로 두고, "
-                + "follow_up_question에 질문 한 개를 쓴다. 질문은 증상(어디가, 어떻게, 언제부터)만 묻는 "
-                + "짧은 존댓말로, 소리 내어 읽어도 알아듣기 쉽게 쓴다.\n"
-                + "- 건강 고민과 관계없는 말이면 concerns를 비우고 needs_more_info는 false로 둔다.\n"
-                + "- 진단, 성분, 제품, 복용법, 건강 조언은 어디에도 쓰지 않는다.\n"
-                + "- symptom_summary에는 사용자가 말한 증상을 한 줄로 정리한다. 말하지 않은 내용은 넣지 않는다.\n"
-                + "- needs_more_info가 false면 follow_up_question은 빈 문자열로 둔다.";
+    /** {CONCERNS} 자리에 고민 목록(이름: 범위)이 들어간다 */
+    static final String SYSTEM_PROMPT = "너는 건강기능식품 추천 앱의 상담 도우미다. 사용자는 주로 고령층과 시각장애인이다.\n"
+            + "할 일: 대화에서 사용자의 증상을 파악해 아래 고민 목록의 항목으로 바꾼다. "
+            + "추천 성분은 앱이 규칙 표로 정하므로 너는 정하지 않는다.\n"
+            + "고민 목록 (이름: 그 항목이 다루는 범위):\n"
+            + "{CONCERNS}\n"
+            + "규칙:\n"
+            + "- concerns에는 목록의 이름만 글자 그대로 넣는다. 해당하는 것이 여러 개면 모두 넣는다.\n"
+            + "- 증상이 그 항목의 범위에 실제로 들어갈 때만 고른다. 부위가 가깝거나 비슷해 보인다고 "
+            + "넓혀 고르지 않는다. 예를 들어 속쓰림, 위경련, 명치 통증은 위(胃)의 증상이라 "
+            + "배변·장내 유익균을 다루는 장 건강에 넣지 않는다.\n"
+            + "- 사용자가 말한 증상 중 목록 범위에 들지 않는 것이 하나라도 있으면 unmatched를 true로 둔다. "
+            + "범위에 드는 증상은 그대로 concerns에 넣는다.\n"
+            + "- 증상은 분명한데 목록에 맞는 항목이 없을 때는 더 묻지 않는다. "
+            + "concerns를 비우고 unmatched를 true, needs_more_info를 false로 둔다.\n"
+            + "- 한 항목이라도 분명히 해당하면 needs_more_info는 false로 두고 더 묻지 않는다.\n"
+            + "- 증상이 모호해서 어느 항목인지 고를 수 없을 때만 needs_more_info를 true로 두고, "
+            + "follow_up_question에 질문 한 개를 쓴다. 질문은 증상(어디가, 어떻게, 언제부터)만 묻는 "
+            + "짧은 존댓말로, 소리 내어 읽어도 알아듣기 쉽게 쓴다.\n"
+            + "- 건강 고민과 관계없는 말이면 concerns를 비우고 needs_more_info와 unmatched는 false로 둔다.\n"
+            + "- 진단, 성분, 제품, 복용법, 건강 조언은 어디에도 쓰지 않는다.\n"
+            + "- symptom_summary에는 사용자가 말한 증상을 한 줄로 정리한다. 말하지 않은 내용은 넣지 않는다.\n"
+            + "- needs_more_info가 false면 follow_up_question은 빈 문자열로 둔다.";
+
+    static String systemPrompt(Map<String, String> scopes) {
+        StringBuilder list = new StringBuilder();
+        for (Map.Entry<String, String> e : scopes.entrySet()) {
+            if (list.length() > 0) {
+                list.append('\n');
+            }
+            list.append("- ").append(e.getKey()).append(": ").append(e.getValue());
+        }
+        return SYSTEM_PROMPT.replace("{CONCERNS}", list);
     }
 
     /** 고민 이름을 enum으로 묶은 출력 스키마 */
@@ -144,13 +163,14 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
         properties.put("concerns", map("type", "array", "items", items));
         properties.put("needs_more_info", map("type", "boolean"));
         properties.put("follow_up_question", map("type", "string"));
+        properties.put("unmatched", map("type", "boolean"));
         properties.put("symptom_summary", map("type", "string"));
 
         return JsonOutputFormat.Schema.builder()
                 .putAdditionalProperty("type", JsonValue.from("object"))
                 .putAdditionalProperty("properties", JsonValue.from(properties))
                 .putAdditionalProperty("required", JsonValue.from(Arrays.asList(
-                        "concerns", "needs_more_info", "follow_up_question", "symptom_summary")))
+                        "concerns", "needs_more_info", "follow_up_question", "unmatched", "symptom_summary")))
                 .putAdditionalProperty("additionalProperties", JsonValue.from(false))
                 .build();
     }

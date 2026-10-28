@@ -6,8 +6,10 @@ import com.google.gson.reflect.TypeToken;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -40,6 +42,19 @@ public class RecommendEngine {
             names.add(rule.getConcern());
         }
         return new ArrayList<>(names);
+    }
+
+    /**
+     * 고민 이름 → 그 고민이 다루는 범위(규칙들의 설명을 이은 것). 표 순서대로.
+     * 분류기가 비슷한 부위의 다른 고민으로 넓혀 고르지 않게 범위를 함께 준다.
+     */
+    public Map<String, String> concernScopes() {
+        Map<String, String> scopes = new LinkedHashMap<>();
+        for (RecommendRule rule : rules) {
+            String prev = scopes.get(rule.getConcern());
+            scopes.put(rule.getConcern(), prev == null ? rule.getReason() : prev + " / " + rule.getReason());
+        }
+        return scopes;
     }
 
     /** 고민 목록에 해당하는 규칙을 표 순서대로 돌려준다. 없으면 빈 목록 */

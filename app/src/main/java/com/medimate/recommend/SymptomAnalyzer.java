@@ -1,6 +1,7 @@
 package com.medimate.recommend;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 챗봇 대화에서 사용자 증상을 파악한다 (README 8-2, 8-6).
@@ -29,7 +30,7 @@ public interface SymptomAnalyzer {
 
     /**
      * @param conversation 이번 상담의 대화 (사용자 말로 끝난다)
-     * @param concerns     규칙 표의 고민 이름 목록. 결과는 이 안에서만 고른다
+     * @param concerns     규칙 표의 고민 이름 → 그 고민이 다루는 범위. 결과는 이 이름 안에서만 고른다
      */
-    void analyze(List<Turn> conversation, List<String> concerns, Callback callback);
+    void analyze(List<Turn> conversation, Map<String, String> concerns, Callback callback);
 }

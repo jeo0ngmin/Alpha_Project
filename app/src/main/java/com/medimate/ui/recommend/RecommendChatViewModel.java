@@ -30,6 +30,8 @@ public class RecommendChatViewModel extends AndroidViewModel {
     static final String DISCLAIMER = "이 정보는 의학적 조언이 아닙니다. 복용 전에 의사나 약사와 상담하세요.";
     static final String MSG_WELCOME = "어떤 건강 고민이 있는지 말씀해 주세요. 예를 들어 \"요즘 눈이 침침하고 피곤해요\"처럼요.";
     static final String MSG_RULES_FAILED = "추천 규칙을 불러오지 못했어요.";
+    static final String MSG_UNMATCHED = "말씀하신 증상 중 일부는 아직 추천할 수 있는 항목이 없어요. "
+            + "증상이 계속되거나 심하면 의사나 약사와 상담하세요.";
     /** 한 상담에서 추가 질문을 하는 최대 횟수 (README 8-2) */
     static final int MAX_FOLLOW_UPS = 2;
 
@@ -74,7 +76,7 @@ public class RecommendChatViewModel extends AndroidViewModel {
         isLoading.setValue(true);
         conversation.add(new SymptomAnalyzer.Turn(true, text));
 
-        analyzer.analyze(conversation, engine.concerns(), new SymptomAnalyzer.Callback() {
+        analyzer.analyze(conversation, engine.concernScopes(), new SymptomAnalyzer.Callback() {
             @Override
             public void onResult(SymptomAnalysis analysis) {
                 isLoading.setValue(false);
@@ -102,17 +104,26 @@ public class RecommendChatViewModel extends AndroidViewModel {
         }
         conversation.clear();
         followUps = 0;
-        bot(buildReply(analysis.getConcerns()));
+        bot(buildReply(analysis.getConcerns(), analysis.isUnmatched()));
     }
 
-    /** 규칙 표 내용으로만 답을 만든다. 면책 문구는 항상 붙인다 (README 8-1) */
-    String buildReply(List<String> concerns) {
+    /**
+     * 규칙 표 내용으로만 답을 만든다. 면책 문구는 항상 붙인다 (README 8-1).
+     * unmatched면 표에 없는 증상이 있다는 것과 상담 안내를 덧붙인다 (README 8-2).
+     */
+    String buildReply(List<String> concerns, boolean unmatched) {
         List<RecommendRule> rules = engine.recommend(concerns);
+        String available = "지금 추천할 수 있는 고민은 " + String.join(", ", engine.concerns()) + "이에요.";
         if (rules.isEmpty()) {
-            return "말씀하신 증상에 맞는 항목을 찾지 못했어요. "
-                    + String.join(", ", engine.concerns()) + " 중에서 말씀해 주세요.";
+            if (unmatched) {
+                return MSG_UNMATCHED + "\n" + available;
+            }
+            return "말씀하신 증상에 맞는 항목을 찾지 못했어요. " + available + " 이 중에서 말씀해 주세요.";
         }
         StringBuilder sb = new StringBuilder();
+        if (unmatched) {
+            sb.append(MSG_UNMATCHED).append("\n\n");
+        }
         sb.append(String.join(", ", concerns)).append("에 도움이 될 수 있는 성분이에요.\n");
         for (RecommendRule rule : rules) {
             sb.append("\n• ").append(rule.getIngredient()).append(": ").append(rule.getReason())
