@@ -34,6 +34,18 @@ public class RecommendEngineTest {
         }
     }
 
+    /** 화면·낭독 문장은 -요체로 통일한다 (2026-10-30 사용자 요청). "~것.", "~있음" 같은 공전 말투가 남지 않게 */
+    @Test
+    public void ruleTextsUsePoliteStyle() throws Exception {
+        RecommendEngine engine = loadAssets();
+        for (RecommendRule rule : engine.recommend(engine.concerns())) {
+            assertTrue(rule.getIngredient() + " 효능: " + rule.getReason(), rule.getReason().endsWith("요."));
+            String caution = rule.getCaution();
+            assertTrue(rule.getIngredient() + " 주의: " + caution, caution.isEmpty() || caution.endsWith("요."));
+            assertFalse(rule.getIngredient() + " 주의에 공전 말투", caution.contains("것.") || caution.contains("있음"));
+        }
+    }
+
     /** 주의사항은 근거 출처가 있을 때만 보인다 */
     @Test
     public void cautionNeedsSource() {

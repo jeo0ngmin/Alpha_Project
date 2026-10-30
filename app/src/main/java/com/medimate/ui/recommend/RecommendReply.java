@@ -9,8 +9,11 @@ import com.medimate.recommend.SymptomAnalysis;
 import com.medimate.recommend.SymptomWarning;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,11 +23,13 @@ import java.util.Set;
  */
 class RecommendReply {
 
-    static final String DISCLAIMER = "이 정보는 의학적 조언이 아닙니다. 복용 전에 의사나 약사와 상담하세요.";
+    static final String DISCLAIMER = "이 정보는 의학적 조언이 아니에요. 드시기 전에 의사나 약사와 상담하세요.";
+    /** 성분마다 반복되던 공전 주의("이상사례 발생 시 섭취를 중단하고 전문가와 상담할 것")를 끝에 한 번만 쓴다 */
+    static final String MSG_ADVERSE = "드시다가 몸에 이상이 생기면 바로 멈추고 의사나 약사와 상담하세요.";
     static final String MSG_UNMATCHED = "말씀하신 증상 중 일부는 아직 추천할 수 있는 항목이 없어요. "
             + "증상이 계속되거나 심하면 의사나 약사와 상담하세요.";
-    static final String MSG_HISTORY_CAUTION = "지금 증상이 지병 때문일 수도 있고, 영양제가 드시는 약과 맞지 않을 수도 있어요. "
-            + "영양제를 드시기 전에 꼭 진료받는 의사나 약사에게 지금 증상을 말씀하고 상담하세요.";
+    static final String MSG_HISTORY_CAUTION = "증상이 지병 때문일 수도 있고 약과 맞지 않을 수도 있으니, "
+            + "드시기 전에 꼭 의사나 약사와 상담하세요.";
 
     private final RecommendEngine engine;
     private final List<SymptomWarning> warnings;
@@ -34,6 +39,20 @@ class RecommendReply {
         this.engine = engine;
         this.warnings = warnings;
         this.knowledge = knowledge;
+    }
+
+    /**
+     * 응급 안내 표(symptom_warnings.json의 emergency 줄)에 해당하면 그 고정 문구들. 없으면 빈 문자열.
+     * 모든 빌드에서 쓰며, 있으면 문진·추천 없이 바로 안내한다 (README 8-7).
+     */
+    String emergencyWarningText(SymptomAnalysis analysis) {
+        List<String> messages = new ArrayList<>();
+        for (SymptomWarning warning : warnings) {
+            if (warning.isEmergency() && analysis.getWarnings().contains(warning.getId())) {
+                messages.add(warning.getMessage());
+            }
+        }
+        return String.join("\n", messages);
     }
 
     /** 응급 분류에 걸린 규칙. 있으면 문진·추천 없이 바로 응급 안내 */
@@ -47,7 +66,7 @@ class RecommendReply {
     }
 
     String emergencyText(List<KnowledgeRule> rules) {
-        return KnowledgeMessages.emergency(rules, knowledge) + "\n" + KnowledgeMessages.UNREVIEWED;
+        return KnowledgeMessages.emergency();
     }
 
     /**
@@ -74,26 +93,32 @@ class RecommendReply {
         List<KnowledgeRule> medical = medicalRules(analysis);
         StringBuilder sb = new StringBuilder();
         if (!medical.isEmpty()) {
-            sb.append(KnowledgeMessages.medicalEvaluation(medical, knowledge))
-              .append("\n").append(KnowledgeMessages.UNREVIEWED)
+            sb.append(KnowledgeMessages.medicalEvaluation(medical))
               .append("\n\n").append(DISCLAIMER);
         } else {
             sb.append(recommendationText(analysis));
         }
         for (SymptomWarning warning : warnings) {
-            if (analysis.getWarnings().contains(warning.getId())) {
+            if (!warning.isEmergency() && analysis.getWarnings().contains(warning.getId())) {
                 sb.append("\n\n").append(warning.getMessage());
             }
         }
         return sb.toString();
     }
 
+    /**
+     * 증상별로 묶어 성분마다 "성분명 / 효능 / 주의" 세 줄만 보여 준다 (2026-10-30 사용자 요청: 가독성).
+     * 규칙 표 성분은 고민 이름으로, AI 성분은 AI가 적은 증상으로 묶는다. 출처 줄은 넣지 않는다.
+     * 확인된 약·질환에 걸리는 근거 규칙(디버그 빌드)은 해당 성분 아래에 붙인다.
+     */
     private String recommendationText(SymptomAnalysis analysis) {
         List<String> concerns = analysis.getConcerns();
-        boolean unmatched = analysis.isUnmatched();
         List<RecommendRule> rules = engine.recommend(concerns);
+        List<SymptomAnalysis.AiSuggestion> aiSuggestions = analysis.getAiSuggestions();
+        // AI가 표 밖 증상의 성분을 골랐으면 "추천할 항목이 없다"는 안내는 하지 않는다
+        boolean unmatched = analysis.isUnmatched() && aiSuggestions.isEmpty();
         String available = "지금 추천할 수 있는 고민은 " + String.join(", ", engine.concerns()) + "이에요.";
-        if (rules.isEmpty()) {
+        if (rules.isEmpty() && aiSuggestions.isEmpty()) {
             if (unmatched) {
                 return MSG_UNMATCHED + "\n" + available;
             }
@@ -102,42 +127,78 @@ class RecommendReply {
         Set<String> confirmed = confirmedTargets(analysis);
         StringBuilder sb = new StringBuilder();
         String history = historyText(analysis.getConditions(), analysis.getMedications());
+        // 문단마다 빈 줄 하나로 나눈다. 맨 앞에는 빈 줄을 두지 않는다
         if (!history.isEmpty()) {
             sb.append(history).append(' ').append(MSG_HISTORY_CAUTION).append("\n\n");
         }
         if (unmatched) {
             sb.append(MSG_UNMATCHED).append("\n\n");
         }
-        sb.append(String.join(", ", concerns)).append("에 도움이 될 수 있는 성분이에요.\n");
-        boolean usedKnowledge = false;
+        Map<String, List<Item>> groups = new LinkedHashMap<>();
         for (RecommendRule rule : rules) {
-            sb.append("\n• ").append(rule.getIngredient()).append(": ").append(rule.getReason())
-              .append("\n  (근거: ").append(rule.getSource()).append(")\n");
-            if (!rule.getCaution().isEmpty()) {
-                sb.append("  섭취 시 주의: ").append(rule.getCaution())
-                  .append("\n  (주의사항 근거: ").append(rule.getCautionSource()).append(")\n");
-            }
-            for (KnowledgeRule k : knowledge.matching(rule.getIngredientIds(), confirmed)) {
-                sb.append("  ").append(KnowledgeMessages.ruleNote(rule.getIngredient(), k, confirmed, knowledge))
-                  .append("\n");
-                usedKnowledge = true;
+            groupOf(groups, rule.getConcern()).add(new Item(rule.getIngredient(), rule.getReason(),
+                    rule.getCaution(), rule.getIngredientIds()));
+        }
+        for (SymptomAnalysis.AiSuggestion s : aiSuggestions) {
+            String symptom = s.getSymptom().isEmpty() ? "그 밖의 증상" : s.getSymptom();
+            groupOf(groups, symptom).add(new Item(s.getIngredient(), s.getReason(), s.getCaution(),
+                    Collections.singletonList(s.getIngredientId())));
+        }
+        for (Map.Entry<String, List<Item>> group : groups.entrySet()) {
+            sb.append("[").append(group.getKey()).append("]\n");
+            for (Item item : group.getValue()) {
+                appendIngredient(sb, item, confirmed);
             }
         }
         List<String> unclear = unclearNames(analysis);
         List<String> noRule = noRuleNames(analysis);
         if (!knowledge.isEmpty() && !unclear.isEmpty()) {
-            sb.append("\n").append(KnowledgeMessages.unclear(unclear)).append("\n");
-            usedKnowledge = true;
+            sb.append(KnowledgeMessages.unclear(unclear)).append("\n\n");
         }
         if (!knowledge.isEmpty() && !noRule.isEmpty()) {
-            sb.append("\n").append(KnowledgeMessages.noRule(noRule)).append("\n");
-            usedKnowledge = true;
+            sb.append(KnowledgeMessages.noRule(noRule)).append("\n\n");
         }
-        if (usedKnowledge) {
-            sb.append("\n").append(KnowledgeMessages.UNREVIEWED).append("\n");
-        }
-        sb.append("\n").append(DISCLAIMER);
+        sb.append(MSG_ADVERSE).append("\n").append(DISCLAIMER);
         return sb.toString();
+    }
+
+    /** 답변에 보여 줄 성분 하나 */
+    private static final class Item {
+        final String ingredient;
+        final String reason;
+        final String caution;
+        final List<String> ingredientIds;
+
+        Item(String ingredient, String reason, String caution, List<String> ingredientIds) {
+            this.ingredient = ingredient;
+            this.reason = reason;
+            this.caution = caution;
+            this.ingredientIds = ingredientIds;
+        }
+    }
+
+    private static List<Item> groupOf(Map<String, List<Item>> groups, String name) {
+        List<Item> items = groups.get(name);
+        if (items == null) {
+            items = new ArrayList<>();
+            groups.put(name, items);
+        }
+        return items;
+    }
+
+    /**
+     * "• 성분명 / 효능: … / 주의: …" + 근거 규칙 확인 사항, 끝에 빈 줄 하나 (성분끼리 구분, 2026-10-30 사용자 요청).
+     */
+    private void appendIngredient(StringBuilder sb, Item item, Set<String> confirmed) {
+        sb.append("• ").append(item.ingredient).append("\n");
+        sb.append("  효능: ").append(item.reason).append("\n");
+        if (!item.caution.isEmpty()) {
+            sb.append("  주의: ").append(item.caution).append("\n");
+        }
+        for (KnowledgeRule k : knowledge.matching(item.ingredientIds, confirmed)) {
+            sb.append("  ").append(KnowledgeMessages.ruleNote(item.ingredient, k, confirmed, knowledge)).append("\n");
+        }
+        sb.append("\n");
     }
 
     /** 사용자가 맞다고 확인한 연결 대상 id */
@@ -183,7 +244,33 @@ class RecommendReply {
         for (RecommendRule rule : engine.recommend(analysis.getConcerns())) {
             ids.addAll(rule.getIngredientIds());
         }
+        for (SymptomAnalysis.AiSuggestion s : analysis.getAiSuggestions()) {
+            ids.add(s.getIngredientId());
+        }
         return ids;
+    }
+
+    /**
+     * 답변에 실린 성분 이름 (규칙 표 + AI). 제품 링크를 만들 때 쓴다 (README 8-9).
+     * 진료 우선이면 추천을 하지 않으므로 빈 목록.
+     */
+    List<String> recommendedIngredients(SymptomAnalysis analysis) {
+        List<String> names = new ArrayList<>();
+        if (!medicalRules(analysis).isEmpty()) {
+            return names;
+        }
+        for (RecommendRule rule : engine.recommend(analysis.getConcerns())) {
+            names.add(rule.getIngredient());
+        }
+        for (SymptomAnalysis.AiSuggestion s : analysis.getAiSuggestions()) {
+            names.add(s.getIngredient());
+        }
+        return names;
+    }
+
+    /** 추천할 성분이 있는지 (규칙 표 또는 AI). 있으면 답변 전에 지병·약을 묻는다 */
+    boolean hasCandidates(SymptomAnalysis analysis) {
+        return !engine.recommend(analysis.getConcerns()).isEmpty() || !analysis.getAiSuggestions().isEmpty();
     }
 
     private List<KnowledgeRule> triageWith(SymptomAnalysis analysis, String action) {

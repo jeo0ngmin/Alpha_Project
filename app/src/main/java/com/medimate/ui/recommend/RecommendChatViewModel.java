@@ -11,6 +11,7 @@ import com.medimate.BuildConfig;
 import com.medimate.recommend.ClaudeSymptomAnalyzer;
 import com.medimate.recommend.KnowledgeBase;
 import com.medimate.recommend.KnowledgeRule;
+import com.medimate.recommend.ProductLinks;
 import com.medimate.recommend.RecommendEngine;
 import com.medimate.recommend.SymptomAnalysis;
 import com.medimate.recommend.SymptomAnalyzer;
@@ -40,6 +41,9 @@ public class RecommendChatViewModel extends AndroidViewModel {
     /** 추천 전에 한 번 묻는다 (README 8-2). 지병 때문에 생긴 증상일 수 있어서다 (예: 당뇨병성 신경병증의 손발 저림) */
     static final String MSG_HISTORY = "영양제를 알려 드리기 전에 여쭤볼게요. "
             + "평소 앓고 계신 병이 있거나 드시고 있는 약이 있으세요? 없으면 없다고 말씀해 주세요.";
+    /** 제품 링크 말풍선 (README 8-9). 쿠팡 검색 순서는 광고·판매 순위라 직접 확인을 안내한다 */
+    static final String MSG_PRODUCTS = "추천한 성분의 제품을 쿠팡에서 찾아볼 수 있게 아래에 버튼을 붙였어요. "
+            + "쿠팡의 검색 순서는 광고나 판매 순위라서, 제품을 고르기 전에 성분과 함량, 주의사항을 꼭 확인하세요.";
     /** 한 상담에서 추가 질문을 하는 최대 횟수 (README 8-2) */
     static final int MAX_FOLLOW_UPS = 2;
 
@@ -117,6 +121,12 @@ public class RecommendChatViewModel extends AndroidViewModel {
      * 규칙에 걸릴 수 있는 약·질환 연결은 사용자에게 확인받은 뒤 답변하고 상담을 끝낸다.
      */
     void handle(SymptomAnalysis analysis) {
+        // 응급 안내 표는 모든 빌드에서, 시작 자료 응급 규칙은 디버그 빌드에서 본다
+        String emergencyWarnings = reply.emergencyWarningText(analysis);
+        if (!emergencyWarnings.isEmpty()) {
+            finish(emergencyWarnings);
+            return;
+        }
         List<KnowledgeRule> emergency = reply.emergencyRules(analysis);
         if (!emergency.isEmpty()) {
             finish(reply.emergencyText(emergency));
@@ -129,7 +139,7 @@ public class RecommendChatViewModel extends AndroidViewModel {
             return;
         }
         boolean medical = !reply.medicalRules(analysis).isEmpty();
-        boolean hasCandidates = !engine.recommend(analysis.getConcerns()).isEmpty();
+        boolean hasCandidates = reply.hasCandidates(analysis);
         if (!medical && hasCandidates && !historyAsked) {
             historyAsked = true;
             ask(MSG_HISTORY);
@@ -141,7 +151,18 @@ public class RecommendChatViewModel extends AndroidViewModel {
             ask(reply.confirmQuestion(toConfirm));
             return;
         }
-        finish(reply.build(analysis));
+        String answer = reply.build(analysis);
+        List<ProductLinks.Link> links = ProductLinks.forIngredients(reply.recommendedIngredients(analysis));
+        if (links.isEmpty()) {
+            finish(answer);
+            return;
+        }
+        // 말풍선은 답변과 제품 링크 두 개, 낭독은 이어서 한 번 (TTS가 새 문장에 앞 문장을 끊기 때문)
+        endConsultation();
+        messages.add(new ChatMessage(ChatMessage.Role.BOT, answer));
+        messages.add(new ChatMessage(ChatMessage.Role.BOT, MSG_PRODUCTS, links));
+        messagesLive.setValue(messages);
+        speak.setValue(answer + "\n" + MSG_PRODUCTS);
     }
 
     private void ask(String question) {
@@ -151,11 +172,16 @@ public class RecommendChatViewModel extends AndroidViewModel {
 
     /** 답변을 내고 상담을 끝낸다 */
     private void finish(String text) {
+        endConsultation();
+        bot(text);
+    }
+
+    /** 다음 입력은 새 상담으로 본다 */
+    private void endConsultation() {
         conversation.clear();
         followUps = 0;
         historyAsked = false;
         confirmAsked = false;
-        bot(text);
     }
 
     private void bot(String text) {
@@ -167,10 +193,10 @@ public class RecommendChatViewModel extends AndroidViewModel {
     private SymptomAnalyzer.Vocabulary vocabulary() {
         Map<String, String> warningScopes = new LinkedHashMap<>();
         for (SymptomWarning warning : warnings) {
-            warningScopes.put(warning.getId(), warning.getSymptoms());
+            warningScopes.put(warning.getId(), (warning.isEmergency() ? "[응급] " : "") + warning.getSymptoms());
         }
         return new SymptomAnalyzer.Vocabulary(engine.concernScopes(), warningScopes,
-                knowledge.triageScopes(), knowledge.linkTargets());
+                knowledge.triageScopes(), knowledge.linkTargets(), knowledge.ingredientIds());
     }
 
     private static RecommendEngine loadEngine(Application application) {
@@ -197,7 +223,10 @@ public class RecommendChatViewModel extends AndroidViewModel {
         try (Reader rules = asset(application, "knowledge_rules.jsonl");
              Reader sources = asset(application, "knowledge_sources.json");
              Reader terms = asset(application, "knowledge_terms.json")) {
-            return KnowledgeBase.load(rules, sources, terms);
+            KnowledgeBase loaded = KnowledgeBase.load(rules, sources, terms);
+            // 검토 전 규칙을 쓰고 있다는 표시는 사용자 답변이 아니라 개발 로그에만 남긴다 (2026-10-30 사용자 요청)
+            android.util.Log.i(TAG, "약사·의사 검토 전 근거 규칙 사용 중 (" + KnowledgeBase.VERSION + ", 디버그 빌드)");
+            return loaded;
         } catch (IOException | RuntimeException e) {
             android.util.Log.e(TAG, "근거 규칙 읽기 실패", e);
             return KnowledgeBase.empty();

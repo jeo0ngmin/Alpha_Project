@@ -38,6 +38,61 @@ public class SymptomAnalysis {
     @SerializedName("links")
     List<Link> links;
 
+    @SerializedName("ai_suggestions")
+    List<AiSuggestion> aiSuggestions;
+
+    /**
+     * 규칙 표에 없는 증상에 대해 AI가 고른 건강기능식품 성분 하나 (README 8-1, 2026-10-30 결정).
+     * ingredientId는 근거 규칙(8-8)의 성분 id로, 상호작용 확인에 쓴다. 목록에 없으면 OTHER.
+     */
+    public static class AiSuggestion {
+        public static final String OTHER = "other";
+
+        @SerializedName("symptom")
+        String symptom;
+
+        @SerializedName("ingredient")
+        String ingredient;
+
+        @SerializedName("reason")
+        String reason;
+
+        @SerializedName("caution")
+        String caution;
+
+        @SerializedName("ingredient_id")
+        String ingredientId;
+
+        public AiSuggestion(String symptom, String ingredient, String reason, String caution, String ingredientId) {
+            this.symptom = symptom;
+            this.ingredient = ingredient;
+            this.reason = reason;
+            this.caution = caution;
+            this.ingredientId = ingredientId;
+        }
+
+        /** 이 성분이 다루는 사용자의 증상 (예: 두통). 답변에서 증상별로 묶을 때 쓴다 */
+        public String getSymptom() {
+            return symptom == null ? "" : symptom.trim();
+        }
+
+        public String getIngredient() {
+            return ingredient == null ? "" : ingredient.trim();
+        }
+
+        public String getReason() {
+            return reason == null ? "" : reason.trim();
+        }
+
+        public String getCaution() {
+            return caution == null ? "" : caution.trim();
+        }
+
+        public String getIngredientId() {
+            return ingredientId == null ? OTHER : ingredientId;
+        }
+    }
+
     /**
      * 사용자가 말한 약·지병·식사·예정 검사 하나와 근거 규칙 대상 id의 연결 (README 8-8).
      * 성분을 알 수 없으면 UNCLEAR, 성분은 알지만 규칙 대상이 아니면 NOT_LISTED.
@@ -122,6 +177,11 @@ public class SymptomAnalysis {
     /** 사용자가 말한 약·지병 등의 연결 목록 */
     public List<Link> getLinks() {
         return links == null ? new ArrayList<>() : links;
+    }
+
+    /** 규칙 표에 없는 증상에 AI가 고른 성분 (최대 3개) */
+    public List<AiSuggestion> getAiSuggestions() {
+        return aiSuggestions == null ? new ArrayList<>() : aiSuggestions;
     }
 
     /** 사용자 말을 정리한 한 줄. 추천 기록 저장(D3)에 쓴다 */

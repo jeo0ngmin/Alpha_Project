@@ -39,6 +39,7 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
     static final String MSG_NO_KEY = "설정 오류예요. Claude 키가 없어요.";
     static final String MSG_FAILED = "말씀을 이해하지 못했어요. 다시 말씀해 주세요.";
     static final String MSG_NETWORK = "인터넷 연결을 확인해 주세요.";
+    static final int MAX_AI_SUGGESTIONS = 3;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -118,11 +119,13 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
 
     /**
      * {CONCERNS} 고민 목록(이름: 범위), {WARNINGS} 병원 안내 목록(이름: 증상),
-     * {TRIAGE} 응급·진료 확인 목록(이름: 상황), {LINKS} 약·질환 연결 목록(id: 이름)이 들어간다.
+     * {TRIAGE} 응급·진료 확인 목록(이름: 상황), {LINKS} 약·질환 연결 목록(id: 이름),
+     * {INGREDIENT_IDS} 근거 규칙의 성분 id가 들어간다.
      */
     static final String SYSTEM_PROMPT = "너는 건강기능식품 추천 앱의 상담 도우미다. 사용자는 주로 고령층과 시각장애인이다.\n"
             + "할 일: 대화에서 사용자의 증상을 파악해 아래 고민 목록의 항목으로 바꾼다. "
-            + "추천 성분은 앱이 규칙 표로 정하므로 너는 정하지 않는다.\n"
+            + "고민 목록에 있는 증상의 성분은 앱이 규칙 표로 정하므로 너는 정하지 않는다. "
+            + "고민 목록에 없는 증상에만 ai_suggestions로 건강기능식품 성분을 고른다.\n"
             + "고민 목록 (이름: 그 항목이 다루는 범위):\n"
             + "{CONCERNS}\n"
             + "병원 안내 목록 (이름: 그 안내가 다루는 증상):\n"
@@ -131,9 +134,11 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
             + "{TRIAGE}\n"
             + "약·질환 연결 목록 (id: 이름):\n"
             + "{LINKS}\n"
+            + "성분 id 목록: {INGREDIENT_IDS}\n"
             + "규칙:\n"
-            + "- 매 턴 가장 먼저, 사용자가 말한 상황이 응급·진료 확인 목록에 해당하는지 본다. "
-            + "해당하면 triage에 그 이름을 넣는다. 사용자가 그런 증상이 없다고 했으면 넣지 않는다.\n"
+            + "- 매 턴 가장 먼저, 사용자가 말한 상황이 병원 안내 목록의 [응급] 항목이나 응급·진료 확인 목록에 "
+            + "해당하는지 본다. [응급] 항목에 해당하면 warnings에, 응급·진료 확인 목록에 해당하면 triage에 그 이름을 넣고, "
+            + "ai_suggestions는 비운다. 사용자가 그런 증상이 없다고 했으면 넣지 않는다.\n"
             + "- concerns에는 목록의 이름만 글자 그대로 넣는다. 해당하는 것이 여러 개면 모두 넣는다.\n"
             + "- 증상이 그 항목의 범위에 실제로 들어갈 때만 고른다. 부위가 가깝거나 비슷해 보인다고 "
             + "넓혀 고르지 않는다. 예를 들어 속쓰림, 위경련, 명치 통증은 위(胃)의 증상이라 "
@@ -147,7 +152,18 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
             + "follow_up_question에 질문 한 개를 쓴다. 질문은 증상(어디가, 어떻게, 언제부터)만 묻는 "
             + "짧은 존댓말로, 소리 내어 읽어도 알아듣기 쉽게 쓴다.\n"
             + "- 건강 고민과 관계없는 말이면 concerns를 비우고 needs_more_info와 unmatched는 false로 둔다.\n"
-            + "- 진단, 성분, 제품, 복용법, 건강 조언은 어디에도 쓰지 않는다.\n"
+            + "- 진단, 제품명, 복용법, 건강 조언은 어디에도 쓰지 않는다. 성분은 ai_suggestions에만 쓴다.\n"
+            + "- ai_suggestions: 증상은 분명한데 고민 목록에 없는 경우(unmatched가 true)에만, 고민 목록에 없는 "
+            + "증상마다 건강기능식품 성분을 1~3개 고른다. 여러 증상을 함께 말했으면 목록에 있는 증상은 concerns에, "
+            + "목록에 없는 증상은 ai_suggestions에 넣어 모든 증상을 다룬다. 고민 목록에 있는 증상, "
+            + "응급·진료 확인 목록에 해당하는 상황, 아직 정보가 부족한 경우에는 빈 배열로 둔다.\n"
+            + "  - symptom: 이 성분이 다루는 사용자의 증상을 짧은 이름으로 쓴다 (예: 두통, 불면).\n"
+            + "  - ingredient: 영양소나 건강기능식품 원료 이름만 쓴다. 의약품, 한약, 제품명, 브랜드는 쓰지 않는다.\n"
+            + "  - reason: 그 성분이 그 증상에 왜 도움이 될 수 있는지 고령층이 알아듣기 쉬운 한 문장. "
+            + "\"~어요\", \"~해요\"로 끝나는 존댓말로 쓴다. 치료·완치·예방을 약속하는 표현과 용량 숫자는 쓰지 않는다.\n"
+            + "  - caution: 그 성분을 먹을 때 알아 둘 주의 한 문장. \"~하세요\", \"~있어요\"로 끝나는 존댓말로 쓴다.\n"
+            + "  - ingredient_id: 성분 id 목록에 같은 성분이 있으면 그 id, 없으면 other.\n"
+            + "  - 사용자가 말한 지병·약과 함께 먹으면 문제가 될 수 있다고 알려진 성분은 고르지 않는다.\n"
             + "- symptom_summary에는 사용자가 말한 증상을 한 줄로 정리한다. 말하지 않은 내용은 넣지 않는다.\n"
             + "- 앱이 추천 전에 평소 지병과 복용 중인 약을 묻는다. 사용자가 말한 지병은 conditions에, "
             + "약은 medications에 사용자가 말한 대로 짧게 넣는다. 추측해서 넣지 않는다. "
@@ -168,7 +184,8 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
         return SYSTEM_PROMPT.replace("{CONCERNS}", bulletList(v.concerns))
                 .replace("{WARNINGS}", bulletList(v.warnings))
                 .replace("{TRIAGE}", bulletList(v.triage))
-                .replace("{LINKS}", bulletList(v.linkTargets));
+                .replace("{LINKS}", bulletList(v.linkTargets))
+                .replace("{INGREDIENT_IDS}", v.ingredientIds.isEmpty() ? "(없음)" : String.join(", ", v.ingredientIds));
     }
 
     private static String bulletList(Map<String, String> entries) {
@@ -211,6 +228,19 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
         properties.put("warnings", arrayOf(enumOf(new ArrayList<>(v.warnings.keySet()))));
         properties.put("triage", arrayOf(enumOf(new ArrayList<>(v.triage.keySet()))));
         properties.put("links", arrayOf(link));
+
+        List<String> ingredientIds = new ArrayList<>(v.ingredientIds);
+        ingredientIds.add(SymptomAnalysis.AiSuggestion.OTHER);
+        properties.put("ai_suggestions", arrayOf(map(
+                "type", "object",
+                "properties", map(
+                        "symptom", map("type", "string"),
+                        "ingredient", map("type", "string"),
+                        "reason", map("type", "string"),
+                        "caution", map("type", "string"),
+                        "ingredient_id", enumOf(ingredientIds)),
+                "required", Arrays.asList("symptom", "ingredient", "reason", "caution", "ingredient_id"),
+                "additionalProperties", false)));
 
         return JsonOutputFormat.Schema.builder()
                 .putAdditionalProperty("type", JsonValue.from("object"))
@@ -259,6 +289,18 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
                     : new SymptomAnalysis.Link(link.getRawName(), SymptomAnalysis.Link.UNCLEAR, false));
         }
         result.links = links;
+        // AI 추천은 이름이 있는 것만 최대 3개. 성분 id가 목록에 없으면 other로 바꾼다
+        List<SymptomAnalysis.AiSuggestion> suggestions = new ArrayList<>();
+        for (SymptomAnalysis.AiSuggestion s : result.getAiSuggestions()) {
+            if (s.getIngredient().isEmpty() || suggestions.size() == MAX_AI_SUGGESTIONS) {
+                continue;
+            }
+            String id = v.ingredientIds.contains(s.getIngredientId())
+                    ? s.getIngredientId() : SymptomAnalysis.AiSuggestion.OTHER;
+            suggestions.add(new SymptomAnalysis.AiSuggestion(s.getSymptom(), s.getIngredient(), s.getReason(),
+                    s.getCaution(), id));
+        }
+        result.aiSuggestions = suggestions;
         return result;
     }
 

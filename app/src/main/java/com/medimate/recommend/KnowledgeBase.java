@@ -114,6 +114,17 @@ public class KnowledgeBase {
         return targets;
     }
 
+    /** 근거 규칙에 나오는 성분 id (AI 추천 성분을 이 id에 맞춰 상호작용을 확인한다) */
+    public List<String> ingredientIds() {
+        Set<String> ids = new LinkedHashSet<>();
+        for (KnowledgeRule rule : rules) {
+            if (!rule.getIngredientId().isEmpty()) {
+                ids.add(rule.getIngredientId());
+            }
+        }
+        return new ArrayList<>(ids);
+    }
+
     /** 대상 id의 한국어 이름. 이름표에 없으면 id 그대로 */
     public String termName(String id) {
         String name = terms.get(id);

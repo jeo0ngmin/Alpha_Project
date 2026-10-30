@@ -1,12 +1,14 @@
 package com.medimate.recommend;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 챗봇 대화에서 사용자 증상을 파악한다 (README 8-2, 8-6).
- * 화면·ViewModel은 이 인터페이스만 참조한다. 추천 성분은 정하지 않는다 (RecommendEngine 몫).
+ * 화면·ViewModel은 이 인터페이스만 참조한다. 규칙 표에 있는 증상의 성분은 RecommendEngine이 정하고,
+ * 규칙 표에 없는 증상만 분석기가 성분을 고른다 (ai_suggestions, README 8-1).
  */
 public interface SymptomAnalyzer {
 
@@ -31,13 +33,17 @@ public interface SymptomAnalyzer {
         public final Map<String, String> triage;
         /** 약·질환 연결 대상 id → 한국어 이름 (README 8-8, 디버그 빌드만) */
         public final Map<String, String> linkTargets;
+        /** 근거 규칙의 성분 id. AI 추천 성분을 여기에 맞춘다 (README 8-8, 디버그 빌드만) */
+        public final List<String> ingredientIds;
 
         public Vocabulary(Map<String, String> concerns, Map<String, String> warnings,
-                          Map<String, String> triage, Map<String, String> linkTargets) {
+                          Map<String, String> triage, Map<String, String> linkTargets,
+                          List<String> ingredientIds) {
             this.concerns = new LinkedHashMap<>(concerns);
             this.warnings = new LinkedHashMap<>(warnings);
             this.triage = new LinkedHashMap<>(triage);
             this.linkTargets = new LinkedHashMap<>(linkTargets);
+            this.ingredientIds = new ArrayList<>(ingredientIds);
         }
     }
 

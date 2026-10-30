@@ -26,7 +26,7 @@ public class ClaudeSymptomAnalyzerParseTest {
         triage.put("severe_dyspnea_unable_to_speak", "");
         Map<String, String> links = new LinkedHashMap<>();
         links.put("warfarin", "와파린");
-        return new SymptomAnalyzer.Vocabulary(concerns, warnings, triage, links);
+        return new SymptomAnalyzer.Vocabulary(concerns, warnings, triage, links, Arrays.asList("magnesium"));
     }
 
     @Test
@@ -85,6 +85,23 @@ public class ClaudeSymptomAnalyzerParseTest {
         assertEquals(SymptomAnalysis.Link.UNCLEAR, result.getLinks().get(1).getTargetId());
         assertFalse(result.getLinks().get(1).isUserConfirmed());
         assertEquals(SymptomAnalysis.Link.NOT_LISTED, result.getLinks().get(2).getTargetId());
+    }
+
+    /** AI 추천은 이름 있는 것만 최대 3개, 목록에 없는 성분 id는 other로 */
+    @Test
+    public void limitsAiSuggestions() {
+        SymptomAnalysis result = ClaudeSymptomAnalyzer.parse(
+                "{\"ai_suggestions\":["
+                        + "{\"ingredient\":\"마그네슘\",\"reason\":\"r\",\"caution\":\"c\",\"ingredient_id\":\"magnesium\"},"
+                        + "{\"ingredient\":\"\",\"reason\":\"r\",\"caution\":\"c\",\"ingredient_id\":\"other\"},"
+                        + "{\"ingredient\":\"리보플라빈\",\"reason\":\"r\",\"caution\":\"c\",\"ingredient_id\":\"riboflavin\"},"
+                        + "{\"ingredient\":\"코엔자임Q10\",\"reason\":\"r\",\"caution\":\"c\",\"ingredient_id\":\"other\"},"
+                        + "{\"ingredient\":\"네번째\",\"reason\":\"r\",\"caution\":\"c\",\"ingredient_id\":\"other\"}]}", VOCAB);
+
+        assertEquals(3, result.getAiSuggestions().size());
+        assertEquals("magnesium", result.getAiSuggestions().get(0).getIngredientId());
+        assertEquals("리보플라빈", result.getAiSuggestions().get(1).getIngredient());
+        assertEquals(SymptomAnalysis.AiSuggestion.OTHER, result.getAiSuggestions().get(1).getIngredientId());
     }
 
     @Test
