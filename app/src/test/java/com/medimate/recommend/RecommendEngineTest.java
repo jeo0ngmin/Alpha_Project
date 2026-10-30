@@ -34,6 +34,20 @@ public class RecommendEngineTest {
         }
     }
 
+    /** 주의사항은 근거 출처가 있을 때만 보인다 */
+    @Test
+    public void cautionNeedsSource() {
+        List<RecommendRule> rules = RecommendEngine.load(new StringReader(
+                "[{\"concern\":\"c\",\"ingredient\":\"a\",\"reason\":\"r\",\"source\":\"s\","
+                        + "\"caution\":\"주의\",\"cautionSource\":\"\"},"
+                        + "{\"concern\":\"c\",\"ingredient\":\"b\",\"reason\":\"r\",\"source\":\"s\","
+                        + "\"caution\":\"주의\",\"cautionSource\":\"출처\"}]"))
+                .recommend(Collections.singletonList("c"));
+
+        assertEquals("", rules.get(0).getCaution());
+        assertEquals("주의", rules.get(1).getCaution());
+    }
+
     /** 고민마다 범위 설명이 붙고, 같은 고민의 규칙 설명은 이어 붙는다 */
     @Test
     public void concernScopesJoinReasonsPerConcern() throws Exception {
