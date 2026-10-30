@@ -11,6 +11,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.auth.UserInfo;
+import com.medimate.data.UserRepository;
 
 /**
  * 로그인 상태의 단일 창구 (README 7-1). 화면은 로그인 방식을 몰라도 되도록 이 클래스만 참조한다.
@@ -50,6 +54,19 @@ public class AuthRepository {
                     && result.getAdditionalUserInfo().isNewUser();
             callback.onSuccess(result.getUser(), isNewUser);
         });
+    }
+
+    /** 로그인 방식 (UserRepository.PROVIDER_*). 구글·전화번호가 아니면 "unknown" */
+    public static String providerOf(FirebaseUser user) {
+        for (UserInfo info : user.getProviderData()) {
+            if (GoogleAuthProvider.PROVIDER_ID.equals(info.getProviderId())) {
+                return UserRepository.PROVIDER_GOOGLE;
+            }
+            if (PhoneAuthProvider.PROVIDER_ID.equals(info.getProviderId())) {
+                return UserRepository.PROVIDER_PHONE;
+            }
+        }
+        return "unknown";
     }
 
     /** Firebase 로그아웃. 카카오 로그아웃은 B4에서 함께 붙인다 (README 7-6). */

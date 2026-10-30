@@ -15,7 +15,12 @@ public class SplashActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // 카카오 사용자는 Firebase 사용자가 아니라서 재실행 시 Login으로 온다. Firebase 연결은 2차 (README 7-5)
-        Class<?> next = new AuthRepository().isSignedIn() ? MainActivity.class : LoginActivity.class;
+        AuthRepository auth = new AuthRepository();
+        if (auth.currentUser() != null) {
+            // D1 이전에 로그인해 둔 사용자도 프로필이 생기게 한다. 기다리지 않는다
+            ProfileSync.ensure(auth.currentUser(), () -> { });
+        }
+        Class<?> next = auth.isSignedIn() ? MainActivity.class : LoginActivity.class;
         startActivity(new Intent(this, next));
         finish();
     }

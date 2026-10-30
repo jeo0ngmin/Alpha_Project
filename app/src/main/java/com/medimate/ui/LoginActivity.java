@@ -47,7 +47,7 @@ public class LoginActivity extends AppCompatActivity {
                 new GoogleSignInHelper(repository).signIn(this, new AuthCallback() {
                     @Override
                     public void onSuccess(FirebaseUser user, boolean isNewUser) {
-                        goToMain();
+                        ProfileSync.ensure(user, LoginActivity.this::goToMain);
                     }
 
                     @Override

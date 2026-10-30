@@ -1,0 +1,10 @@
+// Firestore 보안 규칙 (README 9-3). 콘솔 → Firestore Database → 규칙 탭에 붙여 넣고 "게시"한다.
+// 테스트 모드(누구나 읽기·쓰기)로 두지 않는다. 로그인한 본인 문서(users/{uid} 아래 전체)만 접근할 수 있다.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
