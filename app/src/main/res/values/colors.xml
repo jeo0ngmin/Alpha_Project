@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <color name="white">#FFFFFF</color>
+    <color name="medimate_green">#727D73</color>
+    <color name="medimate_icon_green">#60796D</color>
+    <color name="medimate_icon_background">#EFF5F0</color>
+    <color name="medimate_bottom_green">#EAF2EA</color>
+    <color name="text_primary">#222222</color>
+    <color name="text_secondary">#A7A7A7</color>
+    <color name="card_border">#E5E8E5</color>
+    <!-- 약 봉투 분석 -->
+    <color name="medicine_bag_green">#4F6F5D</color>
+    <color name="medicine_bag_background">#DDE8E0</color>
+    <color name="medicine_bag_border">#BACDBF</color>
+    <color name="medicine_bag_box_background">#60796D</color>
+    <!-- 알약 분석 - 더 진한 버전 -->
+    <color name="pill_analysis_green">#3F5D63</color>
+    <color name="pill_analysis_background">#D3E0E3</color>
+    <color name="pill_analysis_border">#AFC2C7</color>
+</resources>

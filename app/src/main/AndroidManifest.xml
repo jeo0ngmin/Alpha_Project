@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Medimate">
+
+        <!-- 앱 첫 화면 -->
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <!-- 회원가입 -->
+        <activity
+            android:name=".SignupActivity"
+            android:exported="false" />
+
+        <!-- 로그인 -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+
+        <!-- 개인 정보 -->
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
+
+        <!-- 회원 탈퇴 -->
+        <activity
+            android:name=".WithdrawActivity"
+            android:exported="false" />
+
+        <!-- 기존 메인 화면 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- OCR 결과 화면 -->
+        <activity
+            android:name=".OcrResultActivity"
+            android:exported="false" />
+
+        <!-- OCR 결과 상세 분석 화면 -->
+        <activity
+            android:name=".MedicineDetailActivity"
+            android:exported="false" />
+
+        <!-- 알약 사진 촬영 및 선택 화면 -->
+        <activity
+            android:name=".PillCaptureActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- 알약 분석 중 화면 -->
+        <activity
+            android:name=".PillAnalyzingActivity"
+            android:exported="false" />
+
+        <!-- 카메라 촬영 이미지 저장용 FileProvider -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+
+        </provider>
+
+    </application>
+
+</manifest>

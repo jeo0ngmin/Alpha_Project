@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <group
+        android:pivotX="24"
+        android:pivotY="24"
+        android:rotation="-45">
+
+        <!-- 왼쪽(회색) 반 -->
+        <path
+            android:fillColor="#D5D8DC"
+            android:pathData="M8,24
+                              A8,8 0 0,1 16,16
+                              L24,16
+                              L24,32
+                              L16,32
+                              A8,8 0 0,1 8,24
+                              Z" />
+
+        <!-- 오른쪽(초록) 반 -->
+        <path
+            android:fillColor="#789783"
+            android:pathData="M24,16
+                              L32,16
+                              A8,8 0 0,1 40,24
+                              A8,8 0 0,1 32,32
+                              L24,32
+                              Z" />
+
+    </group>
+
+</vector>
