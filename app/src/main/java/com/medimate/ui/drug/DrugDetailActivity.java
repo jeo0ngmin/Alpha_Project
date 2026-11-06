@@ -13,8 +13,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.medimate.R;
+import com.medimate.data.medication.MedicationRepository;
 import com.medimate.model.Drug;
 import com.medimate.tts.TtsManager;
+import com.medimate.ui.schedule.MedicationScheduleActivity;
+import com.medimate.ui.schedule.ScheduleEditActivity;
 
 /**
  * 약 상세 + 낭독 (README 1장). 열리면 전체를 읽어 주고, 항목을 누르면 그 항목만 다시 읽는다.
@@ -64,6 +67,11 @@ public class DrugDetailActivity extends AppCompatActivity {
                 + sentence(getString(R.string.detail_description), drug.getDescription())
                 + sentence(getString(R.string.detail_warning), drug.getWarning());
         findViewById(R.id.button_speak_all).setOnClickListener(v -> tts.speak(all));
+        // 복용량·시간은 등록 화면에서 사용자가 확인하고 입력한다 (README 9-6)
+        findViewById(R.id.button_add_schedule).setOnClickListener(v ->
+                startActivity(MedicationRepository.get(this).currentOwner() == null
+                        ? MedicationScheduleActivity.newIntent(this, null)
+                        : ScheduleEditActivity.fromDrug(this, drug)));
 
         if (savedInstanceState == null) {
             tts.speak(all);

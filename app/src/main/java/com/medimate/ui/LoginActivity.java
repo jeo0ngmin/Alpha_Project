@@ -23,7 +23,6 @@ import com.medimate.tts.TtsManager;
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
-    private static final String MSG_PHONE_NOT_READY = "전화번호 로그인 화면은 준비 중이에요.";
 
     private TtsManager tts;
 
@@ -41,7 +40,8 @@ public class LoginActivity extends AppCompatActivity {
         tts = new TtsManager(this);
         AuthRepository repository = new AuthRepository();
 
-        findViewById(R.id.button_phone).setOnClickListener(v -> tts.speak(MSG_PHONE_NOT_READY));
+        findViewById(R.id.button_phone).setOnClickListener(v ->
+                startActivity(new Intent(this, PhoneLoginActivity.class)));
 
         findViewById(R.id.button_google).setOnClickListener(v ->
                 new GoogleSignInHelper(repository).signIn(this, new AuthCallback() {

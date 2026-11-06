@@ -10,10 +10,12 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.medimate.tts.TtsManager;
+import com.medimate.ui.ProfileActivity;
 import com.medimate.ui.recommend.RecommendChatActivity;
 import com.medimate.ui.scan.ScanActivity;
+import com.medimate.ui.schedule.MedicationScheduleActivity;
 
-/** 메인: 큰 버튼 네 개 (약 찍기 / 내 약 / 영양제 추천 / 내 정보) (README 7-1). 내 약·추천·내 정보 화면은 C·D 단계. */
+/** 메인: 큰 버튼 다섯 개 (약 찍기 / 복약 스케줄 / 내 약 / 영양제 추천 / 내 정보) (README 7-1). 내 약 화면은 D 단계. */
 public class MainActivity extends AppCompatActivity {
 
     private static final String MSG_NOT_READY = "준비 중인 기능이에요.";
@@ -34,10 +36,13 @@ public class MainActivity extends AppCompatActivity {
         tts = new TtsManager(this);
         findViewById(R.id.button_scan).setOnClickListener(v ->
                 startActivity(new Intent(this, ScanActivity.class)));
+        findViewById(R.id.button_schedule).setOnClickListener(v ->
+                startActivity(MedicationScheduleActivity.newIntent(this, null)));
         findViewById(R.id.button_my_drugs).setOnClickListener(v -> tts.speak(MSG_NOT_READY));
         findViewById(R.id.button_recommend).setOnClickListener(v ->
                 startActivity(new Intent(this, RecommendChatActivity.class)));
-        findViewById(R.id.button_profile).setOnClickListener(v -> tts.speak(MSG_NOT_READY));
+        findViewById(R.id.button_profile).setOnClickListener(v ->
+                startActivity(new Intent(this, ProfileActivity.class)));
     }
 
     @Override

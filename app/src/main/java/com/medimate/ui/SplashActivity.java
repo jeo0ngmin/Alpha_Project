@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.medimate.MainActivity;
 import com.medimate.auth.AuthRepository;
+import com.medimate.data.medication.MedicationRepository;
 
 /** 로그인 여부를 보고 Login 또는 Main으로 보낸다 (README 7-1). 화면은 그리지 않는다. */
 public class SplashActivity extends AppCompatActivity {
@@ -19,6 +20,7 @@ public class SplashActivity extends AppCompatActivity {
         if (auth.currentUser() != null) {
             // D1 이전에 로그인해 둔 사용자도 프로필이 생기게 한다. 기다리지 않는다
             ProfileSync.ensure(auth.currentUser(), () -> { });
+            MedicationRepository.get(this).onAppStarted();
         }
         Class<?> next = auth.isSignedIn() ? MainActivity.class : LoginActivity.class;
         startActivity(new Intent(this, next));

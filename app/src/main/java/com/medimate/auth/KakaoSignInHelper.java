@@ -83,7 +83,9 @@ public class KakaoSignInHelper {
     /** 로그아웃 (README 7-6). 실패해도 토큰은 지워진다. */
     public void signOut() {
         UserApiClient.getInstance().logout(error -> {
-            if (error != null) {
+            // 카카오로 로그인하지 않은 경우(TokenNotFound)는 정상이라 남기지 않는다
+            if (error != null && !(error instanceof ClientError
+                    && ((ClientError) error).getReason() == ClientErrorCause.TokenNotFound)) {
                 Log.w(TAG, "카카오 로그아웃 실패", error);
             }
             return Unit.INSTANCE;

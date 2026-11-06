@@ -69,9 +69,10 @@ public class AuthRepository {
         return "unknown";
     }
 
-    /** Firebase 로그아웃. 카카오 로그아웃은 B4에서 함께 붙인다 (README 7-6). */
+    /** 로그아웃: Firebase + 카카오 (README 7-6). 카카오로 로그인하지 않았으면 카카오 쪽은 실패 로그만 남는다. */
     public void signOut() {
         auth.signOut();
+        new KakaoSignInHelper().signOut();
     }
 
     static String toMessage(@Nullable Exception e) {
