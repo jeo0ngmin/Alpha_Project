@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 기본 대화상자는 글자와 버튼이 작아서, 앱 기준(본문 18sp, 버튼 56dp)에 맞춘 대화상자 -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            style="@style/MediMate.Heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/text_title" />
+
+        <TextView
+            android:id="@+id/tvDialogMessage"
+            style="@style/MediMate.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap" />
+
+        <!-- 버튼은 세로로 크게 쌓는다. 가장 권하는 행동이 맨 위 -->
+        <LinearLayout
+            android:id="@+id/dialogButtons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

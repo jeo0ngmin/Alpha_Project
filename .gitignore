@@ -27,3 +27,36 @@ local.properties
 # OS
 .DS_Store
 Thumbs.db
+
+
+# ---- AI·백엔드 (MM-AI) ----
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx
+# pill-classifier: 가상환경, 식약처 DB·이미지, 학습 모델 (용량이 커서 Git에 올리지 않음)
+/pill-classifier/.venv/
+/pill-classifier/data/
+/pill-classifier/models/
+/pill-classifier/runs/
+/pill-classifier/colab/
+__pycache__/
+.pytest_cache/
+# 공공데이터 서비스키 (절대 Git에 올리지 않는다)
+/pill-classifier/.mfds_service_key
+/pill-classifier/.anthropic_key
+/pill-classifier/.clova_ocr
+# backend: 빌드 결과와 업로드된 사진
+/backend/build/
+/backend/.gradle/
+/backend/data/
+/.idea/deviceManager.xml
+/.idea/deploymentTargetSelector.xml

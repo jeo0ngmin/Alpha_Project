@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            style="@style/MediMate.Title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/capture_title" />
+
+        <!-- 안내 문구. 바뀔 때마다 TalkBack이 읽는다 -->
+        <TextView
+            android:id="@+id/tvGuide"
+            style="@style/MediMate.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap"
+            android:accessibilityLiveRegion="polite"
+            android:text="@string/capture_guide" />
+
+        <!-- 앞면 -->
+        <TextView
+            style="@style/MediMate.Heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/capture_front" />
+
+        <ImageView
+            android:id="@+id/ivFront"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/preview_height"
+            android:layout_marginTop="8dp"
+            android:background="#FF263238"
+            android:contentDescription="@string/capture_front_empty"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_pill_placeholder" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFrontCamera"
+                style="@style/MediMate.Button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="@string/capture_take_front" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFrontGallery"
+                style="@style/MediMate.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:contentDescription="@string/capture_pick_front_desc"
+                android:text="@string/capture_pick" />
+        </LinearLayout>
+
+        <!-- 뒷면 -->
+        <TextView
+            style="@style/MediMate.Heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/capture_back" />
+
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/preview_height"
+            android:layout_marginTop="8dp"
+            android:background="#FF263238"
+            android:contentDescription="@string/capture_back_empty"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_pill_placeholder" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBackCamera"
+                style="@style/MediMate.Button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="@string/capture_take_back" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBackGallery"
+                style="@style/MediMate.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:contentDescription="@string/capture_pick_back_desc"
+                android:text="@string/capture_pick" />
+        </LinearLayout>
+
+        <!-- 힌트 -->
+        <TextView
+            style="@style/MediMate.Heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/capture_hints_title" />
+
+        <TextView
+            style="@style/MediMate.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/capture_hints_desc" />
+
+        <TextView
+            android:id="@+id/tvShapeLabel"
+            style="@style/MediMate.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap"
+            android:labelFor="@+id/spShape"
+            android:text="@string/capture_shape" />
+
+        <Spinner
+            android:id="@+id/spShape"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_target" />
+
+        <TextView
+            style="@style/MediMate.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap"
+            android:text="@string/capture_colors" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cgColors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap"
+            android:hint="@string/capture_print">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPrint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapCharacters|textNoSuggestions"
+                android:maxLength="30"
+                android:textSize="@dimen/text_body" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnIdentify"
+            style="@style/MediMate.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:enabled="false"
+            android:minHeight="72dp"
+            android:text="@string/capture_identify" />
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 디버그 빌드 전용. Android 17(targetSdk 37)부터 10.x·192.168.x 같은 사설 주소에 접속하려면
+     ACCESS_LOCAL_NETWORK 런타임 권한이 필요하다. 개발 서버(10.0.2.2, PC의 LAN IP) 접속용이며,
+     공인 주소의 운영 서버만 쓰는 릴리스 빌드에는 넣지 않는다. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
+    <!-- [시험용] 화면(홈, 알약, 약봉투, 복약 일정)과 시험 알람은 모두 이 디버그 폴더에 있다.
+         화면 담당 팀원의 실제 구현과 합칠 때는 src/debug의 java·res·이 매니페스트의 아래 부분과
+         src/testDebug를 빼면 된다. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <application>
+        <!-- [시험용] 시험 홈과 알약 화면. 실제 앱 아이콘과 따로 "MediMate 시험" 아이콘으로 뜬다 -->
+        <activity
+            android:name="com.medimate.debugtools.DebugHomeActivity"
+            android:label="MediMate 시험"
+            android:taskAffinity="com.medimate.debugtools"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.medimate.pill.PillCaptureActivity"
+            android:exported="false"
+            android:label="@string/capture_title"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="com.medimate.pill.PillResultActivity"
+            android:exported="false"
+            android:label="@string/result_title" />
+        <activity
+            android:name="com.medimate.pill.PillSearchActivity"
+            android:exported="false"
+            android:label="@string/search_title"
+            android:windowSoftInputMode="adjustResize" />
+        <!-- [시험용] 약봉투·복약 일정 -->
+        <activity
+            android:name="com.medimate.debugtools.BagTestActivity"
+            android:exported="false"
+            android:label="@string/home_bag_test" />
+        <activity
+            android:name="com.medimate.debugtools.BagResultActivity"
+            android:exported="false"
+            android:label="분석 결과" />
+        <activity
+            android:name="com.medimate.debugtools.BagDetailActivity"
+            android:exported="false"
+            android:label="약 상세 정보" />
+        <activity
+            android:name="com.medimate.debugtools.PlanTestActivity"
+            android:exported="false"
+            android:label="내 복약 일정 (시험)" />
+        <receiver
+            android:name="com.medimate.debugtools.TestAlarms$Receiver"
+            android:exported="false" />
+    </application>
+
+</manifest>

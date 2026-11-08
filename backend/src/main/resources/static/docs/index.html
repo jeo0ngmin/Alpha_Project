@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>MediMate API</title>
+  <link rel="stylesheet" href="../swagger-ui/swagger-ui.css">
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="../swagger-ui/swagger-ui-bundle.js"></script>
+<script>
+  // 명세의 서버 목록(운영 도메인) 대신 지금 열어 본 이 서버로 요청을 보낸다
+  const base = location.pathname.replace(/\/docs\/.*$/, "");
+  fetch(base + "/openapi.json").then(r => r.json()).then(spec => {
+    spec.servers = [{ url: location.origin + base, description: "이 서버" }];
+    SwaggerUIBundle({ spec, dom_id: "#swagger-ui", persistAuthorization: true });
+  });
+</script>
+</body>
+</html>
