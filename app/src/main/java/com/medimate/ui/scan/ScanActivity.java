@@ -2,7 +2,6 @@ package com.medimate.ui.scan;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +24,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.medimate.BuildConfig;
 import com.medimate.R;
+import com.medimate.pill.ImageCompressor;
 import com.medimate.tts.TtsManager;
 import com.medimate.ui.drug.DrugListActivity;
 
@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** 촬영·갤러리 → OCR → 약 목록 화면 (README 4-4). 자르기(UCrop)는 2차. */
+/** 촬영·갤러리 → 서버 약봉투 인식(CLOVA OCR) → 약 목록 화면. 자르기(UCrop)는 2차. */
 public class ScanActivity extends AppCompatActivity {
 
     private static final String TAG = "ScanActivity";
@@ -143,9 +143,10 @@ public class ScanActivity extends AppCompatActivity {
     private void scan(Uri uri) {
         textResult.setText(R.string.scan_reading);
         decoder.execute(() -> {
-            Bitmap bitmap;
+            byte[] jpeg;
             try {
-                bitmap = UriBitmapLoader.load(getContentResolver(), uri);
+                // EXIF 회전 적용 + 긴 변 1600px로 줄여서 서버로 보낸다
+                jpeg = ImageCompressor.toUploadJpeg(getContentResolver(), uri);
             } catch (IOException | RuntimeException e) {
                 Log.e(TAG, "사진 디코딩 실패", e);
                 runOnUiThread(() -> {
@@ -154,7 +155,7 @@ public class ScanActivity extends AppCompatActivity {
                 });
                 return;
             }
-            runOnUiThread(() -> viewModel.start(bitmap));
+            runOnUiThread(() -> viewModel.start(jpeg));
         });
     }
 

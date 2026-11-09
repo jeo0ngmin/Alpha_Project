@@ -1,41 +1,44 @@
 package com.medimate.ui.scan;
 
-import android.graphics.Bitmap;
-
-import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.medimate.gpt.GptCallback;
-import com.medimate.gpt.GptProcessor;
-import com.medimate.gpt.model.GptDrugList;
+import com.medimate.bag.BagRepository;
+import com.medimate.bag.model.BagJob;
+import com.medimate.bag.model.BagJobStatus;
 import com.medimate.model.Drug;
-import com.medimate.ocr.MlKitOcrProcessor;
-import com.medimate.ocr.OcrCallback;
-import com.medimate.ocr.OcrProcessor;
-import com.medimate.publicdata.DrugInfoRepository;
-import com.medimate.publicdata.model.DrugInfoItem;
-import com.medimate.publicdata.util.HtmlCleaner;
+import com.medimate.net.ApiClient;
+import com.medimate.net.ApiException;
+import com.medimate.net.HandlerScheduler;
+import com.medimate.net.JobPoller;
+import com.medimate.pill.model.JobAccepted;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * 사진 → OCR → GPT 정리 → e약은요 조회 (README 4-4). OCR 구현은 인터페이스로만 참조한다.
- * 여러 건이면 첫 번째를 쓴다. 후보 제시·음성 확인은 2차.
+ * 사진 → MediMate 서버 약봉투 인식(CLOVA OCR → 개인정보 가림 → 정리 → 식약처 대조) → 약 목록.
+ * 예전 흐름(ML Kit → GPT → e약은요)은 서버가 같은 일을 하므로 쓰지 않는다.
+ * 후보 선택·확정(일정 초안)은 다음 단계.
  */
 public class ScanViewModel extends ViewModel {
 
-    static final String MSG_READING = "글자를 읽고 있어요";
+    static final String MSG_READING = "약봉투를 읽고 있어요";
     static final String MSG_SEARCHING = "약 정보를 찾고 있어요";
-    static final String MSG_NO_TEXT = "글자를 찾지 못했어요. 약봉투를 화면 가운데에 두고 다시 찍어 주세요.";
     static final String MSG_NO_DRUG = "약 이름을 찾지 못했어요. 약봉투를 다시 찍어 주세요.";
+    static final String MSG_FAILED = "약봉투를 읽지 못했어요. 다시 찍어 주세요.";
+    static final String MSG_NETWORK = "서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.";
+    static final String MSG_TIMEOUT = "읽는 데 시간이 너무 오래 걸려요. 잠시 뒤 다시 시도해 주세요.";
 
-    private final OcrProcessor ocr = new MlKitOcrProcessor();   // 나중에: new ClovaOcrProcessor()
-    private final GptProcessor gpt = new GptProcessor();
-    private final DrugInfoRepository repository = new DrugInfoRepository();
+    /** 서버 인식(CLOVA + Claude)이 보통 10~30초 걸린다 */
+    private static final long POLL_TIMEOUT_MS = 90_000;
+
+    private final BagRepository repository = new BagRepository(ApiClient.get());
+    private final ExecutorService io = Executors.newSingleThreadExecutor();
+    private final HandlerScheduler scheduler = new HandlerScheduler();
+    private JobPoller<BagJob> poller;
 
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> status = new MutableLiveData<>();
@@ -46,7 +49,7 @@ public class ScanViewModel extends ViewModel {
         return isLoading;
     }
 
-    /** 진행 안내 ("글자를 읽고 있어요" → "약 정보를 찾고 있어요"). 화면에 보여 주고 읽어 준다 */
+    /** 진행 안내 ("약봉투를 읽고 있어요" → "약 정보를 찾고 있어요"). 화면에 보여 주고 읽어 준다 */
     public LiveData<String> getStatus() {
         return status;
     }
@@ -61,24 +64,16 @@ public class ScanViewModel extends ViewModel {
         return error;
     }
 
-    public void start(Bitmap bitmap) {
+    /** jpeg: ImageCompressor로 줄인 사진 */
+    public void start(byte[] jpeg) {
         isLoading.setValue(true);
         status.setValue(MSG_READING);
-        ocr.process(bitmap, new OcrCallback() {
-            @Override
-            public void onSuccess(String text) {
-                if (text.isEmpty()) {
-                    // 빈 결과는 GPT를 부르지 않고 바로 다시 찍도록 안내한다 (README 4-0)
-                    fail(MSG_NO_TEXT);
-                    return;
-                }
-                status.setValue(MSG_SEARCHING);
-                structure(text);
-            }
-
-            @Override
-            public void onError(String message) {
-                fail(message);
+        io.execute(() -> {
+            try {
+                JobAccepted accepted = repository.requestRecognition(jpeg);
+                scheduler.schedule(() -> poll(accepted), 0);
+            } catch (ApiException e) {
+                scheduler.schedule(() -> fail(messageOf(e)), 0);
             }
         });
     }
@@ -87,53 +82,46 @@ public class ScanViewModel extends ViewModel {
         drugs.setValue(null);
     }
 
-    private void structure(String ocrText) {
-        gpt.process(ocrText, new GptCallback() {
+    private void poll(JobAccepted accepted) {
+        status.setValue(MSG_SEARCHING);
+        poller = new JobPoller<>(repository::getJob, BagRepository::isFinished, io, scheduler, POLL_TIMEOUT_MS);
+        poller.start(accepted.jobId, accepted.pollAfterMs, new JobPoller.Listener<BagJob>() {
             @Override
-            public void onSuccess(GptDrugList result) {
-                if (result.getDrugs().isEmpty()) {
-                    fail(MSG_NO_DRUG);
-                    return;
-                }
-                lookupAll(result.getDrugs());
+            public void onProgress(BagJob job) {
             }
 
             @Override
-            public void onError(String message) {
-                fail(message);
+            public void onDone(BagJob job) {
+                if (job.status == BagJobStatus.FAILED) {
+                    fail(job.error != null && job.error.ttsMessage != null ? job.error.ttsMessage : MSG_FAILED);
+                    return;
+                }
+                List<Drug> result = BagDrugMapper.toDrugs(job);
+                if (result.isEmpty()) {
+                    fail(MSG_NO_DRUG);
+                    return;
+                }
+                isLoading.setValue(false);
+                drugs.setValue(result);
+            }
+
+            @Override
+            public void onError(ApiException e) {
+                fail(messageOf(e));
+            }
+
+            @Override
+            public void onTimeout() {
+                fail(MSG_TIMEOUT);
             }
         });
     }
 
-    // 약마다 e약은요를 따로 조회하고, 모두 끝나면 원래 순서대로 목록을 만든다
-    private void lookupAll(List<GptDrugList.GptDrug> gptDrugs) {
-        Drug[] results = new Drug[gptDrugs.size()];
-        int[] remaining = {gptDrugs.size()};
-        for (int i = 0; i < gptDrugs.size(); i++) {
-            int index = i;
-            GptDrugList.GptDrug gptDrug = gptDrugs.get(i);
-            repository.lookup(gptDrug.getName(), item -> {
-                results[index] = toDrug(gptDrug, item);
-                if (--remaining[0] == 0) {
-                    isLoading.setValue(false);
-                    drugs.setValue(new ArrayList<>(Arrays.asList(results)));
-                }
-            });
+    private static String messageOf(ApiException e) {
+        if (e.error() != null && e.error().ttsMessage != null) {
+            return e.error().ttsMessage;
         }
-    }
-
-    /** 이름·용법은 OCR 원문(GPT), 설명·주의사항·보관법은 e약은요 (README 6-3) */
-    private static Drug toDrug(GptDrugList.GptDrug gptDrug, @Nullable DrugInfoItem item) {
-        if (item == null) {
-            return new Drug(gptDrug.getName(), "", "", gptDrug.getDosage(), gptDrug.getStorage(),
-                    Drug.NO_OFFICIAL_INFO, "");
-        }
-        String storage = gptDrug.getStorage().isEmpty()
-                ? HtmlCleaner.clean(item.getDepositMethodQesitm()) : gptDrug.getStorage();
-        String warning = (HtmlCleaner.clean(item.getAtpnWarnQesitm()) + "\n"
-                + HtmlCleaner.clean(item.getAtpnQesitm())).trim();
-        return new Drug(item.getItemName(), item.getEntpName(), item.getItemSeq(),
-                gptDrug.getDosage(), storage, HtmlCleaner.clean(item.getEfcyQesitm()), warning);
+        return e.httpStatus() == ApiException.NO_RESPONSE ? MSG_NETWORK : MSG_FAILED;
     }
 
     private void fail(String message) {
@@ -143,6 +131,10 @@ public class ScanViewModel extends ViewModel {
 
     @Override
     protected void onCleared() {
-        ocr.close();
+        if (poller != null) {
+            poller.cancel();
+        }
+        scheduler.cancelAll();
+        io.shutdownNow();
     }
 }
