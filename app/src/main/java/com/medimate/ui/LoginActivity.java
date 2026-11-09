@@ -37,13 +37,18 @@ public class LoginActivity extends AppCompatActivity {
             return insets;
         });
 
+        // JE 화면의 뒤로가기·회원가입 글자 (원래 JE의 com.medimate.LoginActivity에 있던 것)
+        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+        findViewById(R.id.tv_signup).setOnClickListener(v ->
+                startActivity(new Intent(this, com.medimate.SignupActivity.class)));
+
         tts = new TtsManager(this);
         AuthRepository repository = new AuthRepository();
 
-        findViewById(R.id.button_phone).setOnClickListener(v ->
+        findViewById(R.id.btn_phone).setOnClickListener(v ->
                 startActivity(new Intent(this, PhoneLoginActivity.class)));
 
-        findViewById(R.id.button_google).setOnClickListener(v ->
+        findViewById(R.id.btn_google).setOnClickListener(v ->
                 new GoogleSignInHelper(repository).signIn(this, new AuthCallback() {
                     @Override
                     public void onSuccess(FirebaseUser user, boolean isNewUser) {
@@ -56,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 }));
 
-        findViewById(R.id.button_kakao).setOnClickListener(v ->
+        findViewById(R.id.btn_kakao).setOnClickListener(v ->
                 new KakaoSignInHelper().signIn(this, new KakaoSignInHelper.KakaoCallback() {
                     @Override
                     public void onSuccess(long kakaoId, String nickname) {

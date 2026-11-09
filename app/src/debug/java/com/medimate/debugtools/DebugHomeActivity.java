@@ -1,18 +1,19 @@
 package com.medimate.debugtools;
 
+import com.medimate.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.medimate.R;
 import com.medimate.net.LocalNetworkPermission;
 import com.medimate.pill.PillCaptureActivity;
 import com.medimate.pill.PillSearchActivity;
 import com.medimate.ui.EdgeToEdgeHelper;
 
-/** [시험용·디버그 전용] 시험 화면 홈. 앱 아이콘 "MediMate 시험"으로 연다. 실제 홈은 팀원(JM)의 MainActivity. */
+/** [시험용·디버그 전용] 시험 화면 홈. 앱 아이콘 "MediMate 시험"으로 연다. 실제 홈은 JM의 MainActivity. */
 public class DebugHomeActivity extends AppCompatActivity {
 
     @Override
