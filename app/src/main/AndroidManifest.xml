@@ -50,12 +50,6 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".ui.drug.DrugListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.drug.DrugDetailActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.recommend.RecommendChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
