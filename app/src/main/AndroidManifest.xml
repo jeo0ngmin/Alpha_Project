@@ -50,9 +50,6 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".ui.scan.ScanActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.drug.DrugListActivity"
             android:exported="false" />
         <activity
@@ -136,7 +133,7 @@
             </intent-filter>
         </activity>
 
-        <!-- 촬영한 사진을 카메라 앱이 앱 캐시에 쓰게 한다 (ui/scan/ScanActivity) -->
+        <!-- 촬영한 사진을 카메라 앱이 앱 캐시에 쓰게 한다 (BagCaptureActivity) -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
