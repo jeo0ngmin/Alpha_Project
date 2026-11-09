@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application>
-        <!-- [시험용] 시험 홈과 알약 화면. 실제 앱 아이콘과 따로 "MediMate 시험" 아이콘으로 뜬다 -->
+        <!-- [시험용] 홈과 알약 화면 -->
         <activity
             android:name="com.medimate.debugtools.DebugHomeActivity"
             android:label="MediMate 시험"

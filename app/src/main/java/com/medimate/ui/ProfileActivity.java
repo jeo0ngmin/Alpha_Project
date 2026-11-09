@@ -30,17 +30,25 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         AuthRepository auth = new AuthRepository();
-        TextView method = findViewById(R.id.text_login_method);
+        // JE 화면의 "아이디 표시" 칸에 로그인 방식을 보여 준다
+        TextView method = findViewById(R.id.btn_id);
         method.setText(getString(R.string.profile_login_method, methodLabel(auth.currentUser())));
 
-        findViewById(R.id.button_sign_out).setOnClickListener(v -> {
-            // Firebase 로그아웃 → 복약 데이터·알림 정리는 MedicationRepository가 계정 변경을 보고 처리한다 (README 9-6)
-            auth.signOut();
-            Intent intent = new Intent(this, LoginActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        });
+        findViewById(R.id.btn_withdraw).setOnClickListener(v ->
+                startActivity(new Intent(this, com.medimate.WithdrawActivity.class)));
+
+        // TODO(JE): JE 화면에 로그아웃 버튼이 없다. 버튼이 생기면
+        //   findViewById(R.id.<버튼 id>).setOnClickListener(v -> signOut(auth));
+        // 로 연결한다.
+    }
+
+    private void signOut(AuthRepository auth) {
+        // Firebase 로그아웃 → 복약 데이터·알림 정리는 MedicationRepository가 계정 변경을 보고 처리한다 (README 9-6)
+        auth.signOut();
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     private String methodLabel(FirebaseUser user) {
