@@ -1,0 +1,1 @@
+{"success":false,"error":{"code":"MM-RCG-4094","message":"이미 복용 중인 약이 있습니다.","ttsMessage":"이미 복용 중인 약이 있습니다. 기존 일정을 끝내거나 이 약을 목록에서 빼 주세요.","details":[{"field":"i2","reason":"뮤코스타정(레바미피드): 이미 복용 중인 약입니다"}],"retryable":false},"timestamp":"2026-11-05T09:00:00+09:00","requestId":"01M6XHH53VV6RPP3XYWSFFR951"}

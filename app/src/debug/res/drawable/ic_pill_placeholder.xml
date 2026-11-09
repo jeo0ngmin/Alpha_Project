@@ -1,0 +1,10 @@
+<!-- 약 사진이 없을 때 보여 주는 캡슐 아이콘 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFB0BEC5"
+        android:pathData="M4.22,11.29l7.07,-7.07c2.35,-2.35 6.15,-2.35 8.49,0s2.35,6.15 0,8.49l-7.07,7.07c-2.35,2.35 -6.15,2.35 -8.49,0s-2.35,-6.15 0,-8.49zM5.64,12.71c-1.56,1.56 -1.56,4.09 0,5.66s4.09,1.56 5.66,0l3.54,-3.54 -5.66,-5.66 -3.54,3.54z" />
+</vector>
