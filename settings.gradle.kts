@@ -19,8 +19,21 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // uCrop은 JitPack에만 배포됨
+        maven("https://jitpack.io") {
+            content {
+                includeGroup("com.github.Yalantis")
+            }
+        }
+        // 카카오 SDK (README 7-5)
+        maven("https://devrepo.kakao.com/nexus/content/groups/public/") {
+            content {
+                includeGroup("com.kakao.sdk")
+            }
+        }
     }
 }
 
-rootProject.name = "MediMate"
+rootProject.name = "Medimate"
 include(":app")
+ 

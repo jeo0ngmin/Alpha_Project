@@ -1,17 +1,25 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+    // Firebase
+    id("com.google.gms.google-services")
 }
 
-// 백엔드 주소. 에뮬레이터는 10.0.2.2가 PC의 localhost다.
-// 실제 폰으로 시험할 때는 gradle.properties(또는 ~/.gradle/gradle.properties)에
-//   medimate.apiBaseUrl=http://<PC의 IP>:8080/
-// 을 넣는다. 끝의 /는 필수.
-val apiBaseUrl = providers.gradleProperty("medimate.apiBaseUrl").orElse("http://10.0.2.2:8080/").get()
+// API 키는 프로젝트 루트의 secrets.properties에서 읽는다 (README 3-3, 커밋 금지)
+val secrets = Properties().apply {
+    val f = rootProject.file("secrets.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
 
 android {
     namespace = "com.medimate"
     compileSdk {
         version = release(37)
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     defaultConfig {
@@ -22,11 +30,16 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
-    }
 
-    buildFeatures {
-        buildConfig = true
+        // 백엔드 주소(알약·약봉투 API). 실제 폰은 gradle.properties에 medimate.apiBaseUrl=http://<PC IP>:8080/
+        buildConfigField("String", "API_BASE_URL", "\"${providers.gradleProperty("medimate.apiBaseUrl").orElse("http://10.0.2.2:8080/").get()}\"")
+
+        listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY",
+               "KAKAO_NATIVE_APP_KEY", "CLAUDE_API_KEY").forEach { key ->
+            buildConfigField("String", key, "\"${secrets.getProperty(key, "")}\"")
+        }
+        // 카카오 AuthCodeHandlerActivity의 scheme(kakao{키})에 쓴다 (README 7-5)
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = secrets.getProperty("KAKAO_NATIVE_APP_KEY", "")
     }
 
     buildTypes {
@@ -40,23 +53,50 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    packaging {
+        // anthropic-java가 가져오는 httpclient5 jar들이 같은 이름의 메타 파일을 가지고 있다
+        resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*")
+    }
+    sourceSets {
+        // 단위 테스트가 규칙 표(assets/supplement_rules.json)를 사본 없이 읽는다
+        getByName("test").resources.srcDir("src/main/assets")
+    }
 }
 
 dependencies {
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
+    implementation(libs.recyclerview)
     implementation(libs.material)
+
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.gson)
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.livedata)
-    implementation(libs.recyclerview)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    implementation(libs.ucrop)
+    implementation(libs.mlkit.text.recognition.korean)
+    implementation(libs.work.runtime)
     implementation(libs.exifinterface)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.gson)
-    implementation(libs.okhttp.logging)
     implementation(libs.glide)
+
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
+
+    // Firebase (README 7장)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.kakao.user)
+    implementation(libs.anthropic.java)
 }
