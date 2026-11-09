@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/button_scan"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:text="@string/main_scan"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/button_schedule"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/main_schedule"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/button_my_drugs"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/main_my_drugs"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/button_recommend"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/main_recommend"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/button_profile"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/main_profile"
+        android:textSize="24sp" />
+
+</LinearLayout>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <cache-path
-        name="photos"
-        path="photos/" />
+    <!-- 촬영한 약봉투 사진은 앱 캐시에만 둔다 -->
+    <cache-path name="images" path="images/" />
+    <!-- 알약 시험 화면(디버그) 촬영 사진 -->
+    <cache-path name="photos" path="photos/" />
 </paths>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dose_scheduled_bg">#FF2A303A</color>
+    <color name="dose_scheduled_on">#FFEEF2F8</color>
+    <color name="dose_check_bg">#FF4A3800</color>
+    <color name="dose_check_on">#FFFFE9B0</color>
+    <color name="dose_taken_bg">#FF16402A</color>
+    <color name="dose_taken_on">#FFD2F2DD</color>
+    <color name="calendar_selected">#FFA9C7FF</color>
+    <color name="calendar_on_selected">#FF0B1F3F</color>
+    <color name="calendar_today_ring">#FFFFD479</color>
+    <color name="calendar_dot">#FFA9C7FF</color>
+</resources>

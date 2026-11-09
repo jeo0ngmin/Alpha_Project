@@ -2,4 +2,15 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- 복약 상태별 알약 색. 글자와 배경의 대비는 4.5:1 이상 -->
+    <color name="dose_scheduled_bg">#FFE8EEF7</color>
+    <color name="dose_scheduled_on">#FF1B1F27</color>
+    <color name="dose_check_bg">#FFFFF0CC</color>
+    <color name="dose_check_on">#FF3D2B00</color>
+    <color name="dose_taken_bg">#FFCFEBD6</color>
+    <color name="dose_taken_on">#FF0B3B1C</color>
+    <color name="calendar_selected">#FF1F5FBF</color>
+    <color name="calendar_on_selected">#FFFFFFFF</color>
+    <color name="calendar_today_ring">#FFB35900</color>
+    <color name="calendar_dot">#FF1F5FBF</color>
 </resources>

@@ -1,12 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.MediMate" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Medimate" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
-    <style name="Theme.MediMate" parent="Base.Theme.MediMate" />
+    <style name="Theme.Medimate" parent="Base.Theme.Medimate" />
 
+    <!-- 큰 글씨·큰 버튼 공통 스타일 (MM-mine 디버그 화면, 대화상자) -->
     <style name="MediMate.Title" parent="">
         <item name="android:textSize">@dimen/text_title</item>
         <item name="android:textStyle">bold</item>

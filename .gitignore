@@ -28,6 +28,16 @@ local.properties
 .DS_Store
 Thumbs.db
 
+# Secrets (API keys)
+secrets.properties
+/captures
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Firebase config
+google-services.json
+.claude/prompts/
 
 # ---- AI·백엔드 (MM-AI) ----
 .gradle
@@ -39,7 +49,6 @@ Thumbs.db
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /build
-/captures
 .externalNativeBuild
 .cxx
 # pill-classifier: 가상환경, 식약처 DB·이미지, 학습 모델 (용량이 커서 Git에 올리지 않음)
