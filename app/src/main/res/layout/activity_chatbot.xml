@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/medimate_bg">
+
+
+    <!-- ========================= -->
+    <!-- 하단 네비게이션 -->
+    <!-- ========================= -->
+
+    <include
+        android:id="@+id/include_bottom_nav"
+        layout="@layout/layout_bottom_nav"
+        android:layout_width="0dp"
+        android:layout_height="72dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
+    <!-- ========================= -->
+    <!-- 질문 입력창 -->
+    <!-- ========================= -->
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_input"
+        android:layout_width="0dp"
+        android:layout_height="62dp"
+        android:layout_marginStart="22dp"
+        android:layout_marginEnd="22dp"
+        android:layout_marginBottom="10dp"
+        app:cardBackgroundColor="@color/medimate_card"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/medimate_border"
+        app:strokeWidth="1dp"
+        app:layout_constraintBottom_toTopOf="@id/include_bottom_nav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+
+            <!-- 추가 버튼 -->
+            <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_icon_circle">
+
+                <ImageView
+                    android:id="@+id/btn_add_chat"
+                    android:layout_width="19dp"
+                    android:layout_height="19dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@string/chat_add"
+                    android:src="@android:drawable/ic_input_add"
+                    app:tint="@color/medimate_sage" />
+
+            </FrameLayout>
+
+
+            <!-- 질문 입력 -->
+            <EditText
+                android:id="@+id/et_chat_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="11dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="@string/chat_input_hint"
+                android:inputType="textMultiLine"
+                android:maxLines="3"
+                android:textColor="@color/medimate_text_main"
+                android:textColorHint="@color/medimate_text_sub"
+                android:textSize="14sp" />
+
+
+            <!-- 전송 버튼 -->
+            <FrameLayout
+                android:id="@+id/btn_send"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_icon_circle">
+
+                <ImageView
+                    android:layout_width="19dp"
+                    android:layout_height="19dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@string/chat_send"
+                    android:src="@android:drawable/ic_menu_send"
+                    app:tint="@color/medimate_sage_dark" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+    <!-- ========================= -->
+    <!-- 메인 스크롤 영역 -->
+    <!-- ========================= -->
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/chat_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/card_input"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingTop="50dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="24dp">
+
+
+            <!-- ========================= -->
+            <!-- 상단 헤더 -->
+            <!-- ========================= -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btn_back"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="@string/back"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/medimate_text_main" />
+
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/chatbot_title"
+                    android:textColor="@color/medimate_text_main"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:contentDescription="@string/medimate_logo"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_welcome_logo" />
+
+            </LinearLayout>
+
+
+            <!-- ========================= -->
+            <!-- 챗봇 안내 카드 -->
+            <!-- ========================= -->
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="15dp">
+
+
+                    <!-- 알약 아이콘 -->
+                    <FrameLayout
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_icon_circle">
+
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@string/chatbot_icon"
+                            android:src="@drawable/ic_capsule" />
+
+                    </FrameLayout>
+
+
+                    <!-- 설명 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/chatbot_intro_title"
+                            android:textColor="@color/medimate_text_main"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:lineSpacingExtra="1dp"
+                            android:text="@string/chatbot_intro_description"
+                            android:textColor="@color/medimate_text_sub"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- ========================= -->
+            <!-- 빠른 질문 -->
+            <!-- ========================= -->
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:clipToPadding="false"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_dose"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:text="@string/chat_chip_dose"
+                        android:textColor="@color/medimate_sage_dark"
+                        android:textSize="12sp"
+                        app:backgroundTint="@color/medimate_bg"
+                        app:cornerRadius="15dp"
+                        app:strokeColor="@color/medimate_sage"
+                        app:strokeWidth="1dp" />
+
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_side_effect"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="7dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:text="@string/chat_chip_side_effect"
+                        android:textColor="@color/medimate_sage_dark"
+                        android:textSize="12sp"
+                        app:backgroundTint="@color/medimate_bg"
+                        app:cornerRadius="15dp"
+                        app:strokeColor="@color/medimate_sage"
+                        app:strokeWidth="1dp" />
+
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_together"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="7dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:text="@string/chat_chip_together"
+                        android:textColor="@color/medimate_sage_dark"
+                        android:textSize="12sp"
+                        app:backgroundTint="@color/medimate_bg"
+                        app:cornerRadius="15dp"
+                        app:strokeColor="@color/medimate_sage"
+                        app:strokeWidth="1dp" />
+
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chip_storage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="7dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:text="@string/chat_chip_storage"
+                        android:textColor="@color/medimate_sage_dark"
+                        android:textSize="12sp"
+                        app:backgroundTint="@color/medimate_bg"
+                        app:cornerRadius="15dp"
+                        app:strokeColor="@color/medimate_sage"
+                        app:strokeWidth="1dp" />
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+
+            <!-- ========================= -->
+            <!-- 채팅 메시지 영역 -->
+            <!-- ========================= -->
+
+            <LinearLayout
+                android:id="@+id/chat_messages_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical">
+
+
+                <!-- ========================= -->
+                <!-- 챗봇 첫 인사 -->
+                <!-- ========================= -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:orientation="horizontal">
+
+
+                    <!-- 거북이 -->
+                    <ImageView
+                        android:layout_width="58dp"
+                        android:layout_height="58dp"
+                        android:contentDescription="@string/chatbot_icon"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_welcome_logo" />
+
+
+                    <!-- 말풍선 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="24dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:cardBackgroundColor="@color/medimate_sage_soft"
+                            app:cardCornerRadius="17dp"
+                            app:cardElevation="0dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:lineSpacingExtra="2dp"
+                                android:paddingStart="15dp"
+                                android:paddingTop="12dp"
+                                android:paddingEnd="15dp"
+                                android:paddingBottom="12dp"
+                                android:text="@string/chat_bot_welcome"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="14sp" />
+
+                        </com.google.android.material.card.MaterialCardView>
+
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/chat_bot_name"
+                            android:textColor="@color/medimate_text_sub"
+                            android:textSize="11sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+
+                <!-- ========================= -->
+                <!-- 사용자 예시 질문 -->
+                <!-- ========================= -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+
+                    <!-- 사용자 말풍선 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@color/medimate_card"
+                        app:cardCornerRadius="17dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/medimate_border"
+                        app:strokeWidth="1dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="15dp"
+                            android:paddingTop="11dp"
+                            android:paddingEnd="15dp"
+                            android:paddingBottom="11dp"
+                            android:text="@string/chat_sample_user_question"
+                            android:textColor="@color/medimate_text_main"
+                            android:textSize="14sp" />
+
+                    </com.google.android.material.card.MaterialCardView>
+
+
+                    <!-- 시간 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/chat_sample_time"
+                        android:textColor="@color/medimate_text_sub"
+                        android:textSize="11sp" />
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

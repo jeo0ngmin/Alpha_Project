@@ -1,41 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Medimate</string>
+    <string name="back">뒤로가기</string>
+
     <string name="pill_capture_title">알약 분석</string>
     <string name="pill_capture_heading">알약 사진을 등록해 주세요</string>
     <string name="pill_capture_description">알약 한 개가 화면 중앙에 오도록 선명하게 촬영해 주세요.</string>
-
     <string name="pill_preview_empty">촬영한 알약 사진이 여기에 표시돼요</string>
     <string name="pill_preview_hint">배경과 알약 색이 구분되도록 찍어주세요.</string>
-
     <string name="take_photo">카메라로 촬영</string>
     <string name="choose_gallery">갤러리에서 선택</string>
     <string name="start_analysis">분석 시작</string>
-
     <string name="pill_capture_tip">촬영 팁\n• 알약 앞면의 글자나 숫자가 보이게 촬영\n• 그림자와 빛 반사를 피해서 촬영\n• 한 번에 알약 한 개만 촬영</string>
-
     <string name="pill_analyzing_headline">알약을 분석하고 있어요</string>
     <string name="pill_analyzing_description">사진의 모양, 색상, 각인을 확인하고 있습니다.\n잠시만 기다려 주세요.</string>
     <string name="cancel_analysis">분석 취소</string>
-
-    <string name="back">뒤로가기</string>
     <string name="pill_icon">알약 아이콘</string>
     <string name="pill_image">촬영한 알약 사진</string>
-
     <string name="camera_file_error">카메라용 이미지 파일을 만들 수 없습니다.</string>
     <string name="select_image_first">먼저 알약 사진을 선택해 주세요.</string>
-    <!-- 약 봉투 분석 화면 -->
-    <string name="medicine_bag_preview_empty">촬영한 약 봉투 사진이 여기에 표시돼요</string>
-    <string name="medicine_bag_preview_hint">약 이름과 복용 정보가 보이도록 촬영해 주세요.</string>
-
-    <string name="medicine_bag_capture_tip">촬영 팁\n• 약 이름과 복용 시간이 보이게 촬영\n• 약 봉투 전체가 화면 안에 들어오게 촬영\n• 그림자와 빛 반사를 피해서 촬영</string>
-
-    <string name="medicine_bag_start_analysis">약 정보 분석 시작</string>
-
-    <string name="medicine_bag_image">촬영한 약 봉투 사진</string>
-
-    <string name="select_medicine_bag_first">먼저 약 봉투 사진을 선택해 주세요.</string>
 
     <string name="medicine_bag_heading">약 봉투 사진을 등록해 주세요</string>
-
     <string name="medicine_bag_description">약 이름과 복용 정보가 잘 보이도록 약 봉투 전체를 선명하게 촬영해 주세요.</string>
+    <string name="medicine_bag_preview_empty">촬영한 약 봉투 사진이 여기에 표시돼요</string>
+    <string name="medicine_bag_preview_hint">약 이름과 복용 정보가 보이도록 촬영해 주세요.</string>
+    <string name="medicine_bag_capture_tip">촬영 팁\n• 약 이름과 복용 시간이 보이게 촬영\n• 약 봉투 전체가 화면 안에 들어오게 촬영\n• 그림자와 빛 반사를 피해서 촬영</string>
+    <string name="medicine_bag_start_analysis">약 정보 분석 시작</string>
+    <string name="medicine_bag_image">촬영한 약 봉투 사진</string>
+    <string name="select_medicine_bag_first">먼저 약 봉투 사진을 선택해 주세요.</string>
+
+    <string name="nav_home">홈</string>
+    <string name="nav_reminder">복약알림</string>
+    <string name="nav_analysis">분석</string>
+    <string name="nav_chatbot">챗봇</string>
+
+    <string name="chatbot_title">Medimate 챗봇</string>
+    <string name="chatbot_intro_title">복약 관련 궁금한 점을 물어보세요</string>
+    <string name="chatbot_intro_description">복용법, 부작용, 병용 여부 등\n복약에 대한 궁금증을 도와드릴게요.</string>
+    <string name="chat_input_hint">질문을 입력하세요</string>
+    <string name="chat_add">추가</string>
+    <string name="chat_send">전송</string>
+    <string name="chatbot_icon">챗봇</string>
+    <string name="medimate_logo">Medimate 로고</string>
+
+    <string name="chat_chip_dose">복용 시간</string>
+    <string name="chat_chip_side_effect">부작용</string>
+    <string name="chat_chip_together">같이 먹어도 되나요?</string>
+    <string name="chat_chip_storage">보관 방법</string>
+
+    <string name="chat_quick_dose_question">이 약은 언제 복용하는 게 좋나요?</string>
+    <string name="chat_quick_side_effect_question">이 약의 대표적인 부작용은 무엇인가요?</string>
+    <string name="chat_quick_together_question">두 가지 약을 같이 먹어도 되나요?</string>
+    <string name="chat_quick_storage_question">이 약은 어떻게 보관해야 하나요?</string>
+
+    <string name="chat_bot_welcome">안녕하세요! 복약과 관련해 궁금한 점을 편하게 물어보세요. 궁금한 약의 이름이나 복용 정보를 알려주시면 더 자세히 도와드릴게요.</string>
+    <string name="chat_bot_name">Medimate 챗봇</string>
+    <string name="chat_sample_user_question">혈압약은 언제 먹는 게 좋아요?</string>
+    <string name="chat_sample_time">오전 9:42</string>
+
+    <string name="chat_empty_question">질문을 입력해 주세요.</string>
+    <string name="chat_question_sent">질문을 전송했습니다.</string>
 </resources>

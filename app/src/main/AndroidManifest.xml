@@ -73,6 +73,11 @@
             android:name=".PillAnalyzingActivity"
             android:exported="false" />
 
+        <!-- 챗봇 화면 -->
+        <activity
+            android:name=".ChatbotActivity"
+            android:exported="false" />
+
         <!-- 카메라 촬영 이미지 저장용 FileProvider -->
         <provider
             android:name="androidx.core.content.FileProvider"

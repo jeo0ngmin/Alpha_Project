@@ -1,0 +1,701 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/medimate_bg">
+
+
+    <!-- ========================= -->
+    <!-- 전체 스크롤 영역 -->
+    <!-- ========================= -->
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/reminder_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/include_bottom_nav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingTop="50dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="30dp">
+
+
+            <!-- ========================= -->
+            <!-- 상단 제목 -->
+            <!-- ========================= -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="복약알림"
+                    android:textColor="@color/medimate_text_main"
+                    android:textSize="25sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_add_reminder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:text="+ 알림 추가"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/medimate_sage"
+                    app:cornerRadius="16dp" />
+
+            </LinearLayout>
+
+
+            <!-- ========================= -->
+            <!-- 주간 날짜 카드 -->
+            <!-- ========================= -->
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="22dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="15dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp">
+
+
+                    <!-- 월 표시 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="11월"
+                        android:textColor="@color/medimate_text_main"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+
+                    <!-- 날짜 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="78dp"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+
+                        <!-- 월 9 -->
+                        <LinearLayout
+                            android:id="@+id/day_9"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="월"
+                                android:textColor="@color/medimate_text_sub"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="9"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="17sp" />
+
+                        </LinearLayout>
+
+
+                        <!-- 화 10 선택됨 -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/day_10"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_marginStart="2dp"
+                            android:layout_marginEnd="2dp"
+                            android:layout_weight="1"
+                            app:cardBackgroundColor="@color/medimate_sage"
+                            app:cardCornerRadius="18dp"
+                            app:cardElevation="0dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="화"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="5dp"
+                                    android:text="10"
+                                    android:textColor="@color/white"
+                                    android:textSize="17sp"
+                                    android:textStyle="bold" />
+
+                            </LinearLayout>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+
+                        <!-- 수 11 -->
+                        <LinearLayout
+                            android:id="@+id/day_11"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="수"
+                                android:textColor="@color/medimate_text_sub"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="11"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="17sp" />
+
+                        </LinearLayout>
+
+
+                        <!-- 목 12 -->
+                        <LinearLayout
+                            android:id="@+id/day_12"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="목"
+                                android:textColor="@color/medimate_text_sub"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="12"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="17sp" />
+
+                        </LinearLayout>
+
+
+                        <!-- 금 13 -->
+                        <LinearLayout
+                            android:id="@+id/day_13"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="금"
+                                android:textColor="@color/medimate_text_sub"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="13"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="17sp" />
+
+                        </LinearLayout>
+
+
+                        <!-- 토 14 -->
+                        <LinearLayout
+                            android:id="@+id/day_14"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="토"
+                                android:textColor="@color/medimate_text_sub"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="14"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="17sp" />
+
+                        </LinearLayout>
+
+
+                        <!-- 일 15 -->
+                        <LinearLayout
+                            android:id="@+id/day_15"
+                            android:layout_width="0dp"
+                            android:layout_height="64dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="일"
+                                android:textColor="#B77676"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="15"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="17sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- ========================= -->
+            <!-- 선택한 날짜 -->
+            <!-- ========================= -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="선택한 날짜의 복용 일정"
+                    android:textColor="@color/medimate_text_main"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_selected_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11월 10일 (화)"
+                    android:textColor="@color/medimate_text_sub"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+
+            <!-- ========================= -->
+            <!-- 혈압약 카드 -->
+            <!-- ========================= -->
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_blood_pressure"
+                android:layout_width="match_parent"
+                android:layout_height="154dp"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="17dp">
+
+
+                    <!-- 약 정보 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="54dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_icon_circle">
+
+                            <ImageView
+                                android:layout_width="29dp"
+                                android:layout_height="29dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_capsule"
+                                android:contentDescription="혈압약" />
+
+                        </FrameLayout>
+
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="13dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="혈압약"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="1회 1정"
+                                android:textColor="@color/medimate_text_sub"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:contentDescription="상세보기"
+                            app:tint="@color/medimate_nav_inactive" />
+
+                    </LinearLayout>
+
+
+                    <!-- ========================= -->
+                    <!-- 혈압약 시간 버튼 -->
+                    <!-- ========================= -->
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_time_0800"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:text="오전 08:00"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/medimate_sage"
+                            app:cornerRadius="15dp" />
+
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="match_parent" />
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_time_1300"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:text="오후 01:00"
+                            android:textColor="@color/medimate_sage_dark"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/medimate_card"
+                            app:cornerRadius="15dp"
+                            app:strokeColor="@color/medimate_sage"
+                            app:strokeWidth="1dp" />
+
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="match_parent" />
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_time_1800"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:text="오후 06:00"
+                            android:textColor="@color/medimate_sage_dark"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/medimate_card"
+                            app:cornerRadius="15dp"
+                            app:strokeColor="@color/medimate_sage"
+                            app:strokeWidth="1dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- ========================= -->
+            <!-- 소염제 카드 -->
+            <!-- ========================= -->
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_anti_inflammatory"
+                android:layout_width="match_parent"
+                android:layout_height="154dp"
+                android:layout_marginTop="13dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="17dp">
+
+
+                    <!-- 약 정보 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="54dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_icon_circle">
+
+                            <ImageView
+                                android:layout_width="29dp"
+                                android:layout_height="29dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_capsule"
+                                android:contentDescription="소염제" />
+
+                        </FrameLayout>
+
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="13dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="소염제"
+                                android:textColor="@color/medimate_text_main"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="1회 1정"
+                                android:textColor="@color/medimate_text_sub"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:contentDescription="상세보기"
+                            app:tint="@color/medimate_nav_inactive" />
+
+                    </LinearLayout>
+
+
+                    <!-- ========================= -->
+                    <!-- 소염제 시간 버튼 -->
+                    <!-- ========================= -->
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_anti_time_0800"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:text="오전 08:00"
+                            android:textColor="@color/medimate_sage_dark"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/medimate_card"
+                            app:cornerRadius="15dp"
+                            app:strokeColor="@color/medimate_sage"
+                            app:strokeWidth="1dp" />
+
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="match_parent" />
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_anti_time_1300"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:text="오후 01:00"
+                            android:textColor="@color/medimate_sage_dark"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/medimate_card"
+                            app:cornerRadius="15dp"
+                            app:strokeColor="@color/medimate_sage"
+                            app:strokeWidth="1dp" />
+
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="match_parent" />
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_anti_time_2100"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:text="오후 09:00"
+                            android:textColor="@color/medimate_sage_dark"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/medimate_card"
+                            app:cornerRadius="15dp"
+                            app:strokeColor="@color/medimate_sage"
+                            app:strokeWidth="1dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- ========================= -->
+            <!-- 복용 알림 추가 -->
+            <!-- ========================= -->
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_add_med_schedule"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="22dp"
+                android:text="+ 복용 알림 추가"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/medimate_sage"
+                app:cornerRadius="17dp" />
+
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+
+    <!-- ========================= -->
+    <!-- 하단 네비게이션 -->
+    <!-- ========================= -->
+
+    <include
+        android:id="@+id/include_bottom_nav"
+        layout="@layout/layout_bottom_nav"
+        android:layout_width="0dp"
+        android:layout_height="72dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 왼쪽 위 -->
+    <path
+        android:fillColor="@color/medimate_nav_inactive"
+        android:pathData="M3,3 H9 V5 H5 V9 H3 Z" />
+
+    <!-- 오른쪽 위 -->
+    <path
+        android:fillColor="@color/medimate_nav_inactive"
+        android:pathData="M15,3 H21 V9 H19 V5 H15 Z" />
+
+    <!-- 왼쪽 아래 -->
+    <path
+        android:fillColor="@color/medimate_nav_inactive"
+        android:pathData="M3,15 H5 V19 H9 V21 H3 Z" />
+
+    <!-- 오른쪽 아래 -->
+    <path
+        android:fillColor="@color/medimate_nav_inactive"
+        android:pathData="M19,15 H21 V21 H15 V19 H19 Z" />
+
+    <!-- 가운데 알약 -->
+    <path
+        android:fillColor="@color/medimate_nav_inactive"
+        android:pathData="M9,8
+                          C7.3,8 6,9.3 6,11
+                          C6,12.7 7.3,14 9,14
+                          H15
+                          C16.7,14 18,12.7 18,11
+                          C18,9.3 16.7,8 15,8
+                          Z" />
+
+    <!-- 알약 가운데 구분선 -->
+    <path
+        android:fillColor="@color/medimate_bg"
+        android:pathData="M11.5,8 H12.5 V14 H11.5 Z" />
+
+</vector>
