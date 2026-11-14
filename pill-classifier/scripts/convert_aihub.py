@@ -18,6 +18,7 @@ import argparse
 import io
 import json
 import os
+import random
 import re
 import shutil
 import sys
@@ -156,6 +157,7 @@ def main():
     ap.add_argument("--val-ratio", type=float, default=0.1, help="YOLO 검증셋 비율")
     ap.add_argument("--max-per-class", type=int, default=60, help="클래스당 최대 크롭 수 (0=제한 없음)")
     ap.add_argument("--limit", type=int, help="테스트용: 앞쪽 N장만")
+    ap.add_argument("--seed", type=int, default=0, help="클래스당 제한 시 고를 사진을 섞는 시드")
     ap.add_argument("--workers", type=int, default=os.cpu_count())
     args = ap.parse_args()
 
@@ -169,7 +171,11 @@ def main():
     tasks, missing = [], 0
     crops_dir = None if args.no_crops else str(out / "crops")
     yolo_dir = str(out / "yolo") if args.yolo else None
-    for name in sorted(by_image):
+    # 파일 이름 순서대로 고르면 클래스당 제한이 한 배경·조명 조건에 몰린다(이름에 촬영 조건이 들어 있다).
+    # 그래서 고정 시드로 섞어서 여러 촬영 조건이 고르게 들어가게 한다.
+    names = sorted(by_image)
+    random.Random(args.seed).shuffle(names)
+    for name in names:
         if name not in files:
             missing += 1
             continue
