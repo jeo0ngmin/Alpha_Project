@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import random
 import sys
 import time
@@ -79,6 +80,8 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--no-resume", action="store_true",
+                    help="이어서 학습하지 않음. 기본은 <out>.last 가 있으면 끊긴 에폭부터 이어서 학습한다")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -120,8 +123,23 @@ def main():
     config = {"backbone": args.backbone, "dim": args.dim, "img_size": args.img_size}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
 
-    best = -1.0
-    for epoch in range(1, args.epochs + 1):
+    # 서버가 중간에 재시작돼도 이어서 학습하도록 에폭마다 전체 상태를 저장한다
+    last_path = Path(str(args.out) + ".last")
+    best, start = -1.0, 1
+    if last_path.exists() and not args.no_resume:
+        st = torch.load(last_path, map_location="cpu", weights_only=False)
+        if st["labels"] == labels and st["args"] == vars(args):
+            model.load_state_dict(st["model"])
+            head.load_state_dict(st["head"])
+            opt.load_state_dict(st["opt"])
+            sched.load_state_dict(st["sched"])
+            scaler.load_state_dict(st["scaler"])
+            best, start = st["best"], st["epoch"] + 1
+            print(f"{st['epoch']}에폭까지 학습한 상태에서 이어서 학습합니다 (최고 val top1 {best:.3f})")
+        else:
+            print("저장된 학습 상태가 지금 설정·데이터와 달라 처음부터 학습합니다")
+
+    for epoch in range(start, args.epochs + 1):
         model.train()
         head.train()
         t0, running = time.time(), 0.0
@@ -152,7 +170,13 @@ def main():
         elif not val_rows:
             save_checkpoint(args.out, model, config)
         print(msg, flush=True)
+        tmp = last_path.with_name(last_path.name + ".tmp")
+        torch.save({"epoch": epoch, "best": best, "labels": labels, "args": vars(args),
+                    "model": model.state_dict(), "head": head.state_dict(), "opt": opt.state_dict(),
+                    "sched": sched.state_dict(), "scaler": scaler.state_dict()}, tmp)
+        os.replace(tmp, last_path)
 
+    last_path.unlink(missing_ok=True)
     print(f"완료 → {args.out}" + (f" (최고 val top1 {best:.3f})" if best >= 0 else ""))
 
 
