@@ -45,10 +45,26 @@ merge_parts() {
     done
 }
 
+# AI Hub API 서버가 죽어 있으면(502 등) 살아날 때까지 5분마다 확인하며 기다린다 (재시도 횟수를 쓰지 않는다).
+wait_api() {
+    local code warned=""
+    while true; do
+        code=$(curl -s -o /dev/null -m 30 -w '%{http_code}' "https://api.aihub.or.kr/info/576.do")
+        if [ "$code" = 200 ]; then
+            [ -n "$warned" ] && log "   AI Hub 서버 응답 정상, 다시 받습니다"
+            return 0
+        fi
+        [ -z "$warned" ] && log "   AI Hub 서버 응답 없음 (HTTP $code). 5분마다 다시 확인합니다"
+        warned=1
+        sleep 300
+    done
+}
+
 # 받으면서 바로 푼다 (download.tar를 디스크에 두지 않는다). 실패하면 그 파일만 처음부터 다시 받는다.
 download() {
     local keys=$1 what=$2 try rc
     for try in 1 2 3 4 5; do
+        wait_api
         curl -fsSL --retry 5 --retry-delay 30 \
              -H @<(printf 'apikey:%s\n' "$AIHUB_APIKEY") "$URL?fileSn=$keys" | tar -xf -
         rc=("${PIPESTATUS[@]}")
