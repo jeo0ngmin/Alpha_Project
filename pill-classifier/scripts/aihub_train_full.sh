@@ -45,34 +45,41 @@ merge_parts() {
     done
 }
 
-# AI Hub API 서버가 죽어 있으면(502 등) 살아날 때까지 5분마다 확인하며 기다린다 (재시도 횟수를 쓰지 않는다).
+# AI Hub API는 정상 응답에도 HTTP 502를 돌려줄 때가 있어(2026-11-15 확인) 상태 코드가 아니라 내용으로 판단한다.
+# 파일 목록이 안 오면 API 서버가 살아날 때까지 5분마다 확인하며 기다린다 (재시도 횟수를 쓰지 않는다).
 wait_api() {
-    local code warned=""
+    local warned=""
     while true; do
-        code=$(curl -s -o /dev/null -m 30 -w '%{http_code}' "https://api.aihub.or.kr/info/576.do")
-        if [ "$code" = 200 ]; then
+        if curl -s -m 60 "https://api.aihub.or.kr/info/576.do" | grep -q "TS_1_단일"; then
             [ -n "$warned" ] && log "   AI Hub 서버 응답 정상, 다시 받습니다"
             return 0
         fi
-        [ -z "$warned" ] && log "   AI Hub 서버 응답 없음 (HTTP $code). 5분마다 다시 확인합니다"
+        [ -z "$warned" ] && log "   AI Hub 파일 목록이 오지 않습니다. 5분마다 다시 확인합니다"
         warned=1
         sleep 300
     done
 }
 
 # 받으면서 바로 푼다 (download.tar를 디스크에 두지 않는다). 실패하면 그 파일만 처음부터 다시 받는다.
+# 성공 여부는 tar가 풀리는지로 판단한다. 인증 실패(키·데이터 승인 문제)면 2를 돌려주고 더 시도하지 않는다.
 download() {
-    local keys=$1 what=$2 try rc
+    local keys=$1 what=$2 try rc msg
     for try in 1 2 3 4 5; do
         wait_api
-        curl -fsSL --retry 5 --retry-delay 30 \
-             -H @<(printf 'apikey:%s\n' "$AIHUB_APIKEY") "$URL?fileSn=$keys" | tar -xf -
+        curl -sSL -H @<(printf 'apikey:%s\n' "$AIHUB_APIKEY") "$URL?fileSn=$keys" | tar -xf -
         rc=("${PIPESTATUS[@]}")
         if [ "${rc[0]}" -eq 0 ] && [ "${rc[1]}" -eq 0 ] && merge_parts; then
             return 0
         fi
-        log "   $what 실패 (curl ${rc[0]}, tar ${rc[1]}), 다시 시도 $try/5"
         find . -name '*.part[0-9]*' -delete
+        # 응답이 짧은 글이면(오류 안내) 무슨 내용인지 남긴다. 큰 파일이면 내려받지 않는다.
+        msg=$(curl -s -m 60 --max-filesize 65536 -H @<(printf 'apikey:%s\n' "$AIHUB_APIKEY") \
+              "$URL?fileSn=$keys" | head -c 300 | tr -d '\0\r\n')
+        log "   $what 실패 (curl ${rc[0]}, tar ${rc[1]})${msg:+, AI Hub 응답: $msg}, 다시 시도 $try/5"
+        if [[ "$msg" == *인증* || "$msg" == *권한* ]]; then
+            log "!! AI Hub 인증 실패. API 키나 데이터 사용 승인(신청 내역)을 확인하세요."
+            return 2
+        fi
         sleep 60
     done
     return 1
@@ -115,7 +122,9 @@ while read -r key name size; do
         [ "${size%.*}" -ge "$BIG_GB" ] && wait_bg
         log "사진 $n/$total $name (${size}GB) 받는 중 (홈 사용량 $(used))"
         t0=$(date +%s)
-        if ! download "$key" "$name" || [ -z "$(find_zip "$name")" ]; then
+        download "$key" "$name"; drc=$?
+        [ $drc -eq 2 ] && { wait_bg; exit 1; }
+        if [ $drc -ne 0 ] || [ -z "$(find_zip "$name")" ]; then
             log "!! $name 받기 실패"; failed=$((failed + 1)); continue
         fi
         touch ".done/$key"
