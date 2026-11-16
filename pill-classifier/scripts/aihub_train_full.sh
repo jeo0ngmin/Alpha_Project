@@ -62,11 +62,13 @@ wait_api() {
 
 # 받으면서 바로 푼다 (download.tar를 디스크에 두지 않는다). 실패하면 그 파일만 처음부터 다시 받는다.
 # 성공 여부는 tar가 풀리는지로 판단한다. 인증 실패(키·데이터 승인 문제)면 2를 돌려주고 더 시도하지 않는다.
+# 연결이 끊긴 채 멈추면(10분 동안 초당 100KB 미만) curl을 끝내고 다시 받는다 (2026-11-15 TS_14에서 5시간 멈춤).
 download() {
     local keys=$1 what=$2 try rc msg
     for try in 1 2 3 4 5; do
         wait_api
-        curl -sSL -H @<(printf 'apikey:%s\n' "$AIHUB_APIKEY") "$URL?fileSn=$keys" | tar -xf -
+        curl -sSL --speed-limit 102400 --speed-time 600 \
+            -H @<(printf 'apikey:%s\n' "$AIHUB_APIKEY") "$URL?fileSn=$keys" | tar -xf -
         rc=("${PIPESTATUS[@]}")
         if [ "${rc[0]}" -eq 0 ] && [ "${rc[1]}" -eq 0 ] && merge_parts; then
             return 0
