@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import io
 import os
 from pathlib import Path
 
@@ -76,25 +77,69 @@ def _require_torch():
         raise RuntimeError("PyTorch/torchvision을 불러올 수 없습니다. 학습은 Colab에서, 추론은 .onnx 모델로 하세요.")
 
 
+def open_rgb(path: str) -> Image.Image:
+    return Image.open(path).convert("RGB")
+
+
+class PackedImages:
+    """scripts/pack_images.py로 묶은 이미지 파일에서 경로로 이미지를 읽는다 (open_rgb 대신 쓴다).
+
+    NAS처럼 작은 파일을 여는 데 오래 걸리는 저장소에서 수십만 장을 매 에폭 열지 않도록 파일 하나에서 읽는다.
+    파일: <pack> (이미지 바이트를 이어 붙인 것), <pack>.paths.txt (줄마다 경로), <pack>.idx.npy (오프셋, 길이)
+    """
+
+    def __init__(self, path):
+        import numpy as np
+
+        self.path = str(path)
+        with open(self.path + ".paths.txt", encoding="utf-8") as f:
+            self.index = {p: i for i, p in enumerate(f.read().splitlines())}
+        self.idx = np.load(self.path + ".idx.npy")
+        self._fd = None
+
+    def __getstate__(self):  # 데이터 워커 프로세스마다 파일을 따로 연다
+        st = self.__dict__.copy()
+        st["_fd"] = None
+        return st
+
+    def __contains__(self, path: str) -> bool:
+        return path in self.index
+
+    def __len__(self):
+        return len(self.index)
+
+    def __call__(self, path: str) -> Image.Image:
+        off, n = (int(v) for v in self.idx[self.index[path]])
+        if self._fd is None:
+            self._fd = os.open(self.path, os.O_RDONLY | getattr(os, "O_BINARY", 0))
+        if hasattr(os, "pread"):
+            data = os.pread(self._fd, n, off)
+        else:  # Windows
+            os.lseek(self._fd, off, os.SEEK_SET)
+            data = os.read(self._fd, n)
+        return Image.open(io.BytesIO(data)).convert("RGB")
+
+
 class ManifestDataset(Dataset):
-    def __init__(self, rows: list[dict], label_to_idx: dict[str, int], transform):
+    def __init__(self, rows: list[dict], label_to_idx: dict[str, int], transform, loader=None):
         self.rows, self.label_to_idx, self.transform = rows, label_to_idx, transform
+        self.loader = loader or open_rgb
 
     def __len__(self):
         return len(self.rows)
 
     def __getitem__(self, i):
         r = self.rows[i]
-        img = Image.open(r["path"]).convert("RGB")
-        return self.transform(img), self.label_to_idx[r["label"]]
+        return self.transform(self.loader(r["path"])), self.label_to_idx[r["label"]]
 
 
 class PathDataset(Dataset):
-    def __init__(self, paths: list[str], transform):
+    def __init__(self, paths: list[str], transform, loader=None):
         self.paths, self.transform = paths, transform
+        self.loader = loader or open_rgb
 
     def __len__(self):
         return len(self.paths)
 
     def __getitem__(self, i):
-        return self.transform(Image.open(self.paths[i]).convert("RGB"))
+        return self.transform(self.loader(self.paths[i]))

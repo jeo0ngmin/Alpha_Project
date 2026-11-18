@@ -185,9 +185,15 @@ cd "$REPO" || exit 1
 MANIFESTS=(data/reference/manifest.csv)
 for m in data/aihub_ts/parts/*/manifest.csv; do [ -f "$m" ] && MANIFESTS+=("$m"); done
 [ -f data/aihub/manifest_train.csv ] && MANIFESTS+=(data/aihub/manifest_train.csv)
+# 작은 파일 27만 개를 매 에폭 NAS에서 열면 GPU가 거의 논다 (2026-11-18). 한 번 묶어 두고 거기서 읽는다.
+PACK=data/packed/train_full.pack
 if [ ! -f models/.full_trained ]; then
+    if [ ! -f "$PACK" ]; then
+        log "학습용 사진을 파일 하나로 묶는 중"
+        python scripts/pack_images.py --manifest "${MANIFESTS[@]}" --out "$PACK" || exit 1
+    fi
     log "학습 시작 (${EPOCHS}에폭, 매니페스트 ${#MANIFESTS[@]}개)"
-    python scripts/train_embedder.py --manifest "${MANIFESTS[@]}" --out models/embedder_full.pt \
+    python scripts/train_embedder.py --manifest "${MANIFESTS[@]}" --pack "$PACK" --out models/embedder_full.pt \
         --backbone efficientnet_b0 --img-size 224 --epochs "$EPOCHS" --batch-size 128 \
         --workers "$WORKERS" --eval-every 2 || exit 1
     touch models/.full_trained

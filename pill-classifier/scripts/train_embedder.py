@@ -21,7 +21,8 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from pillid.data import ManifestDataset, PathDataset, eval_transform, read_manifest, train_transform  # noqa: E402
+from pillid.data import (ManifestDataset, PackedImages, PathDataset, eval_transform, read_manifest,  # noqa: E402
+                         train_transform)
 from pillid.embedding import ArcFaceHead, PillEmbedder, save_checkpoint  # noqa: E402
 
 
@@ -41,8 +42,8 @@ def split_rows(rows, val_frac: float, seed: int):
 
 
 @torch.no_grad()
-def embed(model, rows, size, device, batch_size, workers):
-    dl = DataLoader(PathDataset([r["path"] for r in rows], eval_transform(size)),
+def embed(model, rows, size, device, batch_size, workers, loader=None):
+    dl = DataLoader(PathDataset([r["path"] for r in rows], eval_transform(size), loader),
                     batch_size=batch_size, num_workers=workers)
     model.eval()
     return torch.cat([model(x.to(device)).float() for x in dl])
@@ -77,6 +78,7 @@ def main():
     ap.add_argument("--scale", type=float, default=30.0)
     ap.add_argument("--val-frac", type=float, default=0.1)
     ap.add_argument("--eval-every", type=int, default=2)
+    ap.add_argument("--pack", help="pack_images.py로 묶은 파일. 주면 이미지를 여기서 읽는다 (NAS에서 빠르다)")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -92,13 +94,20 @@ def main():
     labels = sorted({r["label"] for r in rows})
     label_to_idx = {l: i for i, l in enumerate(labels)}
     train_rows, val_rows = split_rows(rows, args.val_frac, args.seed)
+    loader = None
+    if args.pack:
+        loader = PackedImages(args.pack)
+        missing = sum(r["path"] not in loader for r in rows)
+        if missing:
+            raise SystemExit(f"묶음 파일에 없는 이미지가 {missing:,}장입니다. "
+                             "pack_images.py를 같은 매니페스트로 다시 실행하세요.")
     print(f"클래스 {len(labels):,}개, 학습 {len(train_rows):,}장, 검증 {len(val_rows):,}장, 장치 {device}")
 
     # 클래스별 이미지 수 편차(참조 2장 vs AI Hub 수십 장)를 완화하는 샘플링
     counts = Counter(r["label"] for r in train_rows)
     weights = [1.0 / math.sqrt(counts[r["label"]]) for r in train_rows]
     sampler = WeightedRandomSampler(weights, num_samples=len(train_rows), replacement=True)
-    train_dl = DataLoader(ManifestDataset(train_rows, label_to_idx, train_transform(args.img_size)),
+    train_dl = DataLoader(ManifestDataset(train_rows, label_to_idx, train_transform(args.img_size), loader),
                           batch_size=args.batch_size, sampler=sampler, num_workers=args.workers,
                           drop_last=True, pin_memory=use_amp, persistent_workers=args.workers > 0)
     if len(train_dl) == 0:
@@ -157,8 +166,8 @@ def main():
         msg = f"[{epoch}/{args.epochs}] loss {running / len(train_dl):.4f} ({time.time() - t0:.0f}s)"
 
         if val_rows and (epoch % args.eval_every == 0 or epoch == args.epochs):
-            g = embed(model, train_rows, args.img_size, device, args.batch_size * 2, args.workers)
-            q = embed(model, val_rows, args.img_size, device, args.batch_size * 2, args.workers)
+            g = embed(model, train_rows, args.img_size, device, args.batch_size * 2, args.workers, loader)
+            q = embed(model, val_rows, args.img_size, device, args.batch_size * 2, args.workers, loader)
             gl = torch.tensor([label_to_idx[r["label"]] for r in train_rows], device=device)
             ql = torch.tensor([label_to_idx[r["label"]] for r in val_rows], device=device)
             acc = retrieval_accuracy(g, gl, q, ql, len(labels))
