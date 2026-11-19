@@ -30,6 +30,12 @@ MISSED = 0.5          # 정답에는 각인이 있는데 못 읽음 (음각·같
 FALSE_READ = 0.4      # 각인 없는 면인데 글자가 읽힘 (분할선·반사·윤곽을 글자로 읽는 일이 잦다)
 PARTIAL_ALPHA = 0.8   # 일부만 읽힌 경우의 최대 점수
 PARTIAL_BETA = 0.25   # 읽은 비율이 낮을수록 깎는 정도 (1이면 깎지 않음)
+# 읽은 글자가 정답 각인 안에 그대로 들어 있을 때(예: "MM PRG 75"를 "PRG 75"로 읽음)의 최저 점수.
+# 읽은 비율만큼 1까지 올라간다. 없으면 한 글자 틀린 다른 약("PRC 75", 편집거리 0.8)이 더 높게 나왔다.
+# 짧은 조각("RS", "CP")은 여러 각인에 우연히 들어 있어 4글자 이상일 때만 쓴다. 2026-11 조정:
+# AI Hub 실제 사진 276쌍 Top-1 97.1% → 97.8%, 식약처 참조 사진(임베딩 없음) 조정용 111 → 115, 검증용 110 → 111 / 200.
+CONTAIN_BASE: float | None = 0.4  # None이면 쓰지 않음
+CONTAIN_MIN_LEN = 4
 MAX_PERMUTED_TOKENS = 4
 OUTLINE_FRAC = 0.8    # 한 글자 상자가 알약 짧은 변의 이 비율 이상이면 윤곽을 글자로 읽은 것
 
@@ -63,16 +69,21 @@ def _arrangements(tokens: tuple[str, ...]) -> list[str]:
     return list({"".join(p) for p in permutations(tokens)})
 
 
-def imprint_components(query, target) -> tuple[float, float, float] | None:
-    """(편집거리 유사도, 부분 일치도, 읽은 비율). 둘 중 하나라도 비어 있으면 None.
-
-    조각 순서는 무시한다. 점수 상수를 바꿔 가며 다시 계산할 수 있도록 재료만 돌려준다.
-    """
+def _compared_tokens(query, target) -> tuple[tuple[str, ...], tuple[str, ...]]:
     q, t = _as_tokens(query), _as_tokens(target)
     if q and not any(_HANGUL.search(x) for x in q):
         # 영문 OCR은 한글 각인("CP 마이페노"의 "마이페노")을 읽지 못한다. 읽은 쪽에 한글이 없으면
         # 정답의 한글 조각은 비교에서 뺀다 (전부 한글이면 그대로 둔다)
         t = tuple(x for x in t if not _HANGUL.search(x)) or t
+    return q, t
+
+
+def imprint_components(query, target) -> tuple[float, float, float] | None:
+    """(편집거리 유사도, 부분 일치도, 읽은 비율). 둘 중 하나라도 비어 있으면 None.
+
+    조각 순서는 무시한다. 점수 상수를 바꿔 가며 다시 계산할 수 있도록 재료만 돌려준다.
+    """
+    q, t = _compared_tokens(query, target)
     if not q or not t:
         return None
     qs = "".join(q)
@@ -87,18 +98,23 @@ def imprint_components(query, target) -> tuple[float, float, float] | None:
     return lev, partial, min(len(qs), total) / max(len(qs), total)
 
 
-def combine_components(components, both_empty: bool, query_empty: bool) -> float:
+def combine_components(components, both_empty: bool, query_empty: bool, min_len: int = 99) -> float:
     if components is None:
         return BOTH_EMPTY if both_empty else MISSED if query_empty else FALSE_READ
     lev, partial, coverage = components
     # 일부만 읽힌 경우: 읽은 글자가 정답 안에 그대로 있어도, 못 읽은 비율만큼 깎아서 인정한다
-    return float(max(lev, PARTIAL_ALPHA * partial * (PARTIAL_BETA + (1 - PARTIAL_BETA) * coverage)))
+    score = max(lev, PARTIAL_ALPHA * partial * (PARTIAL_BETA + (1 - PARTIAL_BETA) * coverage))
+    if CONTAIN_BASE is not None and partial >= 1.0 and min_len >= CONTAIN_MIN_LEN:  # 한쪽이 다른 쪽 안에 그대로 들어 있다
+        score = max(score, CONTAIN_BASE + (1 - CONTAIN_BASE) * coverage)
+    return float(score)
 
 
 def imprint_similarity(query, target) -> float:
     """두 각인의 유사도 0~1. 문자열이나 imprint_tokens() 결과를 받는다."""
     q, t = _as_tokens(query), _as_tokens(target)
-    return combine_components(imprint_components(q, t), both_empty=not q and not t, query_empty=not q)
+    qc, tc = _compared_tokens(q, t)
+    return combine_components(imprint_components(q, t), both_empty=not q and not t, query_empty=not q,
+                              min_len=min(len("".join(qc)), len("".join(tc))))
 
 
 def _as_tokens(value) -> tuple[str, ...]:
