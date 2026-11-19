@@ -77,6 +77,82 @@ def _require_torch():
         raise RuntimeError("PyTorch/torchvision을 불러올 수 없습니다. 학습은 Colab에서, 추론은 .onnx 모델로 하세요.")
 
 
+class PhotoLike:
+    """식약처 참조 사진(스튜디오 조명, 깨끗한 배경)을 폰으로 찍은 사진처럼 바꾼다 (학습 증강).
+
+    참조 사진만 있는 약은 실제 사진과의 임베딩 유사도가 낮아 촬영 사진이 있는 비슷한 약에 밀렸다
+    (2026-11, 평가 약의 색인을 식약처 사진만 남기면 Top-1 98.9% → 58.0%). 조명 색·밝기 기울기·그림자,
+    반사광, 흐림, 해상도 저하, 잡음, JPEG 압축을 무작위로 섞어 두 사진 영역의 차이를 줄인다.
+    """
+
+    def __init__(self, p: float = 0.8, seed: int | None = None):
+        import random
+
+        self.p, self.seed = p, seed
+        self.rng, self._pid = random.Random(seed), os.getpid()
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        import random
+
+        import cv2
+        import numpy as np
+
+        if os.getpid() != self._pid:  # 데이터 워커마다 같은 난수 순서를 물려받지 않도록 다시 섞는다
+            self.rng, self._pid = random.Random(None if self.seed is None else self.seed + os.getpid()), os.getpid()
+        r = self.rng
+        if r.random() >= self.p:
+            return img
+        a = np.asarray(img.convert("RGB"), np.float32)
+        h, w = a.shape[:2]
+        bg = np.all(np.abs(a - np.array(FILL, np.float32)) < 3, axis=2)  # 크롭 바깥(회색 채움)은 건드리지 않는다
+        # 조명 색온도와 노출
+        a *= np.array([r.uniform(0.85, 1.15), r.uniform(0.92, 1.08), r.uniform(0.8, 1.2)], np.float32)
+        a = 255 * (np.clip(a, 0, 255) / 255) ** r.uniform(0.75, 1.35)
+        # 한쪽이 어두운 조명 / 그림자
+        if r.random() < 0.6:
+            ang = r.uniform(0, 2 * np.pi)
+            yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+            g = (np.cos(ang) * (xx / w - 0.5) + np.sin(ang) * (yy / h - 0.5)) * 2
+            a *= (1 - r.uniform(0.1, 0.45) * np.clip(g, 0, 1))[..., None]
+        # 반사광 (코팅정·연질캡슐)
+        if r.random() < 0.35:
+            cx, cy, rad = r.uniform(0.2, 0.8) * w, r.uniform(0.2, 0.8) * h, r.uniform(0.04, 0.15) * w
+            yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+            a += r.uniform(40, 120) * np.exp(-((xx - cx) ** 2 + (yy - cy) ** 2) / (2 * rad ** 2))[..., None]
+        a = np.clip(a, 0, 255).astype(np.uint8)
+        # 해상도 저하 (멀리서 찍은 사진)
+        if r.random() < 0.5:
+            s = r.uniform(0.3, 0.7)
+            small = cv2.resize(a, (max(8, int(w * s)), max(8, int(h * s))), interpolation=cv2.INTER_AREA)
+            a = cv2.resize(small, (w, h), interpolation=cv2.INTER_LINEAR)
+        # 초점·손떨림
+        if r.random() < 0.5:
+            if r.random() < 0.5:
+                k = r.choice([3, 5])
+                a = cv2.GaussianBlur(a, (k, k), 0)
+            else:
+                k = r.choice([5, 7])
+                kernel = np.zeros((k, k), np.float32)
+                kernel[k // 2, :] = 1 / k
+                m = cv2.getRotationMatrix2D((k / 2 - 0.5, k / 2 - 0.5), r.uniform(0, 180), 1)
+                a = cv2.filter2D(a, -1, cv2.warpAffine(kernel, m, (k, k)))
+        # 센서 잡음과 JPEG
+        if r.random() < 0.6:
+            a = np.clip(a + np.random.default_rng(r.randrange(1 << 30)).normal(0, r.uniform(2, 8), a.shape), 0, 255).astype(np.uint8)
+        if r.random() < 0.7:
+            ok, buf = cv2.imencode(".jpg", a[..., ::-1], [cv2.IMWRITE_JPEG_QUALITY, r.randint(35, 85)])
+            if ok:
+                a = cv2.imdecode(buf, cv2.IMREAD_COLOR)[..., ::-1]
+        a = np.ascontiguousarray(a)
+        a[bg] = FILL
+        return Image.fromarray(a)
+
+
+def is_reference(path: str) -> bool:
+    """식약처 참조 크롭(data/reference/...)인지."""
+    return "reference" in Path(path).parts
+
+
 def open_rgb(path: str) -> Image.Image:
     return Image.open(path).convert("RGB")
 
@@ -121,16 +197,22 @@ class PackedImages:
 
 
 class ManifestDataset(Dataset):
-    def __init__(self, rows: list[dict], label_to_idx: dict[str, int], transform, loader=None):
+    def __init__(self, rows: list[dict], label_to_idx: dict[str, int], transform, loader=None, reference_aug=None):
+        """reference_aug: 식약처 참조 크롭에만 먼저 적용할 변환 (예: PhotoLike)."""
         self.rows, self.label_to_idx, self.transform = rows, label_to_idx, transform
         self.loader = loader or open_rgb
+        self.reference_aug = reference_aug
+        self.is_ref = [is_reference(r["path"]) for r in rows] if reference_aug else None
 
     def __len__(self):
         return len(self.rows)
 
     def __getitem__(self, i):
         r = self.rows[i]
-        return self.transform(self.loader(r["path"])), self.label_to_idx[r["label"]]
+        img = self.loader(r["path"])
+        if self.reference_aug is not None and self.is_ref[i]:
+            img = self.reference_aug(img)
+        return self.transform(img), self.label_to_idx[r["label"]]
 
 
 class PathDataset(Dataset):

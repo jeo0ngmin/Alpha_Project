@@ -32,6 +32,15 @@ LOW_CONF_EMB_SCORE = 0.6
 LOW_CONF_EMB_MARGIN = 0.03
 LOW_CONF_EMBEDDING = 0.7  # 1위 후보의 임베딩 점수가 이 이상이면 각인을 못 읽었어도 확신할 수 있다
 OCR_CROP_SIZE = 480
+# 질의 크롭을 90°씩 돌려 4번 임베딩하고 평균한다 (색인은 한 번씩). AI Hub 실제 사진 276쌍:
+# Top-1 270 → 272, 확신 표시 178 → 186, 확신 오답 0 그대로. 사진 한 장에 임베딩 33ms → 113ms (2026-11).
+EMBED_ROTATIONS = (0, 90, 180, 270)
+# 색인에 식약처 사진만 있는 약(AI Hub 촬영 사진이 없는 약, DB의 대부분)은 실제 사진과의 임베딩 유사도가 낮게 나와,
+# 촬영 사진이 있는 비슷한 약에 밀린다. AI Hub 실제 사진 276쌍에서 평가 약의 색인을 식약처 사진 2장만 남기면
+# Top-1 98.9% → 58.0%로 임베딩 없이(65.6%)보다도 나빴다. 이런 약의 임베딩 점수에 보정값을 더한다:
+# 0.15에서 식약처 사진만 남긴 경우 58.0% → 80.1%, 지금 색인(촬영 사진 있음)은 98.9% 그대로 (0.20부터 떨어짐). 2026-11
+REFERENCE_ONLY_MAX = 2
+REFERENCE_ONLY_BONUS = 0.15
 
 
 @dataclass
@@ -107,6 +116,9 @@ class PillIdentifier:
             valid = item_idx >= 0  # DB에 없는 라벨(예: AI Hub 전용 코드)은 제외
             self._gallery_embs = self.gallery.embs[valid]
             self._gallery_item = item_idx[valid]
+            counts = np.bincount(self._gallery_item, minlength=len(self.items))
+            # 색인에 식약처 사진(품목당 2장 이하)만 있는 품목. 실제 사진과의 유사도가 낮게 나온다
+            self._reference_only = (counts > 0) & (counts <= REFERENCE_ONLY_MAX)
             crop_size = self.embedder.img_size
         self.crop_size = crop_size
 
@@ -240,11 +252,13 @@ class PillIdentifier:
         return out
 
     def _embedding_scores(self, obs: list[PillObservation]) -> np.ndarray:
-        q = self.embedder.embed_bgr([o.crop for o in obs])
+        crops = [np.ascontiguousarray(np.rot90(o.crop, r // 90)) for o in obs for r in EMBED_ROTATIONS]
+        q = self.embedder.embed_bgr(crops).reshape(len(obs), len(EMBED_ROTATIONS), -1).sum(axis=1)
+        q /= np.linalg.norm(q, axis=1, keepdims=True)
         per_obs = []
         for vec in q:
             sims = np.clip(self._gallery_embs @ vec, 0.0, 1.0)
             best = np.zeros(len(self.items), np.float32)  # 참조 이미지가 없는 품목은 0
             np.maximum.at(best, self._gallery_item, sims)  # 품목별 참조 이미지 중 최고 유사도
             per_obs.append(best)
-        return np.mean(per_obs, axis=0)
+        return np.minimum(np.mean(per_obs, axis=0) + REFERENCE_ONLY_BONUS * self._reference_only, 1.0)

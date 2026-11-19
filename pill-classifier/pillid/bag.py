@@ -32,6 +32,10 @@ RECHECK_PROMPT = "bag-recheck-v2"
 RECHECK_MAX_SIDE = 1600
 REVIEW_CONFIDENCE = 0.7      # 0.6 × OCR 신뢰도 + 0.4 × 품목 유사도가 이보다 낮으면 사용자 확인
 MATCHED_SIMILARITY = 0.85
+# 1위와 2위 품목의 유사도 차이가 이보다 작으면 하나로 정하지 않고 사용자가 고르게 한다.
+# 가상 약봉투 평가(2026-11)에서 Claude가 "레비티라세브이정500mg"을 성분명 "레비티라세탐정500mg"으로 고쳐 다른 회사
+# 제품(레비세탐정, 0.85)이 정답(0.833)을 근소하게 앞선 채 '일치'로 나간 일이 있었다.
+MATCHED_MARGIN = 0.05
 CANDIDATE_SIMILARITY = 0.6
 APP_TEXT_CONFIDENCE = 0.9    # 앱이 보낸 OCR 원문은 줄별 신뢰도를 모른다
 DEFAULT_SLOTS = {1: ["MORNING"], 2: ["MORNING", "DINNER"], 3: ["MORNING", "LUNCH", "DINNER"],
@@ -59,6 +63,7 @@ class OcrField:
     y: float
     w: float
     h: float
+    angle: float = 0.0  # 글자 상자 윗변의 기울기(라디안). 사진이 기울면 같은 줄의 글자도 높이가 달라진다
 
 
 def load_clova_config(root: Path) -> tuple[str, str] | None:
@@ -117,8 +122,11 @@ class ClovaOcr:
             pts = (f.get("boundingPoly") or {}).get("vertices") or []
             xs = [p.get("x", 0) for p in pts] or [0]
             ys = [p.get("y", 0) for p in pts] or [0]
+            angle = 0.0
+            if len(pts) == 4:  # 왼쪽 위 → 오른쪽 위 꼭짓점
+                angle = float(np.arctan2(pts[1].get("y", 0) - pts[0].get("y", 0), pts[1].get("x", 0) - pts[0].get("x", 0)))
             fields.append(OcrField(f.get("inferText", ""), float(f.get("inferConfidence", 0)),
-                                   min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)))
+                                   min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys), angle))
         return fields
 
 
@@ -131,26 +139,49 @@ class Line:
     text: str
 
 
+MAX_SKEW = np.radians(20)  # 이보다 많이 기운 것은 각도를 잘못 잰 것으로 본다
+
+
+def page_skew(fields: list[OcrField]) -> float:
+    """사진의 기울기(라디안). 두 글자 이상인 상자들의 윗변 기울기 중앙값."""
+    angles = [f.angle for f in fields if len(f.text.strip()) >= 2 and abs(f.angle) <= MAX_SKEW]
+    return float(np.median(angles)) if angles else 0.0
+
+
 def assemble_lines(fields: list[OcrField]) -> list[Line]:
-    """세로 위치가 비슷한 글자 덩어리를 한 줄로 묶고, 간격이 넓으면 표의 칸으로 보고 ' | '를 넣는다."""
+    """세로 위치가 비슷한 글자 덩어리를 한 줄로 묶고, 간격이 넓으면 표의 칸으로 보고 ' | '를 넣는다.
+
+    사진이 기울면 오른쪽 칸(용량)이 왼쪽 칸(약 이름)보다 한 줄 아래로 내려가 다른 약과 묶인다.
+    그래서 글자 상자의 기울기로 사진을 바로 세운 좌표에서 줄을 나눈다.
+    """
     fields = [f for f in fields if f.text.strip()]
     if not fields:
         return []
-    median_h = float(np.median([f.h for f in fields])) or 1.0
+    skew = page_skew(fields)
+    cos, sin = np.cos(skew), np.sin(skew)
+
+    def straight(f):  # 상자 중심을 기울기만큼 되돌린 (x, y)
+        cx, cy = f.x + f.w / 2, f.y + f.h / 2
+        return cx * cos + cy * sin, -cx * sin + cy * cos
+
+    pos = {id(f): straight(f) for f in fields}
+    # 기운 글자 상자는 테두리 상자가 (글자 폭 × 기울기)만큼 높아진다. 실제 글자 높이로 줄 간격을 잰다
+    median_h = float(np.median([max(f.h - f.w * abs(sin), 0.3 * f.h) for f in fields])) or 1.0
     rows: list[list[OcrField]] = []
-    for f in sorted(fields, key=lambda f: f.y + f.h / 2):
-        cy = f.y + f.h / 2
-        if rows and abs(cy - np.mean([g.y + g.h / 2 for g in rows[-1]])) <= 0.5 * median_h:
+    for f in sorted(fields, key=lambda f: pos[id(f)][1]):
+        cy = pos[id(f)][1]
+        if rows and abs(cy - np.mean([pos[id(g)][1] for g in rows[-1]])) <= 0.5 * median_h:
             rows[-1].append(f)
         else:
             rows.append([f])
     char_w = sum(f.w for f in fields) / max(1, sum(len(f.text) for f in fields))
     lines = []
     for i, row in enumerate(rows, 1):
-        row.sort(key=lambda f: f.x)
+        row.sort(key=lambda f: pos[id(f)][0])
         text = row[0].text
         for prev, cur in zip(row, row[1:]):
-            text += (" | " if cur.x - (prev.x + prev.w) > 2 * char_w else " ") + cur.text
+            gap = (pos[id(cur)][0] - cur.w / 2) - (pos[id(prev)][0] + prev.w / 2)
+            text += (" | " if gap > 2 * char_w else " ") + cur.text
         lines.append(Line(i, min(f.conf for f in row), text))
     return lines
 
@@ -461,6 +492,7 @@ class BagReader:
 
         by_no = {l.no: l for l in lines}
         items = [self._item(i, c, by_no) for i, c in enumerate(checked, 1)]
+        flag_shared_columns(items)
         general_cautions = printed_cautions(extracted.get("generalCautions"), lines)
         if not items:
             raise BagError("NO_MEDICATION", "약을 찾지 못함",
@@ -503,14 +535,27 @@ class BagReader:
                 problems.append(f"{name}: 식약처 품목과 이름이 맞지 않습니다. 이름을 다시 확인하세요.")
         return problems
 
+    def _matches(self, med: dict) -> list[tuple[dict, float, bool]]:
+        """고친 이름과 인쇄된 이름으로 모두 찾아 품목마다 더 높은 유사도를 쓴다.
+        Claude가 이름을 고치면서 성분명처럼 바꿔도 인쇄된 이름이 정확하면 맞는 품목을 찾는다."""
+        best: dict[str, tuple[dict, float, bool]] = {}
+        for name in (med.get("nameCorrected"), med.get("nameAsPrinted")):
+            for r in self.matcher.match(name or ""):
+                seq = r[0]["item_seq"]
+                if seq not in best or r[1] > best[seq][1]:
+                    best[seq] = r
+        return sorted(best.values(), key=lambda r: (-r[1], r[0]["item_seq"]))[:5]
+
     def _item(self, index: int, c: Checked, by_no: dict) -> dict:
         m = c.med
-        matches = self.matcher.match(m.get("nameCorrected") or "")
+        matches = self._matches(m)
         best = matches[0] if matches else None
         sim = best[1] if best else 0.0
+        # 이름이 정확히 같으면(1.0) 바로 정한다. 긴 이름은 한 글자만 다른 다른 회사 제품도 0.98쯤 나온다
+        close_second = sim < 1.0 and len(matches) > 1 and sim - matches[1][1] < MATCHED_MARGIN
         q_strength = strength_of(normalize_name(m.get("nameCorrected")))
         strength_ok = best is not None and (best[2] if q_strength else strength_of(normalize_name(best[0].get("item_name"))) is None)
-        grade = "MATCHED" if best and sim >= MATCHED_SIMILARITY and strength_ok else (
+        grade = "MATCHED" if best and sim >= MATCHED_SIMILARITY and strength_ok and not close_second else (
             "CANDIDATE" if best and sim >= CANDIDATE_SIMILARITY else "UNMATCHED")
         reasons = list(c.reasons)
         if grade == "CANDIDATE":
@@ -562,6 +607,26 @@ class BagReader:
             "candidates": [{"itemSeq": r[0]["item_seq"], "itemName": r[0].get("item_name"),
                             "entpName": r[0].get("entp_name"), "similarity": round(r[1], 3)} for r in matches],
         }
+
+
+SHARED_COLUMNS = (("dosageAmount", "1회량"), ("frequencyPerDay", "하루 횟수"), ("durationDays", "일수"))
+
+
+def flag_shared_columns(items: list[dict]) -> None:
+    """한 약의 값을 비웠으면 다른 약의 같은 칸도 확인을 요구한다.
+
+    사진이 기울면 약 이름 줄과 오른쪽 용량 칸이 한 줄씩 어긋나게 읽힌다. 가상 약봉투 평가(2026-11)에서
+    Claude가 첫 약의 1회량은 "어느 줄인지 확정할 수 없다"며 비우고, 다음 약에는 밀린 값을 넣은 일이 있었다.
+    """
+    for key, label in SHARED_COLUMNS:
+        if sum(it[key] is None for it in items) == 0:
+            continue
+        for it in items:
+            if it[key] is not None:
+                reason = f"다른 약의 {label}을 읽지 못해 이 약의 {label}도 확인이 필요합니다"
+                if reason not in it["reviewReasons"]:
+                    it["reviewReasons"].append(reason)
+                it["needsReview"] = True
 
 
 def _date_or_none(value: str | None) -> str | None:

@@ -188,14 +188,14 @@ def test_reader_drops_pill_outline_read_as_letter():
 
     crop = np.full((480, 480, 3), BG_FILL, np.uint8)
     crop[175:305, 45:435] = (230, 230, 230)  # 390x130 캡슐
-    reader = ImprintReader(engine="rapidocr")
+    reader = ImprintReader(engine="rapidocr", rec="en")
     reader.engine = "rapidocr"
 
-    reader._reader = FakeOcr([(box(240, 175, 190, 130), "D", 0.9)])
+    reader._readers = [FakeOcr([(box(240, 175, 190, 130), "D", 0.9)])]
     assert reader.read(crop) == ("", 0.0)
-    reader._reader = FakeOcr([(box(100, 210, 50, 60), "D", 0.9)])
+    reader._readers = [FakeOcr([(box(100, 210, 50, 60), "D", 0.9)])]
     assert reader.read(crop)[0] == "D"
-    reader._reader = FakeOcr([(box(60, 190, 360, 110), "TYLENOL", 0.9)])
+    reader._readers = [FakeOcr([(box(60, 190, 360, 110), "TYLENOL", 0.9)])]
     assert reader.read(crop)[0] == "TYLENOL"
 
 
@@ -259,3 +259,23 @@ def test_phone_segmentation_ignores_lighting_gradient_and_shadow():
     assert 440 <= x <= 465 and 400 <= y <= 420 and w <= 100 and h <= 100
     assert estimate_shape(r.contour) == "원형"
     assert estimate_colors(img, r.mask) == ["하양"]
+
+
+def test_hybrid_reader_uses_korean_only_for_confident_hangul():
+    """hybrid: 영문 모델 판독을 쓰되, 한국어 모델이 한글을 확실하게 읽었으면 그쪽을 쓴다."""
+    class FakeOcr:
+        def __init__(self, text, conf):
+            self.text, self.conf = text, conf
+
+        def __call__(self, image, use_cls=None):
+            return [([[100, 210], [150, 210], [150, 270], [100, 270]], self.text, self.conf)], None
+
+    crop = np.full((480, 480, 3), BG_FILL, np.uint8)
+    crop[175:305, 45:435] = (230, 230, 230)
+    reader = ImprintReader(engine="rapidocr", rec="en")
+    reader._readers = [FakeOcr("8", 0.95), FakeOcr("덴티골드", 0.99)]
+    assert reader.read(crop)[0] == "덴티골드"
+    reader._readers = [FakeOcr("8", 0.95), FakeOcr("덴티골드", 0.6)]  # 한글이지만 확실하지 않다
+    assert reader.read(crop)[0] == "8"
+    reader._readers = [FakeOcr("L15", 0.99), FakeOcr("L157", 0.99)]  # 한글이 없으면 영문 모델
+    assert reader.read(crop)[0] == "L15"

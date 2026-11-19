@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 import re
 import warnings
 from itertools import permutations
@@ -143,16 +144,29 @@ class ImprintReader:
     식약처 참조 사진 400품목으로 같은 조건에서 비교했을 때(2026-10) 각인을 양면 모두 정확히 읽은 비율이
     rapidocr 56%, easyocr 29%였고 속도도 rapidocr가 두 배 빨랐다. 그래서 rapidocr를 먼저 쓴다.
     점수 상수와 신뢰도 기준도 rapidocr 결과로 맞췄다.
+
+    rec (또는 환경변수 PILL_OCR_REC): rapidocr의 글자 인식 모델. auto(기본) | en | ko | hybrid
+      en      패키지에 들어 있는 중국어·영문 모델. 한글 각인("덴티골드")을 못 읽는다
+      ko      PP-OCRv5 한국어 모델(models/ocr/, README "한글 각인" 참고). 한글은 읽지만 영문·숫자 각인은 en보다 못하다
+      hybrid  두 모델로 읽어 en 판독을 쓰되, ko가 한글을 확실하게(KOREAN_MIN_CONF 이상) 읽었으면 ko 판독을 쓴다.
+              판독 시간은 두 배. 2026-11 비교: 식약처 참조 사진 400품목 Top-1 en 263 · ko 251 · hybrid 270,
+              AI Hub 실제 사진 276쌍 en 272 · ko 273 · hybrid 273 (확신 오답은 en과 같음)
+      auto    한국어 모델 파일이 있으면 hybrid, 없으면 en
     """
 
     ENGINES = ("rapidocr", "easyocr")
 
     def __init__(self, langs=("en",), gpu: bool | None = None, min_conf: float = 0.25,
-                 engine: str | None = None):
+                 engine: str | None = None, rec: str | None = None):
         self.langs = tuple(langs)
         self.min_conf = min_conf
         self.engine: str | None = None
         self._reader = None
+        self._readers: list = []  # rapidocr: 글자 인식 모델별 판독기
+        self._shared = None  # hybrid: 글자 위치는 한 번만 찾고 두 모델로 읽는다
+        self.rec = (rec or os.environ.get("PILL_OCR_REC") or "auto").lower()
+        if self.rec == "auto":
+            self.rec = "hybrid" if KOREAN_REC.exists() and KOREAN_KEYS.exists() else "en"
         requested = (engine or os.environ.get("PILL_OCR_ENGINE") or "auto").lower()
         for name in (self.ENGINES if requested == "auto" else (requested,)):
             try:
@@ -174,7 +188,17 @@ class ImprintReader:
             return easyocr.Reader(list(self.langs), gpu=gpu, verbose=False)
         if name == "rapidocr":
             from rapidocr_onnxruntime import RapidOCR
-            return RapidOCR()
+            if self.rec not in ("en", "ko", "hybrid"):
+                raise ValueError(f"알 수 없는 글자 인식 모델: {self.rec} (auto, en, ko, hybrid 중 하나)")
+            if self.rec != "en" and not (KOREAN_REC.exists() and KOREAN_KEYS.exists()):
+                raise FileNotFoundError(f"한국어 글자 인식 모델이 없습니다: {KOREAN_REC}")
+            if self.rec in ("en", "hybrid"):
+                self._readers.append(RapidOCR())
+            if self.rec in ("ko", "hybrid"):
+                self._readers.append(RapidOCR(rec_model_path=str(KOREAN_REC), rec_keys_path=str(KOREAN_KEYS)))
+            if self.rec == "hybrid":
+                self._shared = _SharedDetection(*self._readers)
+            return self._readers[0]
         raise ValueError(f"알 수 없는 OCR 엔진: {name} (easyocr, rapidocr, auto 중 하나)")
 
     @property
@@ -204,16 +228,21 @@ class ImprintReader:
         def read_one(angle):
             rotated = image if angle == 0 else cv2.rotate(image, _ROTATE[angle])
             # 방향 판별(use_cls)은 끈다. 이미 네 방향으로 돌려 읽고 있어 같은 일을 두 번 하는 셈이고, 판독 시간의 절반을 차지했다
-            result, _ = self._reader(rotated, use_cls=_USE_CLS)
-            return self._join(result or [], outline)
+            if self._shared is not None:
+                return [self._join(r or [], outline) for r in self._shared(rotated, _USE_CLS)]
+            out = []
+            for reader in self._readers:
+                result, _ = reader(rotated, use_cls=_USE_CLS)
+                out.append(self._join(result or [], outline))
+            return out
 
-        results = list(_POOL.map(read_one, angles))
-        best, best_score = ("", 0.0), 0.0
-        for text, conf in results:  # 같은 점수면 앞 방향을 고르는 것도 차례로 읽을 때와 같다
-            score = conf * len(text.replace(" ", ""))
-            if score > best_score:
-                best, best_score = (text, conf), score
-        return best
+        groups = list(_POOL.map(read_one, angles))  # [방향][판독기]
+        best = [_most_certain([g[i] for g in groups]) for i in range(len(self._readers))]
+        if len(best) == 2:  # hybrid: [en, ko]
+            text, conf = best[1]
+            if _HANGUL.search(text) and conf >= KOREAN_MIN_CONF:
+                return best[1]
+        return best[0]
 
     def _join(self, results, outline: float = float("inf")) -> tuple[str, float]:
         """[(상자, 글자, 신뢰도)] → 위→아래, 왼→오른 순으로 이어 붙인 각인.
@@ -229,10 +258,49 @@ class ImprintReader:
         return " ".join(t for _, t, _ in pieces), float(np.mean([c for *_, c in pieces]))
 
 
+# 한국어 글자 인식 모델 (ModelScope RapidAI/RapidOCR, Apache-2.0). Git에 올리지 않는다
+KOREAN_REC = Path(__file__).resolve().parents[1] / "models" / "ocr" / "korean_PP-OCRv5_rec_mobile.onnx"
+KOREAN_KEYS = KOREAN_REC.with_name("ppocrv5_korean_dict.txt")
+KOREAN_MIN_CONF = 0.8  # hybrid에서 한국어 판독으로 바꾸는 최소 신뢰도 (0.8과 0.9 결과가 같았다)
 _ROTATE = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}
 _USE_CLS = os.environ.get("PILL_OCR_CLS", "0") == "1"
 # 각인 판독용 스레드. 방향 4개 × 앞·뒷면 2장을 한꺼번에 처리할 만큼 둔다
 _POOL = ThreadPoolExecutor(max_workers=min(8, max(2, (os.cpu_count() or 2))), thread_name_prefix="ocr")
+
+
+class _SharedDetection:
+    """hybrid용. 글자 위치 찾기(두 판독기가 같은 모델을 쓴다)는 한 번만 하고, 찾은 글자 상자를 두 인식 모델로 읽는다.
+    RapidOCR.__call__과 같은 순서다 (rapidocr-onnxruntime 1.4). 따로 부를 때보다 판독 시간이 줄어든다."""
+
+    def __init__(self, first, second):
+        self.ocr, self.second_rec = first, second.text_rec
+
+    def __call__(self, img: np.ndarray, use_cls: bool = False) -> list:
+        o = self.ocr
+        raw_h, raw_w = img.shape[:2]
+        im, ratio_h, ratio_w = o.preprocess(img)
+        record = {"preprocess": {"ratio_h": ratio_h, "ratio_w": ratio_w}}
+        im, record = o.maybe_add_letterbox(im, record)
+        boxes, _ = o.auto_text_det(im)
+        if boxes is None:
+            return [None, None]
+        crops = o.get_crop_img_list(im, boxes)
+        if use_cls:
+            crops, _, _ = o.text_cls(crops)
+        first, _ = o.text_rec(crops, False)
+        second, _ = self.second_rec(crops, False)
+        boxes = o._get_origin_points(boxes, record, raw_h, raw_w)
+        return [o.get_final_res(boxes, None, r, 0.0, 0.0, 0.0)[0] for r in (first, second)]
+
+
+def _most_certain(results: list[tuple[str, float]]) -> tuple[str, float]:
+    """방향별 판독 중 (신뢰도 × 글자 수)가 가장 큰 것. 같으면 앞 방향."""
+    best, best_score = ("", 0.0), 0.0
+    for text, conf in results:
+        score = conf * len(text.replace(" ", ""))
+        if score > best_score:
+            best, best_score = (text, conf), score
+    return best
 
 
 def _box_size(box) -> float:

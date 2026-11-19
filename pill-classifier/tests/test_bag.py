@@ -82,6 +82,20 @@ def test_fields_become_lines_and_table_cells():
     assert lines[0].conf == 0.8 and lines[0].no == 1
 
 
+def test_tilted_photo_keeps_dose_on_the_drug_line():
+    """사진이 3° 기울면 오른쪽 용량 칸이 한 줄(25px) 아래로 내려온다. 기울기를 되돌려 같은 줄로 묶는다."""
+    import math
+    a = math.radians(3)
+
+    def field(text, x, y, w, h=20):  # 기울어진 사진에서의 테두리 상자 (윗변 기울기 a)
+        return OcrField(text, 0.95, x, y + x * math.tan(a), w, h + w * math.sin(a), a)
+
+    fields = [field("자누리틴콤비정", 50, 100, 200), field("1회 2정", 520, 100, 80),
+              field("데스모엠정", 50, 125, 140), field("1회 1정", 520, 125, 80)]
+    lines = assemble_lines(fields)
+    assert [l.text for l in lines] == ["자누리틴콤비정 | 1회 2정", "데스모엠정 | 1회 1정"]
+
+
 def test_personal_information_is_masked():
     lines = [Line(1, 1, "환자명 : 홍길동  주민번호 900101-2345678"), Line(2, 1, "약국 전화 02-123-4567"),
              Line(3, 1, "교부번호 : 2026-1234"), Line(4, 1, "타이레놀정 1정")]
@@ -175,6 +189,30 @@ def test_problems_trigger_one_recheck_with_the_photo():
     assert claude.calls[1]["task"] == "bag-recheck-v2"
     assert claude.calls[1]["content"][0]["type"] == "image"
     assert "<problems>" in claude.calls[1]["content"][1]["text"]
+
+
+def test_unread_value_flags_same_column_of_other_drugs():
+    # 기운 사진에서 용량 칸이 한 줄 밀려, 첫 약의 1회량은 비우고 다음 약에는 밀린 값을 넣은 경우
+    claude = FakeClaude(extraction(med("타이레놀정500밀리그람", lines=(4, 6), quotes=["타이레놀정500밀리그람"], dose=None),
+                                   med("뮤코스타정", lines=(5, 6))))
+    ocr_lines = ["행복약국 복약안내", "환자명 : 홍길동", "약품명 | 1회 | 1일 | 일수", "타이레놀정500밀리그람 | 1 | 3 | 5",
+                 "뮤코스타정 | 1 | 3 | 5", "매 식후 30분에 복용하세요"]
+    result = BagReader(ITEMS, claude, FakeOcr(ocr_lines)).recognize(photo())
+    first, second = result["items"]
+    assert first["dosageAmount"] is None and first["needsReview"]
+    assert second["dosageAmount"] == 1 and second["needsReview"]
+    assert "다른 약의 1회량을 읽지 못해 이 약의 1회량도 확인이 필요합니다" in second["reviewReasons"]
+    assert result["status"] == "PARTIAL"
+
+
+def test_printed_name_still_matches_when_correction_drifts_to_ingredient_name():
+    # Claude가 제품명을 성분명처럼 고쳐도 인쇄된 이름이 정확하면 그 품목으로 정한다
+    from pillid.bag import Checked
+    reader = BagReader(ITEMS, None, None)
+    med = {"nameAsPrinted": "타이레놀정500밀리그람", "nameCorrected": "아세트아미노펜정500밀리그람", "dosePerTake": 1,
+           "timesPerDay": 3, "durationDays": 5, "slots": [], "evidenceLines": []}
+    item = reader._item(1, Checked(med), {})
+    assert item["matchGrade"] == "MATCHED" and item["itemSeq"] == "1001"
 
 
 def test_unknown_drug_needs_review_and_keeps_printed_name():
