@@ -15,7 +15,7 @@ from pillid.db import PillDB  # noqa: E402
 from pillid.imaging import BG_FILL, canonical_crop, segment_pills, segment_reference  # noqa: E402
 from pillid.ocr import (ImprintReader, canonical_imprint, imprint_pair_score,  # noqa: E402
                         imprint_similarity, imprint_tokens)
-from pillid.pipeline import PillIdentifier  # noqa: E402
+from pillid.pipeline import PillIdentifier, PillObservation  # noqa: E402
 
 BG = (40, 40, 40)
 WHITE, YELLOW, RED, BLUE = (240, 240, 240), (60, 220, 240), (40, 40, 200), (200, 90, 30)
@@ -279,3 +279,28 @@ def test_hybrid_reader_uses_korean_only_for_confident_hangul():
     assert reader.read(crop)[0] == "8"
     reader._readers = [FakeOcr("L15", 0.99), FakeOcr("L157", 0.99)]  # 한글이 없으면 영문 모델
     assert reader.read(crop)[0] == "L15"
+
+
+def test_exact_imprint_on_untrained_rival_blocks_confidence(tmp_path):
+    # 각인 GGZ를 정확히 읽었는데 1위가 학습한 ggr 약이면, GGZ인 학습하지 않은 같은 모양 약이 있으니 확신하지 않는다
+    db = PillDB(tmp_path / "pills.db")
+    db.upsert_many([
+        {"ITEM_SEQ": "1", "ITEM_NAME": "기가렉스", "DRUG_SHAPE": "타원형", "COLOR_CLASS1": "빨강", "PRINT_FRONT": "ggr"},
+        {"ITEM_SEQ": "2", "ITEM_NAME": "기가제로", "DRUG_SHAPE": "타원형", "COLOR_CLASS1": "주황", "PRINT_FRONT": "GGZ"},
+        {"ITEM_SEQ": "3", "ITEM_NAME": "모양다름", "DRUG_SHAPE": "원형", "COLOR_CLASS1": "주황", "PRINT_FRONT": "GGZ"},
+    ])
+    db.close()
+    ident = PillIdentifier(tmp_path / "pills.db", use_ocr=False, trusted_items={"1"})
+
+    def observe(text):
+        o = PillObservation(crop=np.zeros((8, 8, 3), np.uint8), shape="타원형", colors=["빨강"], imprint=text,
+                            imprint_conf=0.9, bbox=(0, 0, 8, 8), area=64.0)
+        return ident.identify([o], topk=3)
+
+    res = observe("GGZ")
+    assert ident.imprint_rival(res, "1") == "2"   # 원형(3)은 모양이 달라 상관없다
+    assert ident.imprint_rival(res, "2") is None  # 1위 각인이 맞으면 문제없다
+    ident.trusted_items = {"1", "2"}
+    assert ident.imprint_rival(res, "1") is None  # 맞는 약도 학습했으면 임베딩이 가를 수 있다
+    ident.trusted_items = {"1"}
+    assert ident.imprint_rival(observe("GG"), "1") is None  # 두 글자는 우연히 맞는 약이 많다

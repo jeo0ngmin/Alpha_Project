@@ -2,8 +2,9 @@
 
     python scripts/make_synthetic_bags.py --out data/eval/bags_synth --n 12
 
-양식 3가지(표형 복약안내문, 시간 칸 체크형 봉투, 번호 목록형)에 식약처 DB의 실제 품목명을 넣고,
+양식 4가지(표형 복약안내문, 시간 칸 체크형 봉투, 번호 목록형, 처방전형 표)에 식약처 DB의 실제 품목명을 넣고,
 폰으로 찍은 것처럼 기울기·원근·그림자·흐림·JPEG 압축을 더한다. 환자 정보는 모두 가짜다.
+--hard: 약 개수를 늘리고(최대 7개) 사진 상태 L3(구겨짐·반사광·손가락 가림·어두운 잡음)를 섞는다.
 정답은 <out>/truth.json (사진마다 약 목록: 품목기준코드, 인쇄 이름, 1회량, 단위, 하루 횟수, 시점, 식사 관계, 일수).
 실제 약봉투보다 깨끗하고 양식이 단순하므로, 여기서 나온 수치는 상한에 가깝다고 봐야 한다.
 """
@@ -63,7 +64,7 @@ def pick_drugs(db: Path, rng: random.Random) -> list[dict]:
             continue
         seen.add(p)
         out.append({"item_seq": seq, "item_name": name, "printed": p,
-                    "unit": "CAPSULE" if "캡슐" in (form or name) else "TABLET"})
+                    "unit": "CAPSULE" if any(k in f"{form or ''} {name}" for k in ("캡슐", "스팬슐")) else "TABLET"})
     return out
 
 
@@ -174,16 +175,81 @@ def style_list(meds, info, cautions):
     return img
 
 
+def style_prescription(meds, info, cautions):
+    """처방전·조제내역서처럼 칸이 많은 표. 약 이름 칸이 넓고 숫자 칸이 좁다."""
+    w, h = 1500, 1300 + 60 * max(0, len(meds) - 4)
+    img = Image.new("RGB", (w, h), (255, 255, 255))
+    d = ImageDraw.Draw(img)
+    ft, fb, fs = font("bold", 40), font("regular", 26), font("regular", 24)
+    d.text((w // 2, 30), "조 제 내 역 및 복 약 안 내", font=ft, fill=(0, 0, 0), anchor="mt")
+    d.text((40, 100), f"성명: {info['patient']}   조제일: {info['date']}   {info['pharmacy']}", font=fb, fill=(0, 0, 0))
+    d.text((40, 140), f"의료기관: {info['hospital']}   처방전 교부번호: {info['rx_no']}", font=fb, fill=(0, 0, 0))
+    cols = [40, 620, 760, 900, 1040, 1460]
+    heads = ["처방 의약품의 명칭", "1회 투약량", "1일 투여횟수", "총 투약일수", "용법"]
+    y = 200
+    for x, t in zip(cols, heads):
+        d.text((x + 8, y + 12), t, font=fs, fill=(0, 0, 0))
+    d.rectangle((cols[0], y, cols[-1], y + 52), outline=(0, 0, 0), width=2)
+    y += 52
+    for m in meds:
+        d.rectangle((cols[0], y, cols[-1], y + 56), outline=(60, 60, 60), width=1)
+        for x in cols[1:-1]:
+            d.line((x, y, x, y + 56), fill=(60, 60, 60))
+        dose = {0.5: "0.5", 1: "1", 2: "2"}[m["dose"]]
+        how = "/".join(SLOT_KO[s] for s in m["slots"]) + (" " + m["meal_text"] if m["meal_text"] else "")
+        for x, t in zip(cols, [m["printed"], dose, str(m["times"]), str(m["days"]), how]):
+            d.text((x + 8, y + 15), t, font=fs, fill=(0, 0, 0))
+        y += 56
+    y += 40
+    for c in cautions:
+        d.text((40, y), f"▶ {c}", font=fs, fill=(0, 0, 0))
+        y += 38
+    return img
+
+
 # ── 사진처럼 ──────────────────────────────────────────────────────────────
 
+def crumple(a: np.ndarray, rng: random.Random) -> np.ndarray:
+    """구겨진 종이: 부드러운 변위장으로 글자 줄을 휘게 하고, 접힌 자국에 음영을 준다."""
+    h, w = a.shape[:2]
+    g = np.random.default_rng(rng.randint(0, 1 << 30))
+    dx = cv2.GaussianBlur(g.normal(0, 1, (h // 40 + 2, w // 40 + 2)).astype(np.float32), (0, 0), 1.2)
+    dy = cv2.GaussianBlur(g.normal(0, 1, (h // 40 + 2, w // 40 + 2)).astype(np.float32), (0, 0), 1.2)
+    amp = rng.uniform(5, 10)
+    dx = cv2.resize(dx, (w, h)) * amp
+    dy = cv2.resize(dy, (w, h)) * amp
+    xx, yy = np.meshgrid(np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32))
+    out = cv2.remap(a, xx + dx, yy + dy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+    shade = 1 - 0.12 * np.clip(cv2.Sobel(dy, cv2.CV_32F, 0, 1, ksize=5) / 30, -1, 1)
+    return np.clip(out * shade[..., None], 0, 255).astype(np.uint8)
+
+
+def glare_and_finger(a: np.ndarray, rng: random.Random) -> np.ndarray:
+    h, w = a.shape[:2]
+    out = a.astype(np.float32)
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    cx, cy = rng.uniform(0.3, 0.8) * w, rng.uniform(0.2, 0.8) * h
+    rx, ry = rng.uniform(0.08, 0.18) * w, rng.uniform(0.04, 0.1) * h
+    out += rng.uniform(80, 150) * np.exp(-(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2))[..., None]
+    # 가장자리를 가리는 손가락 (글자를 덮지 않도록 아래쪽 모서리)
+    fx, fy = rng.choice([0.05, 0.95]) * w, rng.uniform(0.9, 1.0) * h
+    finger = ((xx - fx) / (0.07 * w)) ** 2 + ((yy - fy) / (0.16 * h)) ** 2 < 1
+    out[finger] = np.array([120, 150, 205], np.float32) * rng.uniform(0.8, 1.05)
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def photograph(img: Image.Image, rng: random.Random, level: int) -> np.ndarray:
-    """level 0: 스캔처럼 깨끗, 1: 보통 폰 사진, 2: 기울고 그늘지고 흐린 사진."""
+    """level 0: 스캔처럼 깨끗, 1: 보통 폰 사진, 2: 기울고 그늘지고 흐린 사진, 3: 2 + 구겨짐·반사광·손가락·어두운 잡음."""
     a = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    if level == 3:
+        a = glare_and_finger(crumple(a, rng), rng)
     h, w = a.shape[:2]
     pad = 120
     canvas = np.full((h + 2 * pad, w + 2 * pad, 3), rng.choice([(70, 80, 90), (150, 140, 120), (40, 40, 45)]), np.uint8)
     canvas[pad:pad + h, pad:pad + w] = a
     H, W = canvas.shape[:2]
+    hard = level == 3
+    level = min(level, 2)
     if level:
         j = [40, 90][level - 1]
         src = np.float32([[0, 0], [W, 0], [W, H], [0, H]])
@@ -196,10 +262,10 @@ def photograph(img: Image.Image, rng: random.Random, level: int) -> np.ndarray:
         gx = np.linspace(rng.uniform(0.55, 0.85) if level == 2 else 0.85, 1.0, W)[None, :, None]
         if rng.random() < 0.5:
             gx = gx[:, ::-1]
-        canvas = np.clip(canvas * gx * rng.uniform(0.85, 1.05), 0, 255).astype(np.uint8)
+        canvas = np.clip(canvas * gx * (rng.uniform(0.55, 0.7) if hard else rng.uniform(0.85, 1.05)), 0, 255).astype(np.uint8)
         k = [3, 5][level - 1]
         canvas = cv2.GaussianBlur(canvas, (k, k), 0)
-        noise = np.random.default_rng(rng.randint(0, 1 << 30)).normal(0, [3, 6][level - 1], canvas.shape)
+        noise = np.random.default_rng(rng.randint(0, 1 << 30)).normal(0, 10 if hard else [3, 6][level - 1], canvas.shape)
         canvas = np.clip(canvas + noise, 0, 255).astype(np.uint8)
         scale = [0.8, 0.65][level - 1]
         canvas = cv2.resize(canvas, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
@@ -212,18 +278,21 @@ def main():
     ap.add_argument("--n", type=int, default=12)
     ap.add_argument("--db", default=str(ROOT / "data" / "pills.db"))
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--hard", action="store_true", help="약 최대 7개, 처방전형 양식, 사진 상태 L3 포함")
     args = ap.parse_args()
     rng = random.Random(args.seed)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     pool = pick_drugs(Path(args.db), rng)
     styles = [("table", style_table), ("envelope", style_envelope), ("list", style_list)]
+    if args.hard:
+        styles.append(("rx", style_prescription))
     truth = {}
     for i in range(args.n):
         style_name, style = styles[i % len(styles)]
-        level = (i // len(styles)) % 3
+        level = (i // len(styles)) % (4 if args.hard else 3)
         days = rng.choice([3, 5, 7, 14, 30])
-        drugs = [pool.pop() for _ in range(rng.randint(2, 4))]
+        drugs = [pool.pop() for _ in range(rng.randint(3, 7) if args.hard else rng.randint(2, 4))]
         if style_name == "envelope":  # 한 봉투 = 같은 시간에 먹는 약
             base = make_regimen(drugs[0], rng, days)
             meds = [{**dr, **{k: base[k] for k in ("times", "slots", "meal", "meal_text", "meal_offset", "days")},
@@ -236,7 +305,7 @@ def main():
         cautions = rng.sample(CAUTIONS, rng.randint(1, 2))
         photo = photograph(style(meds, info, cautions), rng, level)
         name = f"bag{i + 1:02d}_{style_name}_L{level}.jpg"
-        cv2.imwrite(str(out / name), photo, [cv2.IMWRITE_JPEG_QUALITY, [92, 85, 75][level]])
+        cv2.imwrite(str(out / name), photo, [cv2.IMWRITE_JPEG_QUALITY, [92, 85, 75, 70][level]])
         truth[name] = {"style": style_name, "level": level, "cautions": cautions,
                        "medications": [{k: m[k] for k in ("item_seq", "item_name", "printed", "dose", "unit", "times",
                                                           "slots", "meal", "meal_offset", "days")} for m in meds]}

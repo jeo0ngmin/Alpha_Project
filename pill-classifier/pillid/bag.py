@@ -36,6 +36,7 @@ MATCHED_SIMILARITY = 0.85
 # 가상 약봉투 평가(2026-11)에서 Claude가 "레비티라세브이정500mg"을 성분명 "레비티라세탐정500mg"으로 고쳐 다른 회사
 # 제품(레비세탐정, 0.85)이 정답(0.833)을 근소하게 앞선 채 '일치'로 나간 일이 있었다.
 MATCHED_MARGIN = 0.05
+RECHECK_SKIP_MIN_OCR = 0.6   # 이름이 식약처 품목과 정확히 같아도 근거 줄 OCR 신뢰도가 이보다 낮으면 재확인한다
 CANDIDATE_SIMILARITY = 0.6
 APP_TEXT_CONFIDENCE = 0.9    # 앱이 보낸 OCR 원문은 줄별 신뢰도를 모른다
 DEFAULT_SLOTS = {1: ["MORNING"], 2: ["MORNING", "DINNER"], 3: ["MORNING", "LUNCH", "DINNER"],
@@ -143,9 +144,16 @@ MAX_SKEW = np.radians(20)  # 이보다 많이 기운 것은 각도를 잘못 잰
 
 
 def page_skew(fields: list[OcrField]) -> float:
-    """사진의 기울기(라디안). 두 글자 이상인 상자들의 윗변 기울기 중앙값."""
-    angles = [f.angle for f in fields if len(f.text.strip()) >= 2 and abs(f.angle) <= MAX_SKEW]
-    return float(np.median(angles)) if angles else 0.0
+    """사진의 기울기(라디안). 글자 상자 윗변 기울기의 가중 중앙값 (넓은 상자일수록 가중치가 크다).
+
+    "1회", "1/2캡슐"처럼 짧은 상자는 기울기가 부정확하다 (6.6° 기운 봉투에서 0.7°로 잰 일이 있었다).
+    """
+    pairs = sorted((f.angle, f.w) for f in fields if len(f.text.strip()) >= 2 and abs(f.angle) <= MAX_SKEW)
+    if not pairs:
+        return 0.0
+    angles, weights = np.array(pairs).T
+    cum = np.cumsum(weights)
+    return float(angles[np.searchsorted(cum, cum[-1] / 2)])
 
 
 def assemble_lines(fields: list[OcrField]) -> list[Line]:
@@ -208,6 +216,8 @@ _RRN = re.compile(r"\d{6}\s*[-–]\s*[1-8][\d*]{6}|\d{6}\s*[-–]\s*[1-8]\*+")
 _PHONE = re.compile(r"(?<!\d)0\d{1,2}[-\s)]?\d{3,4}[-\s]?\d{4}(?!\d)")
 _NAME = re.compile(r"(환\s*자\s*명|성\s*명|수\s*진\s*자|이\s*름|환\s*자\s*[:：])\s*[:：]?\s*([가-힣]{2,4})")
 _NUMBER = re.compile(r"(교부\s*번호|요양\s*기관\s*번호|기관\s*번호|처방전?\s*번호|조제\s*번호|영수증\s*번호)\s*[:：]?\s*[\d\-]+")
+# 이름표와 다른 줄로 떨어진 교부번호·기관번호 (사진이 기울면 생긴다). 복약 정보에는 10자리 넘는 숫자가 없다
+_LONG_NUMBER = re.compile(r"(?<![\d.])\d[\d\-]{8,}\d(?![\d.])")
 
 
 def mask_name(name: str) -> str:
@@ -222,6 +232,7 @@ def mask_lines(lines: list[Line]) -> tuple[list[Line], str | None]:
         text = _RRN.sub("[주민번호]", line.text)
         text = _NUMBER.sub(lambda m: m.group(1) + " [번호]", text)
         text = _PHONE.sub("[전화]", text)
+        text = _LONG_NUMBER.sub(lambda m: "[번호]" if sum(c.isdigit() for c in m.group()) >= 10 else m.group(), text)
 
         def name(m):
             nonlocal patient
@@ -320,10 +331,16 @@ class DrugMatcher:
 
     def __init__(self, items: list[dict]):
         self.rows = []
+        self.names: set[str] = set()
         for it in items:
             norm = normalize_name(it.get("item_name"))
             if norm:
+                self.names.add(norm)
                 self.rows.append((it, strength_of(norm), _bigrams(norm), _bigrams(without_strength(norm))))
+
+    def exact(self, name: str | None) -> bool:
+        """정규화한 이름이 식약처 품목명과 글자 그대로 같은 품목이 있는지."""
+        return bool(name) and normalize_name(name) in self.names
 
     def match(self, name: str, topn: int = 5) -> list[tuple[dict, float, bool]]:
         """[(품목, 유사도, 함량 일치)] 유사도 높은 순."""
@@ -510,6 +527,7 @@ class BagReader:
             "ocrConfidence": round(ocr_conf, 3),
             "overallConfidence": round(float(np.mean([it["confidence"] for it in items])), 3),
             "rechecked": rechecked,
+            "recheckReasons": problems if rechecked else [],  # 재확인을 부른 문제 (가린 뒤 글자에서 나온 것)
             "extractor": self.claude.model,
         }
 
@@ -522,14 +540,22 @@ class BagReader:
                            "지금은 약봉투를 정리할 수 없습니다. 잠시 후 다시 시도해 주세요.") from e
 
     def _problems(self, extracted: dict, checked: list[Checked], lines: list[Line]) -> list[str]:
-        """§4.5 재확인 조건."""
+        """§4.5 재확인 조건.
+
+        Claude가 '처음 보는 약 이름이라 OCR 오탈자일 수 있다'며 LOW를 준 경우라도, 인쇄된 이름이 식약처 품목명과
+        글자 그대로 같고 근거 검증을 통과했으며 그 줄의 OCR 신뢰도가 아주 낮지 않으면 재확인하지 않는다.
+        가상 약봉투 12장에서 재확인 7번이 모두 이 경우였다(재확인 한 번에 10~30초).
+        """
+        by_no = {l.no: l for l in lines}
         problems = []
         hangul = sum(len(re.findall(r"[가-힣]", l.text)) for l in lines)
         if not checked and hangul >= 20:
             problems.append("약을 하나도 찾지 못했지만 글자는 충분합니다. 약 목록을 다시 확인하세요.")
         for c in checked:
             name = c.med.get("nameAsPrinted")
-            if c.med.get("confidence") == "LOW" or c.reasons:
+            ev = [by_no[n].conf for n in c.med.get("evidenceLines") or [] if n in by_no]
+            settled = (not c.reasons and self.matcher.exact(name) and ev and min(ev) >= RECHECK_SKIP_MIN_OCR)
+            if (c.med.get("confidence") == "LOW" and not settled) or c.reasons:
                 problems.append(f"{name}: {', '.join(c.reasons) or c.med.get('uncertainReason') or '신뢰도 낮음'}")
             elif not self.matcher.match(c.med.get("nameCorrected") or "", 1):
                 problems.append(f"{name}: 식약처 품목과 이름이 맞지 않습니다. 이름을 다시 확인하세요.")
@@ -551,8 +577,14 @@ class BagReader:
         matches = self._matches(m)
         best = matches[0] if matches else None
         sim = best[1] if best else 0.0
-        # 이름이 정확히 같으면(1.0) 바로 정한다. 긴 이름은 한 글자만 다른 다른 회사 제품도 0.98쯤 나온다
-        close_second = sim < 1.0 and len(matches) > 1 and sim - matches[1][1] < MATCHED_MARGIN
+        # 인쇄된(또는 고친) 이름이 품목명과 글자 그대로 같으면 바로 정한다. 유사도 1.0만으로는 안 된다:
+        # 함량 일치 가산점 때문에 "삼시타플러스정50/500mg"도 "시타플러스정50/500mg"과 1.0이 나왔다 (2026-11)
+        names = {normalize_name(m.get("nameCorrected")), normalize_name(m.get("nameAsPrinted"))} - {""}
+        exact = [r for r in matches if normalize_name(r[0].get("item_name")) in names]
+        if exact:
+            best, sim = exact[0], exact[0][1]
+            matches = [best] + [r for r in matches if r is not best]
+        close_second = not exact and len(matches) > 1 and sim - matches[1][1] < MATCHED_MARGIN
         q_strength = strength_of(normalize_name(m.get("nameCorrected")))
         strength_ok = best is not None and (best[2] if q_strength else strength_of(normalize_name(best[0].get("item_name"))) is None)
         grade = "MATCHED" if best and sim >= MATCHED_SIMILARITY and strength_ok and not close_second else (

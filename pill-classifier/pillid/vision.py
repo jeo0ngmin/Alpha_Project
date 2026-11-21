@@ -263,7 +263,11 @@ def apply_rerank(candidates: list[dict], matches: dict[str, str]) -> tuple[list[
 
     최종 점수 = 0.5 × CV 점수 + 0.5 × 판정값. 판정받지 않은 후보(6위 이하)는 판정값 0으로 계산하고,
     '다른 약'(DIFFERENT) 판정은 점수와 상관없이 목록 뒤로 보낸다.
+    판정받은 후보가 모두 '다른 약'이면 순서를 바꾸지 않고 저신뢰로 낸다. 판정받지 않은 6위가 1위로 올라오는 일을 막는다
+    (평가에서 Claude가 정답까지 '다른 약'이라고 본 7건이 모두 이렇게 6위 이하 후보로 바뀌었다).
     """
+    if not any(matches.get(c["itemSeq"]) in ("SAME_LIKELY", "POSSIBLE") for c in candidates):
+        return candidates, True
     rescored = []
     for c in candidates:
         value = MATCH_VALUES.get(matches.get(c["itemSeq"]), 0.0)

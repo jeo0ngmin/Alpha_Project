@@ -58,6 +58,16 @@ def test_identify_demo_photos(client, demo, photo, expected_seq, shape, colors):
     assert f["drugShape"] == shape
     assert {f["colorClass1"], f["colorClass2"]} - {None} == colors
     assert set(body["candidates"][0]["scoreBreakdown"]) == {"shape", "color"}
+    assert body["sameIngredientCount"] == 0  # 데모 품목에는 성분명이 없다
+
+
+def test_look_alike_key_groups_same_ingredient_products():
+    from server.app import look_alike_key
+    a = {"item_name": "리세즈정150mg(리세드론산나트륨일수화물)", "drug_shape": "장방형", "color_class1": "파랑"}
+    b = {"item_name": "본틸정150밀리그램(리세드론산나트륨일수화물)", "drug_shape": "장방형", "color_class1": "파랑"}
+    c = {"item_name": "본틸정35밀리그램(리세드론산나트륨일수화물)", "drug_shape": "장방형", "color_class1": "파랑"}
+    assert look_alike_key(a) == look_alike_key(b) != look_alike_key(c)
+    assert look_alike_key({"item_name": "삼시타플러스정50/500밀리그램"}) is None  # 성분명이 없으면 묶지 않는다
 
 
 def test_multiple_pills_asks_for_retake(client, demo):

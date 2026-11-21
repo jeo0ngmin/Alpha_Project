@@ -51,8 +51,9 @@ final class PillResults {
         }
         // 확신이 없을 때는 1위를 대표 결과로 내세우지 않는다
         Candidate top = low ? null : candidates.get(0);
+        int sameIngredient = r.path("sameIngredientCount").asInt(0);
         return new JobView(jobId, PillJobStatus.COMPLETED, features, top, candidates, low || close, fallback,
-                script(candidates, low, close, fallback));
+                script(candidates, low, close, fallback, sameIngredient));
     }
 
     static JobView failed(String jobId) {
@@ -75,7 +76,11 @@ final class PillResults {
         return node.hasNonNull(field) ? node.get(field).asText() : null;
     }
 
-    private static String script(List<Candidate> candidates, boolean low, boolean close, String fallback) {
+    /** 1위와 성분·함량·모양·색이 같은 다른 회사 제품이 있을 때. 약 정보는 같지만 제품은 다를 수 있다. */
+    static final String SAME_INGREDIENT = "같은 성분과 함량으로 모양과 색까지 같은 다른 회사 약도 있어서, 제품 이름은 다를 수 있습니다.";
+
+    private static String script(List<Candidate> candidates, boolean low, boolean close, String fallback,
+                                 int sameIngredient) {
         String first = speakName(candidates.get(0).itemName());
         if (low) {
             String next = RETAKE.equals(fallback) ? "다시 찍어 보시거나, " : "모양과 색으로 직접 찾아 보시거나, ";
@@ -85,7 +90,8 @@ final class PillResults {
             return "비슷한 약이 " + SpeechFormatter.nativeCount(candidates.size()) + " 개 있습니다. 가장 비슷한 약은 " + first
                     + "입니다. " + CHECK_WITH_SOMEONE;
         }
-        return "가장 비슷한 약은 " + first + "입니다. " + CHECK_WITH_SOMEONE;
+        String same = sameIngredient > 0 ? SAME_INGREDIENT + " " : "";
+        return "가장 비슷한 약은 " + first + "입니다. " + same + CHECK_WITH_SOMEONE;
     }
 
     /** 괄호 안 성분명까지 읽으면 길어지므로 이름만 읽는다. */

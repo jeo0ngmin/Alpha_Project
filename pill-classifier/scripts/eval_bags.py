@@ -87,7 +87,8 @@ def field_values(t: dict, it: dict) -> dict:
         "unit": (t["unit"], it.get("dosageUnit")),
         "times": (t["times"], it.get("frequencyPerDay")),
         "slots": (sorted(t["slots"]), None if it.get("slotsInferred") and not it.get("timeSlots") else sorted(it.get("timeSlots") or []) or None),
-        "meal": (meal_truth, it.get("mealRelation")),
+        # 봉투에 식사 관계가 적혀 있지 않은 약(ANYTIME)은 비워 두는 것도 맞다
+        "meal": (meal_truth, it.get("mealRelation") or ("ANYTIME" if meal_truth == "ANYTIME" else None)),
         "days": (t["days"], it.get("durationDays")),
     }
 

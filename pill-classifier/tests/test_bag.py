@@ -177,8 +177,17 @@ def test_bag_is_read_and_matched(tmp_path):
     assert len(claude.calls) == 1  # 문제가 없으면 재확인하지 않는다
 
 
+def test_low_confidence_on_an_exact_db_name_does_not_recheck():
+    # Claude가 낯선 제품명이라 LOW를 줘도, 인쇄된 이름이 식약처 품목명과 같고 근거가 맞으면 다시 묻지 않는다
+    claude = FakeClaude(extraction(med("뮤코스타정", lines=(5, 6), confidence="LOW")))
+    ocr_lines = ["행복약국 복약안내 약국", "약품명 | 1회 | 1일 | 일수", "기타 안내 문구입니다", "다른 줄입니다",
+                 "뮤코스타정 | 1 | 3 | 5", "매 식후 30분에 복용하세요"]
+    result = BagReader(ITEMS, claude, FakeOcr(ocr_lines)).recognize(photo())
+    assert result["rechecked"] is False and len(claude.calls) == 1
+
+
 def test_problems_trigger_one_recheck_with_the_photo():
-    first = extraction(med("뮤코스타정", lines=(5, 6), confidence="LOW"))
+    first = extraction(med("뮤코스타정", lines=(5, 6), confidence="LOW", quotes=["문서에 없는 문구"]))
     second = extraction(med("뮤코스타정", lines=(5, 6)))
     claude = FakeClaude(first, second)
     ocr_lines = ["행복약국 복약안내 약국", "약품명 | 1회 | 1일 | 일수", "기타 안내 문구입니다", "다른 줄입니다",

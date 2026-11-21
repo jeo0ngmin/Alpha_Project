@@ -100,3 +100,7 @@ def test_rerank_scoring():
 
     _, low = apply_rerank(cands, {"A": "POSSIBLE", "B": "POSSIBLE"})
     assert low is True  # '같아 보임' 판정이 없으면 여전히 저신뢰
+
+    # 판정받은 후보가 모두 '다른 약'이면 판정받지 않은 후보(D)를 올리지 않고 순서를 그대로 둔다
+    ranked, low = apply_rerank(cands, {"A": "DIFFERENT", "B": "DIFFERENT", "C": "DIFFERENT"})
+    assert [c["itemSeq"] for c in ranked] == ["A", "B", "C", "D"] and low is True

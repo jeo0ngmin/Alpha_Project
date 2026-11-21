@@ -246,6 +246,27 @@ def major_axis_angle(contour: np.ndarray) -> float:
     return float(np.degrees(0.5 * np.arctan2(2 * m["mu11"], m["mu20"] - m["mu02"])))
 
 
+def region_in_original(original: np.ndarray, region: PillRegion, scale: float,
+                       margin: float = 0.15) -> tuple[np.ndarray, PillRegion]:
+    """축소한 사진에서 찾은 알약 영역을 원본 해상도로 옮긴다. (알약 주변만 자른 원본, 그 안의 영역)
+
+    preprocess()는 처리 속도를 위해 사진을 긴 변 1600px로 줄인다. 폰 사진(12MP, 4000px)은 이때 각인 해상도가
+    절반 이하로 떨어지므로, 각인 판독용 크롭은 원본에서 다시 자른다. 전체 크기 마스크를 만들지 않도록 주변만 자른다.
+    """
+    x, y, w, h = region.bbox
+    inv = 1.0 / scale
+    pad = int(np.hypot(w, h) * inv * (0.5 + margin)) + 4
+    cx, cy = (x + w / 2) * inv, (y + h / 2) * inv
+    H, W = original.shape[:2]
+    x0, y0 = max(0, int(cx - pad)), max(0, int(cy - pad))
+    x1, y1 = min(W, int(cx + pad) + 1), min(H, int(cy + pad) + 1)
+    roi = original[y0:y1, x0:x1]
+    contour = np.round(region.contour.astype(np.float64) * inv - [x0, y0]).astype(np.int32)
+    mask = np.zeros(roi.shape[:2], np.uint8)
+    cv2.drawContours(mask, [contour], -1, 255, thickness=cv2.FILLED)
+    return roi, PillRegion(contour, mask, tuple(int(v) for v in cv2.boundingRect(contour)))
+
+
 def canonical_crop(img: np.ndarray, region: PillRegion, size: int = 224,
                    margin: float = 0.12, rotate: bool = True) -> np.ndarray:
     """알약만 남기고 배경을 회색으로 채운 뒤, 장축을 수평으로 맞춘 정사각 크롭을 만든다."""
