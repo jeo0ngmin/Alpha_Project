@@ -29,8 +29,8 @@ final class PillResults {
         String status = r.path("status").asText();
         if ("NOT_FOUND".equals(status)) {
             String script = "MULTIPLE_PILLS".equals(r.path("reason").asText())
-                    ? "알약이 여러 개 보입니다. 한 개만 놓고 다시 찍어 주세요."
-                    : "사진에서 알약을 찾지 못했습니다. 알약 하나를 단색 바탕에 놓고 다시 찍어 주세요.";
+                    ? "알약이 여러 개 보입니다. 다른 약은 치우고 한 개만 놓고 다시 찍어 주세요."
+                    : "사진에서 알약을 찾지 못했습니다. 알약 하나를 어두운 천이나 종이 위에 놓고 가까이서 다시 찍어 주세요.";
             return new JobView(jobId, PillJobStatus.NOT_FOUND, null, null, List.of(), false, RETAKE, script);
         }
         if (!"COMPLETED".equals(status)) {
