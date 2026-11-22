@@ -304,3 +304,7 @@ def test_exact_imprint_on_untrained_rival_blocks_confidence(tmp_path):
     assert ident.imprint_rival(res, "1") is None  # 맞는 약도 학습했으면 임베딩이 가를 수 있다
     ident.trusted_items = {"1"}
     assert ident.imprint_rival(observe("GG"), "1") is None  # 두 글자는 우연히 맞는 약이 많다
+    # 각인이 정확히 맞는 약은 순위와 상관없이 재비교 후보로 더한다 (이미 비교하는 후보는 빼고)
+    assert [c.item_seq for c in ident.imprint_candidates(res)] == ["2", "3"]
+    assert [c.item_seq for c in ident.imprint_candidates(res, skip=["2"])] == ["3"]
+    assert ident.imprint_candidates(observe("GG")) == []

@@ -45,6 +45,9 @@ REFERENCE_ONLY_BONUS = 0.15
 # AI Hub에 사진이 없는 약을 찍으면 임베딩이 학습한 비슷한 약을 1위로 올려 확신 오답이 났다(처음 보는 약 135쌍 중 3건:
 # 각인 GGZ를 정확히 읽었는데 ggr 약, PG 75 → 다른 회사 PG75). 학습한 약의 확신 표시는 262 → 253으로 줄었다. 2026-11
 RIVAL_MIN_LEN = 3
+# 위와 같은 정확 일치 약은 순위가 낮아도 Claude 재비교에 이 개수까지 더 넣는다 (처음 보는 약 오답 17건 중 5건이
+# 각인을 정확히 읽었는데 정답이 2~8위였다)
+IMPRINT_EXTRA = 3
 
 
 @dataclass
@@ -90,6 +93,8 @@ class Identification:
     # 읽은 각인이 정확히 맞는 품목 번호(self.items 기준)와 품목별 각인 점수. 각인을 충분히 읽지 못했으면 비어 있다
     exact_imprint: list[int] = field(default_factory=list)
     imprint_scores: np.ndarray | None = field(default=None, repr=False)
+    scores: np.ndarray | None = field(default=None, repr=False)
+    parts: dict | None = field(default=None, repr=False)
 
 
 class PillIdentifier:
@@ -229,15 +234,7 @@ class PillIdentifier:
         order = np.argsort(-score, kind="stable")[:topk]
         candidates = []
         for i in order:
-            it = self.items[i]
-            candidates.append(Candidate(
-                item_seq=it["item_seq"], item_name=it.get("item_name") or "",
-                entp_name=it.get("entp_name") or "", score=float(score[i]),
-                parts={k: float(v[i]) for k, v in parts.items()},
-                drug_shape=it["_shape"], colors=", ".join(it["_colors"]),
-                print_front=it.get("print_front") or "", print_back=it.get("print_back") or "",
-                image_url=it.get("item_image") or "",
-            ))
+            candidates.append(self._candidate(i, score, parts))
         top = candidates[0].score if candidates else 0.0
         second = candidates[1].score if len(candidates) > 1 else 0.0
         # 한 면만 각인이 있는 약을 정확히 읽으면 각인 점수가 (1.0 + BOTH_EMPTY) / 2 = 0.9로 기준과 같다.
@@ -250,10 +247,31 @@ class PillIdentifier:
                 imprint_ok or parts0.get("embedding", 0.0) >= LOW_CONF_EMBEDDING - eps)
         else:
             low = top < LOW_CONF_SCORE - eps or (top - second) < LOW_CONF_MARGIN - eps or not imprint_ok
-        res = Identification(obs, candidates, weights, low, exact, parts.get("imprint"))
+        res = Identification(obs, candidates, weights, low, exact, parts.get("imprint"), score, parts)
         if candidates and (not self.is_trusted(candidates[0].item_seq) or self.imprint_rival(res, candidates[0].item_seq)):
             res.low_confidence = True
         return res
+
+    def _candidate(self, i: int, score: np.ndarray, parts: dict) -> Candidate:
+        it = self.items[i]
+        return Candidate(
+            item_seq=it["item_seq"], item_name=it.get("item_name") or "",
+            entp_name=it.get("entp_name") or "", score=float(score[i]),
+            parts={k: float(v[i]) for k, v in parts.items()},
+            drug_shape=it["_shape"], colors=", ".join(it["_colors"]),
+            print_front=it.get("print_front") or "", print_back=it.get("print_back") or "",
+            image_url=it.get("item_image") or "",
+        )
+
+    def imprint_candidates(self, res: Identification, limit: int = IMPRINT_EXTRA, skip=()) -> list[Candidate]:
+        """읽은 각인이 정확히 맞는 약 중 skip(이미 비교할 후보)에 없는 것을 점수 순으로 limit개.
+        AI Hub에 사진이 없는 약은 각인을 정확히 읽어도 학습한 비슷한 약에 밀려 6위 밖으로 나가, Claude 재비교가 정답을 보지 못했다."""
+        if not res.exact_imprint or res.scores is None or limit <= 0:
+            return []
+        skip = set(skip)
+        idx = [i for i in res.exact_imprint if self.items[i]["item_seq"] not in skip]
+        idx.sort(key=lambda i: -res.scores[i])
+        return [self._candidate(i, res.scores, res.parts) for i in idx[:limit]]
 
     def imprint_rival(self, res: Identification, item_seq: str) -> str | None:
         """1위(item_seq)의 각인은 맞지 않는데, 읽은 각인이 정확히 맞는 학습하지 않은 같은 모양의 약이 있으면 그 품목기준코드.

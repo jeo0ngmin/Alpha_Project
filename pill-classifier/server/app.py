@@ -363,17 +363,19 @@ def create_app(db_path=None, model_path=None, index_path=None, detector=None,
                 res = ident.identify(obs, topk, ai)
 
             by_seq = state["by_seq"]
-            candidates = []
-            for c in res.candidates:
+
+            def as_dict(c) -> dict:
                 summary = item_summary(by_seq[c.item_seq])
-                candidates.append({
+                return {
                     "itemSeq": c.item_seq, "itemName": summary["itemName"], "entpName": summary["entpName"],
                     "className": summary["className"], "etcOtcName": summary["etcOtcName"],
                     "itemImageUrl": summary["itemImageUrl"], "score": round(c.score, 4),
                     "scoreBreakdown": {k: round(v, 4) for k, v in c.parts.items()},
                     "description": describe_item(by_seq[c.item_seq]),
                     "hasImage": (state["images"] / f"{c.item_seq}.jpg").is_file(),
-                })
+                }
+
+            candidates = [as_dict(c) for c in res.candidates]
             features = features_payload(obs, set(h))
             # OCR이 읽지 못한 각인은 비전 모델이 읽은 값으로 보여 준다
             features["printFront"] = features["printFront"] or ai_imprints[0]
@@ -382,12 +384,18 @@ def create_app(db_path=None, model_path=None, index_path=None, detector=None,
             # 3) 확신이 없을 때만 Claude에게 상위 후보를 다시 비교시킨다 (비용이 드는 호출)
             low_confidence, reranked = res.low_confidence, False
             if use_ai and pill_vision and needs_rerank(candidates, low_confidence):
+                # 상위 후보에 더해, 읽은 각인이 정확히 맞는데 순위가 밀린 약도 같이 비교시킨다
+                compared = candidates[:RERANK_TOP_N]
+                extra = [as_dict(c) for c in ident.imprint_candidates(res, skip=[c["itemSeq"] for c in compared])]
                 top = [{"itemSeq": c["itemSeq"], "itemName": c["itemName"], "description": c["description"],
                         "image": load_reference_image(state["images"] / f"{c['itemSeq']}.jpg")}
-                       for c in candidates[:RERANK_TOP_N]]
+                       for c in compared + extra]
                 matches = pill_vision.rerank(front_img, back_img, top)
                 if matches is not None:
-                    candidates, low_confidence = apply_rerank(candidates, matches)
+                    listed = {c["itemSeq"] for c in candidates}
+                    pool = candidates + [c for c in extra if c["itemSeq"] not in listed]
+                    candidates, low_confidence = apply_rerank(pool, matches)
+                    candidates = candidates[:topk]
                     reranked = True
             if candidates and (not ident.is_trusted(candidates[0]["itemSeq"])
                                or ident.imprint_rival(res, candidates[0]["itemSeq"])):
