@@ -23,6 +23,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.Medimate">
         <activity
@@ -49,15 +50,6 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".ui.scan.ScanActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.drug.DrugListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.drug.DrugDetailActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.drug.MyDrugsActivity"
             android:exported="false" />
         <activity
@@ -73,6 +65,35 @@
             android:name=".ui.schedule.ScheduleEditActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+
+        <!-- ===== JE 화면 (MM-JE) ===== -->
+        <!-- 로그인 전 시작 화면. 앱 실행은 JM의 SplashActivity가 맡고, 로그인 전이면 여기로 보낸다 -->
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SignupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WithdrawActivity"
+            android:exported="false" />
+        <!-- JE의 약봉투 촬영 화면 (원래 이름 MainActivity) -->
+        <activity
+            android:name=".BagCaptureActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OcrResultActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MedicineDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PillCaptureActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".PillAnalyzingActivity"
+            android:exported="false" />
 
         <receiver
             android:name=".reminder.ReminderReceiver"
@@ -109,7 +130,7 @@
             </intent-filter>
         </activity>
 
-        <!-- 촬영한 사진을 카메라 앱이 앱 캐시에 쓰게 한다 (ui/scan/ScanActivity) -->
+        <!-- 촬영한 사진을 카메라 앱이 앱 캐시에 쓰게 한다 (BagCaptureActivity) -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

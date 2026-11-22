@@ -26,12 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 내 약 목록 (README 10-2 D2). 약 상세 화면의 "내 약에 추가"로 저장한 약을 보여 준다.
+ * 내 약 목록 (README 10-2 D2). 테스트용 임시 화면 — JE 화면이 생기면 교체한다.
+ * 저장은 MyDrugRepository.add (약 상세 화면에 "내 약에 추가" 버튼은 아직 없다).
  * 항목을 누르면 이름·복용법·보관법을 읽어 주고, 지우기 버튼으로 지운다.
  */
 public class MyDrugsActivity extends AppCompatActivity {
 
-    private static final String MSG_EMPTY = "저장한 약이 없어요. 약 상세 화면에서 내 약에 추가를 눌러 주세요.";
+    private static final String MSG_EMPTY = "저장한 약이 없어요.";
     private static final String MSG_REMOVED = "%s, 내 약에서 지웠어요.";
 
     private final MyDrugRepository repository = new FirestoreMyDrugRepository();
@@ -101,10 +102,10 @@ public class MyDrugsActivity extends AppCompatActivity {
     private String sentence(MyDrug drug) {
         StringBuilder sb = new StringBuilder(drug.name).append(". ");
         if (!drug.dosage.isEmpty()) {
-            sb.append(getString(R.string.detail_dosage)).append(". ").append(drug.dosage).append(". ");
+            sb.append("복용법").append(". ").append(drug.dosage).append(". ");
         }
         if (!drug.storage.isEmpty()) {
-            sb.append(getString(R.string.detail_storage)).append(". ").append(drug.storage).append(". ");
+            sb.append("보관법").append(". ").append(drug.storage).append(". ");
         }
         return sb.toString();
     }

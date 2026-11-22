@@ -22,7 +22,8 @@ public class SplashActivity extends AppCompatActivity {
             ProfileSync.ensure(auth.currentUser(), () -> { });
             MedicationRepository.get(this).onAppStarted();
         }
-        Class<?> next = auth.isSignedIn() ? MainActivity.class : LoginActivity.class;
+        // 로그인 전이면 JE의 시작 화면(회원가입·로그인 고르기)으로
+        Class<?> next = auth.isSignedIn() ? MainActivity.class : com.medimate.WelcomeActivity.class;
         startActivity(new Intent(this, next));
         finish();
     }

@@ -13,7 +13,6 @@ import com.medimate.tts.TtsManager;
 import com.medimate.ui.ProfileActivity;
 import com.medimate.ui.drug.MyDrugsActivity;
 import com.medimate.ui.recommend.RecommendChatActivity;
-import com.medimate.ui.scan.ScanActivity;
 import com.medimate.ui.schedule.MedicationScheduleActivity;
 
 /** 메인: 큰 버튼 다섯 개 (약 찍기 / 복약 스케줄 / 내 약 / 영양제 추천 / 내 정보) (README 7-1). */
@@ -34,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
         tts = new TtsManager(this);
         findViewById(R.id.button_scan).setOnClickListener(v ->
-                startActivity(new Intent(this, ScanActivity.class)));
+                startActivity(new Intent(this, BagCaptureActivity.class)));
         findViewById(R.id.button_schedule).setOnClickListener(v ->
                 startActivity(MedicationScheduleActivity.newIntent(this, null)));
         findViewById(R.id.button_my_drugs).setOnClickListener(v ->

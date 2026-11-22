@@ -75,7 +75,7 @@ public class AuthRepository {
         });
     }
 
-    /** 서버 요청에 붙일 Firebase ID 토큰 (server/README.md). 로그인 안 했으면 null. 메인 스레드에서 부르지 않는다 */
+    /** 서버 요청에 붙일 Firebase ID 토큰 (backend/README.md "영양제 챗봇 Claude 중계"). 로그인 안 했으면 null. 메인 스레드에서 부르지 않는다 */
     @Nullable
     @WorkerThread
     public String idTokenBlocking() throws Exception {

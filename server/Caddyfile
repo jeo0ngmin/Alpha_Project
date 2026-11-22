@@ -1,8 +1,0 @@
-{$DOMAIN} {
-	encode gzip
-	reverse_proxy api:8080
-	# 요청 본문·헤더(토큰)는 남기지 않는다. 접속 로그도 끈다.
-	log {
-		output discard
-	}
-}

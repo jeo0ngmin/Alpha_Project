@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            style="@style/MediMate.Title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/gap"
+            android:text="@string/search_title" />
+
+        <include
+            android:id="@+id/filters"
+            layout="@layout/header_pill_search" />
+
+        <!-- 결과는 한 페이지(20개)씩이라 스크롤 뷰 안에서 전부 그려도 된다 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvResults"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMore"
+            style="@style/MediMate.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/search_more"
+            android:visibility="gone" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

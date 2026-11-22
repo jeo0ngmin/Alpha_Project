@@ -1,0 +1,72 @@
+<resources>
+    <!-- [시험용·디버그 전용] 알약·약봉투 시험 화면 문구 -->
+
+    <!-- 홈 -->
+    <string name="home_title">MediMate</string>
+    <string name="home_subtitle">무슨 약인지 모를 때 사진으로 확인해 보세요.</string>
+    <string name="home_identify">알약 사진으로 확인하기</string>
+    <string name="home_search">모양·색으로 약 찾기</string>
+
+    <!-- 촬영 -->
+    <string name="capture_title">알약 확인하기</string>
+    <string name="capture_guide">알약 하나를 어두운 단색 천이나 종이 위에 올려놓고, 위에서 똑바로 찍어 주세요. 글자가 새겨진 면이 앞면입니다.</string>
+    <string name="capture_front">앞면 (필수)</string>
+    <string name="capture_back">뒷면 (선택, 찍으면 더 정확해요)</string>
+    <string name="capture_take_front">앞면 찍기</string>
+    <string name="capture_take_back">뒷면 찍기</string>
+    <string name="capture_pick">사진 고르기</string>
+    <string name="capture_pick_front_desc">앞면 사진을 앨범에서 고르기</string>
+    <string name="capture_pick_back_desc">뒷면 사진을 앨범에서 고르기</string>
+    <string name="capture_front_empty">앞면 사진이 아직 없습니다</string>
+    <string name="capture_back_empty">뒷면 사진이 아직 없습니다</string>
+    <string name="capture_front_ready">앞면 사진</string>
+    <string name="capture_back_ready">뒷면 사진</string>
+    <string name="capture_hints_title">알고 있는 정보 (선택)</string>
+    <string name="capture_hints_desc">직접 입력한 정보는 사진보다 우선해서 찾습니다.</string>
+    <string name="capture_shape">모양</string>
+    <string name="capture_colors">색 (최대 2개)</string>
+    <string name="capture_print">새겨진 글자</string>
+    <string name="capture_identify">알약 확인하기</string>
+    <string name="capture_preparing">사진을 준비하고 있습니다.</string>
+    <string name="capture_front_done">앞면 사진이 준비되었습니다. 뒷면도 찍으면 더 정확합니다. 준비되면 알약 확인하기 버튼을 누르세요.</string>
+    <string name="capture_back_done">뒷면 사진이 준비되었습니다. 알약 확인하기 버튼을 누르세요.</string>
+    <string name="capture_photo_failed">사진을 불러오지 못했습니다. 다시 찍어 주세요.</string>
+    <string name="capture_no_camera">카메라 앱을 열 수 없습니다. 사진 고르기를 이용해 주세요.</string>
+    <string name="capture_color_limit">색은 두 개까지 고를 수 있습니다.</string>
+    <string name="shape_unknown">모름</string>
+
+    <!-- 결과 -->
+    <string name="result_title">확인 결과</string>
+    <string name="result_features">사진 속 알약: %1$s</string>
+    <string name="result_retake">다시 찍기</string>
+    <string name="result_search">직접 찾기</string>
+    <string name="result_retry">다시 시도</string>
+    <string name="result_confirm_title">이 약이 맞나요?</string>
+    <string name="result_confirm_message">%1$s\n%2$s\n\n약 봉투나 설명서의 사진과 꼭 비교해 주세요.</string>
+    <string name="result_confirm_add">맞아요, 내 약에 추가</string>
+    <string name="result_confirm_only">맞아요</string>
+    <string name="result_confirm_no">아니요</string>
+    <string name="result_selected_title">선택했습니다</string>
+    <string name="result_selected_message">%1$s\n\n복용 계획 초안: %2$s\n복용 계획 화면에서 바꿀 수 있습니다.</string>
+    <string name="result_ok">확인</string>
+    <string name="result_no_candidates">비슷한 약을 찾지 못했습니다.</string>
+    <string name="candidate_score">일치도 %1$d%%</string>
+    <string name="candidate_mine">내 약</string>
+    <string name="candidate_desc">%1$d위, %2$s, %3$s, 일치도 %4$d퍼센트%5$s. 두 번 누르면 선택합니다.</string>
+    <string name="candidate_desc_mine">, 이미 내 약에 있음</string>
+
+    <!-- 검색 -->
+    <string name="search_title">모양·색으로 약 찾기</string>
+    <string name="search_colors">색 (여러 개 가능)</string>
+    <string name="search_name">약 이름</string>
+    <string name="search_do">찾기</string>
+    <string name="search_more">더 보기</string>
+    <string name="search_count">%1$d개를 찾았습니다.</string>
+    <string name="search_empty">조건에 맞는 약이 없습니다. 조건을 줄여서 다시 찾아 주세요.</string>
+    <string name="search_loading">찾고 있습니다.</string>
+    <string name="search_item_desc">%1$s, %2$s, %3$s</string>
+    <string name="search_detail">%1$s\n%2$s\n\n모양: %3$s\n색: %4$s\n앞면 글자: %5$s\n분류: %6$s</string>
+    <string name="none">없음</string>
+    <string name="home_bag_test">약봉투 시험</string>
+    <string name="home_plan_test">내 복약 일정 (시험)</string>
+</resources>

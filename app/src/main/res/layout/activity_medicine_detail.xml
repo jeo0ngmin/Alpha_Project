@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="32dp">
+
+
+        <!-- ========================= -->
+        <!-- 상단 제목 영역 -->
+        <!-- ========================= -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- 뒤로가기 -->
+            <ImageButton
+                android:id="@+id/btn_back"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="뒤로가기"
+                android:padding="12dp"
+                android:src="@drawable/ic_back"
+                app:tint="@color/medimate_icon_green" />
+
+            <!-- 약 이름 -->
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="엘도비캡슐"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+
+        <!-- ========================= -->
+        <!-- 약 대표 카드 -->
+        <!-- ========================= -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_medicine"
+            android:layout_width="match_parent"
+            android:layout_height="245dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="22dp"
+            android:layout_marginEnd="32dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <!-- 캡슐 원형 배경 -->
+                <FrameLayout
+                    android:layout_width="116dp"
+                    android:layout_height="116dp"
+                    android:background="@drawable/bg_icon_circle">
+
+                    <ImageView
+                        android:id="@+id/img_capsule"
+                        android:layout_width="70dp"
+                        android:layout_height="70dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="약 아이콘"
+                        android:src="@drawable/ic_capsule" />
+
+                </FrameLayout>
+
+                <!-- 약 이름 -->
+                <TextView
+                    android:id="@+id/tv_medicine_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:text="엘도비캡슐"
+                    android:textColor="@color/text_primary"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- 구분선 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="22dp"
+            android:layout_marginEnd="32dp"
+            android:layout_marginBottom="22dp"
+            android:background="#E8E8E8" />
+
+
+        <!-- ========================= -->
+        <!-- 약 성분 -->
+        <!-- ========================= -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_ingredient"
+            android:layout_width="match_parent"
+            android:layout_height="94dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- 아이콘 -->
+                <TextView
+                    android:id="@+id/icon_ingredient"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:gravity="center"
+                    android:text="▧"
+                    android:textColor="@color/medimate_icon_green"
+                    android:textSize="32sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:layout_marginStart="28dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="18dp"
+                    android:text="약 성분"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toEndOf="@id/icon_ingredient"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="22dp"
+                    android:contentDescription="이동"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/medimate_icon_green"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- ========================= -->
+        <!-- 약 설명 -->
+        <!-- ========================= -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_description"
+            android:layout_width="match_parent"
+            android:layout_height="94dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginEnd="32dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/icon_description"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="28dp"
+                    android:gravity="center"
+                    android:text="ⓘ"
+                    android:textColor="@color/medimate_icon_green"
+                    android:textSize="30sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="18dp"
+                    android:text="약 설명"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toEndOf="@id/icon_description"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="22dp"
+                    android:contentDescription="이동"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/medimate_icon_green"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- ========================= -->
+        <!-- 복용방법 -->
+        <!-- ========================= -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_dosage"
+            android:layout_width="match_parent"
+            android:layout_height="94dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginEnd="32dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/icon_dosage"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="28dp"
+                    android:gravity="center"
+                    android:text="○"
+                    android:textColor="@color/medimate_icon_green"
+                    android:textSize="36sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="18dp"
+                    android:text="복용방법"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toEndOf="@id/icon_dosage"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="22dp"
+                    android:contentDescription="이동"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/medimate_icon_green"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- ========================= -->
+        <!-- 보관방법 -->
+        <!-- ========================= -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_storage"
+            android:layout_width="match_parent"
+            android:layout_height="94dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginEnd="32dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/icon_storage"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="28dp"
+                    android:gravity="center"
+                    android:text="⬡"
+                    android:textColor="@color/medimate_icon_green"
+                    android:textSize="34sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="18dp"
+                    android:text="보관방법"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toEndOf="@id/icon_storage"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="22dp"
+                    android:contentDescription="이동"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/medimate_icon_green"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- 구분선 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="22dp"
+            android:layout_marginEnd="32dp"
+            android:layout_marginBottom="22dp"
+            android:background="#E8E8E8" />
+
+
+        <!-- ========================= -->
+        <!-- 주의사항 -->
+        <!-- ========================= -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_warning"
+            android:layout_width="match_parent"
+            android:layout_height="94dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="0dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:background="@color/medimate_green"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <!-- 주의 아이콘 -->
+                <TextView
+                    android:id="@+id/icon_warning"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="28dp"
+                    android:gravity="center"
+                    android:text="⚠"
+                    android:textColor="@color/white"
+                    android:textSize="32sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="18dp"
+                    android:text="주의사항"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toEndOf="@id/icon_warning"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="22dp"
+                    android:contentDescription="이동"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/white"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

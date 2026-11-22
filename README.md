@@ -127,8 +127,9 @@ OPENAI_API_KEY=sk-...
 # Anthropic Claude (영양제 챗봇의 증상 파악, 8-6)
 CLAUDE_API_KEY=sk-ant-...
 
-# 우리 서버 주소 (server/README.md). 넣으면 Claude 요청을 서버가 대신 보내고 위 키는 쓰지 않는다
-SERVER_BASE_URL=https://1-2-3-4.sslip.io
+# Claude 요청을 대신 보낼 backend 주소 (backend/README.md). 넣으면 위 CLAUDE_API_KEY는 쓰지 않는다
+# 에뮬레이터 + PC의 backend: http://10.0.2.2:8080
+SERVER_BASE_URL=
 
 # 공공데이터포털 일반 인증키 (64자리, 3-4 참고)
 DATA_GO_KR_SERVICE_KEY=...
@@ -757,7 +758,7 @@ com.medimate.ui.recommend
 | 규칙 표 최소 5개 + 챗봇 답변 + 낭독 | 규칙 표 전체 작성 (출처 포함) |
 | — | 복용 약과의 상호작용 주의 표시 (8-8에서 시작 자료 규칙으로 디버그 빌드 시연 중, 전문가 검토 필요) |
 | — | 건강기능식품 API로 실제 제품 표시 (활용신청 후 실제 응답으로 모델 작성) |
-| — | Claude 호출을 서버로 옮겨 앱에서 키 제거 (8-6) — 2026-11-22 서버 코드 준비됨(`server/`), 서버 구매 후 배포·확인 대기 |
+| — | Claude 호출을 서버로 옮겨 앱에서 키 제거 (8-6) — 2026-11-22 `backend/`에 중계 추가(`POST /claude/v1/messages`), 앱 연결 확인 대기 |
 | — | 응급 증상 안내 (8-8에서 시작 자료 규칙으로 디버그 빌드 시연 중, 전문가 검토 필요) |
 
 ### 8-6. Claude 증상 파악 규격
@@ -771,7 +772,7 @@ com.medimate.ui.recommend
 | 생각 깊이 | `effort: low` (분류 작업이라 빠른 응답 우선) |
 | 출력 | 구조화된 출력(`output_config.format`, JSON 스키마). 고민 이름·병원 안내·응급 분류·연결 대상은 목록을 `enum`으로 넣어 **표에 없는 이름은 나올 수 없게** 합니다 |
 | 거절 대비 | `fallbacks: "default"` (베타 `server-side-fallback-2026-07-01`). 그래도 거절되면 "다시 말씀해 주세요"로 안내합니다 |
-| 키 | `SERVER_BASE_URL`이 있으면 **서버가 키를 붙여 대신 호출** (앱은 Firebase ID 토큰만 붙임, `server/README.md`). 비어 있으면 `BuildConfig.CLAUDE_API_KEY`로 직접 호출 (3-3) |
+| 키 | `SERVER_BASE_URL`이 있으면 **서버가 키를 붙여 대신 호출** (앱은 Firebase ID 토큰만 붙임, `backend/README.md`의 "영양제 챗봇 Claude 중계"). 비어 있으면 `BuildConfig.CLAUDE_API_KEY`로 직접 호출 (3-3) |
 
 **보내는 것**: 시스템 프롬프트(역할·규칙·목록) + 이번 상담의 대화. 고민 목록에는 이름과 함께 **그 고민이 다루는 범위**(규칙 표 `reason`을 이어 붙인 것, `RecommendEngine.concernScopes()`)를 넣어, 이름만 보고 넓혀 고르지 않게 합니다. 사용자 말은 `user`, 봇의 질문은 `assistant`로 넣습니다.
 

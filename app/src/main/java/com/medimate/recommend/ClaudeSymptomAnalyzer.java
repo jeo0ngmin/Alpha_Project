@@ -32,7 +32,7 @@ import java.util.concurrent.Executors;
  * SymptomAnalyzer의 Claude 구현 (README 8-6).
  * 고를 수 있는 이름은 모두 JSON 스키마의 enum으로 묶어 표에 없는 이름이 나오지 않게 한다.
  * 대화 본문은 환자 정보라서 로그에 남기지 않는다.
- * 서버 주소(ServerConfig)가 있으면 서버가 키를 들고 대신 보내고(server/README.md), 없으면 앱의 키로 직접 보낸다.
+ * 서버 주소(ServerConfig)가 있으면 backend가 키를 들고 대신 보내고(backend/README.md), 없으면 앱의 키로 직접 보낸다.
  */
 public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
 

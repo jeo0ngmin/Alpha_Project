@@ -31,6 +31,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // 백엔드 주소(알약·약봉투 API). 실제 폰은 gradle.properties에 medimate.apiBaseUrl=http://<PC IP>:8080/
+        buildConfigField("String", "API_BASE_URL", "\"${providers.gradleProperty("medimate.apiBaseUrl").orElse("http://10.0.2.2:8080/").get()}\"")
+
         listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY",
                "KAKAO_NATIVE_APP_KEY", "CLAUDE_API_KEY", "SERVER_BASE_URL").forEach { key ->
             buildConfigField("String", key, "\"${secrets.getProperty(key, "")}\"")
@@ -78,8 +81,11 @@ dependencies {
     implementation(libs.ucrop)
     implementation(libs.mlkit.text.recognition.korean)
     implementation(libs.work.runtime)
+    implementation(libs.exifinterface)
+    implementation(libs.glide)
 
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
 

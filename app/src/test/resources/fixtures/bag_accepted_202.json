@@ -1,0 +1,1 @@
+{"success":true,"data":{"jobId":"rcg_01M6XHH4G9D3QZYBFBMKF81T6Z","type":"MEDICATION_BAG","status":"PROCESSING","estimatedSeconds":20,"pollAfterMs":2000,"ttsMessage":"약봉투를 읽고 있습니다. 이십 초쯤 걸립니다. 잠시만 기다려 주세요."},"timestamp":"2026-11-05T09:00:00+09:00","requestId":"01M6XHH49QV24X2Q96WPX2ZZBY"}

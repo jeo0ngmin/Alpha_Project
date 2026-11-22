@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--약 하나의 카드 디자인을 정의하는 파일-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="120dp"
+    android:layout_marginBottom="16dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/card_border"
+    app:strokeWidth="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- 캡슐 아이콘 배경 -->
+        <FrameLayout
+            android:id="@+id/capsule_icon_container"
+            android:layout_width="82dp"
+            android:layout_height="82dp"
+            android:layout_marginStart="18dp"
+            android:background="@drawable/bg_icon_circle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:id="@+id/img_capsule"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_capsule"
+                android:contentDescription="약 아이콘" />
+
+        </FrameLayout>
+
+        <!-- 약 이름 -->
+        <TextView
+            android:id="@+id/tv_medicine_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:text="엘도비캡슐"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/capsule_icon_container"
+            app:layout_constraintTop_toTopOf="@id/capsule_icon_container"
+            app:layout_constraintBottom_toTopOf="@id/tv_medicine_info"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <!-- 복용 정보 -->
+        <TextView
+            android:id="@+id/tv_medicine_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="1회 1정"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            app:layout_constraintStart_toStartOf="@id/tv_medicine_name"
+            app:layout_constraintTop_toBottomOf="@id/tv_medicine_name"
+            app:layout_constraintBottom_toBottomOf="@id/capsule_icon_container" />
+
+        <!-- 오른쪽 화살표 -->
+        <ImageView
+            android:id="@+id/img_arrow"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/ic_arrow_right"
+            android:contentDescription="상세 보기"
+            app:tint="@color/medimate_icon_green"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

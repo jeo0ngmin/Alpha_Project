@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 검색 조건. 결과 목록과 함께 스크롤되도록 RecyclerView의 첫 줄로 붙인다 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/gap">
+
+    <TextView
+        style="@style/MediMate.Body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:labelFor="@+id/spShape"
+        android:text="@string/capture_shape" />
+
+    <Spinner
+        android:id="@+id/spShape"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/touch_target" />
+
+    <TextView
+        style="@style/MediMate.Body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:text="@string/search_colors" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/cgColors"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:hint="@string/capture_print">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPrint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapCharacters|textNoSuggestions"
+            android:maxLength="30"
+            android:textSize="@dimen/text_body" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="@string/search_name">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:textSize="@dimen/text_body" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDoSearch"
+        style="@style/MediMate.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:text="@string/search_do" />
+
+    <TextView
+        android:id="@+id/tvSearchStatus"
+        style="@style/MediMate.Body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:accessibilityLiveRegion="polite" />
+</LinearLayout>

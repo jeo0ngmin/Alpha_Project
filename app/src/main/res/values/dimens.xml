@@ -1,0 +1,10 @@
+<resources>
+    <!-- 고령자·저시력 사용자를 위해 기본보다 크게 잡는다 -->
+    <dimen name="screen_padding">20dp</dimen>
+    <dimen name="gap">12dp</dimen>
+    <dimen name="touch_target">56dp</dimen>
+    <dimen name="preview_height">180dp</dimen>
+    <dimen name="text_title">26sp</dimen>
+    <dimen name="text_heading">20sp</dimen>
+    <dimen name="text_body">18sp</dimen>
+</resources>

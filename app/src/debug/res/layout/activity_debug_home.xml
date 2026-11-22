@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="@dimen/screen_padding"
+    tools:context="com.medimate.debugtools.DebugHomeActivity">
+
+    <TextView
+        style="@style/MediMate.Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/home_title" />
+
+    <TextView
+        style="@style/MediMate.Body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:text="@string/home_subtitle" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnIdentifyPill"
+        style="@style/MediMate.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:minHeight="72dp"
+        android:text="@string/home_identify" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSearchPill"
+        style="@style/MediMate.Button.Outlined"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:text="@string/home_search" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnBagTest"
+        style="@style/MediMate.Button.Outlined"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:text="@string/home_bag_test" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPlanTest"
+        style="@style/MediMate.Button.Outlined"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/gap"
+        android:text="@string/home_plan_test" />
+
+</LinearLayout>
