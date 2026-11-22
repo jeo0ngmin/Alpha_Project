@@ -772,7 +772,7 @@ com.medimate.ui.recommend
 | 생각 깊이 | `effort: low` (분류 작업이라 빠른 응답 우선) |
 | 출력 | 구조화된 출력(`output_config.format`, JSON 스키마). 고민 이름·병원 안내·응급 분류·연결 대상은 목록을 `enum`으로 넣어 **표에 없는 이름은 나올 수 없게** 합니다 |
 | 거절 대비 | `fallbacks: "default"` (베타 `server-side-fallback-2026-07-01`). 그래도 거절되면 "다시 말씀해 주세요"로 안내합니다 |
-| 키 | `SERVER_BASE_URL`이 있으면 **서버가 키를 붙여 대신 호출** (앱은 Firebase ID 토큰만 붙임, `backend/README.md`의 "영양제 챗봇 Claude 중계"). 비어 있으면 `BuildConfig.CLAUDE_API_KEY`로 직접 호출 (3-3) |
+| 키 | `SERVER_BASE_URL`이 있으면 **backend가 키를 붙여 대신 호출** (backend에 Bedrock API 키가 있으면 Amazon Bedrock으로, 없으면 Anthropic으로) (앱은 Firebase ID 토큰만 붙임, `backend/README.md`의 "영양제 챗봇 Claude 중계"). 비어 있으면 `BuildConfig.CLAUDE_API_KEY`로 직접 호출 (3-3) |
 
 **보내는 것**: 시스템 프롬프트(역할·규칙·목록) + 이번 상담의 대화. 고민 목록에는 이름과 함께 **그 고민이 다루는 범위**(규칙 표 `reason`을 이어 붙인 것, `RecommendEngine.concernScopes()`)를 넣어, 이름만 보고 넓혀 고르지 않게 합니다. 사용자 말은 `user`, 봇의 질문은 `assistant`로 넣습니다.
 

@@ -58,6 +58,12 @@ medimate:
     allowed-models: ${CLAUDE_ALLOWED_MODELS:claude-opus-5-5}
     max-tokens: ${CLAUDE_MAX_TOKENS:4096}
     hourly: ${MEDIMATE_HOURLY_CLAUDE:60}
+    bedrock:
+      # Bedrock API 키. 넣으면 Anthropic 대신 Amazon Bedrock(bedrock-mantle)으로 보낸다. 비우면 Anthropic 키를 쓴다.
+      bearer-token: ${AWS_BEARER_TOKEN_BEDROCK:}
+      region: ${BEDROCK_REGION:ap-northeast-2}
+      # 비우면 앱이 보낸 모델 앞에 "anthropic."을 붙인다 (anthropic.claude-opus-5-5)
+      model-id: ${BEDROCK_MODEL_ID:}
   auth:
     # Firebase 프로젝트 ID. 넣으면 앱이 보낸 Firebase 로그인 토큰을 확인한다. 비우면 로그인 없이 받는다.
     firebase-project-id: ${FIREBASE_PROJECT_ID:}

@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.medimate.server.common.ApiException;
 import com.medimate.server.common.FirebaseAuthFilter;
 import com.medimate.server.common.Limits;
@@ -42,6 +43,8 @@ import jakarta.servlet.http.HttpServletRequest;
  * 허용한 모델·최대 토큰 안에서만, 사용자(또는 IP)당 시간당 횟수 제한을 두고 서버의 키로 보낸다.
  * 앱이 보낸 x-api-key는 버린다. 대화 본문은 환자 정보라서 로그에 남기지 않는다.
  * 로그인 확인(FIREBASE_PROJECT_ID)이 꺼져 있으면 이 PC(에뮬레이터 포함)에서 온 요청만 받는다.
+ * Bedrock API 키(AWS_BEARER_TOKEN_BEDROCK)가 있으면 Anthropic 대신 Claude in Amazon Bedrock(bedrock-mantle)으로 보낸다.
+ * Bedrock은 요청 형식이 같고, 모델 이름에 "anthropic."이 붙으며, 서버 쪽 fallbacks를 지원하지 않아 빼고 보낸다.
  */
 @RestController
 public class ClaudeProxyController {
@@ -55,6 +58,8 @@ public class ClaudeProxyController {
     private final Limits limits;
     private final boolean authEnabled;
     private final String apiKey;
+    /** Bedrock을 쓰면 값이 있다. 없으면 Anthropic */
+    private final MedimateProperties.Bedrock bedrock;
     private final Set<String> allowedModels;
     private final int maxTokens;
     private final int hourly;
@@ -63,24 +68,31 @@ public class ClaudeProxyController {
 
     @Autowired
     public ClaudeProxyController(MedimateProperties props, ObjectMapper mapper, Limits limits) {
-        this(props, mapper, limits, DEFAULT_ENDPOINT);
+        this(props, mapper, limits, null);
     }
 
-    /** endpoint는 테스트에서 가짜 Anthropic 서버로 바꿀 때만 쓴다 */
+    /** endpoint는 테스트에서 가짜 서버로 바꿀 때만 쓴다. null이면 Anthropic 또는 Bedrock 주소 */
     ClaudeProxyController(MedimateProperties props, ObjectMapper mapper, Limits limits, URI endpoint) {
         MedimateProperties.Claude cfg = props.claude();
         this.mapper = mapper;
         this.limits = limits;
         this.authEnabled = props.auth() != null && props.auth().enabled();
-        this.apiKey = cfg == null ? null : resolveKey(cfg.apiKey(), cfg.apiKeyFile());
+        this.bedrock = cfg != null && cfg.bedrock() != null && cfg.bedrock().enabled() ? cfg.bedrock() : null;
+        this.apiKey = bedrock != null ? bedrock.bearerToken().trim()
+                : cfg == null ? null : resolveKey(cfg.apiKey(), cfg.apiKeyFile());
         this.allowedModels = cfg == null || cfg.allowedModels() == null ? Set.of()
                 : Arrays.stream(cfg.allowedModels().split(",")).map(String::trim)
                         .filter(s -> !s.isEmpty()).collect(Collectors.toSet());
         this.maxTokens = cfg == null ? 0 : cfg.maxTokens();
         this.hourly = cfg == null ? 0 : cfg.hourly();
-        this.endpoint = endpoint;
+        this.endpoint = endpoint != null ? endpoint
+                : bedrock != null ? URI.create("https://bedrock-mantle." + bedrock.region().trim()
+                        + ".api.aws/anthropic/v1/messages")
+                : DEFAULT_ENDPOINT;
         if (apiKey == null) {
             log.info("Claude 키 없음: 챗봇 중계(/claude/v1/messages)는 503을 돌려줍니다.");
+        } else {
+            log.info("챗봇 중계: {}", bedrock != null ? "Amazon Bedrock (" + bedrock.region() + ")" : "Anthropic");
         }
     }
 
@@ -96,7 +108,9 @@ public class ClaudeProxyController {
             throw ApiException.retryable(HttpStatus.SERVICE_UNAVAILABLE, "MM-CLD-5030",
                     "Claude 키가 설정되지 않았습니다.", TTS_UNAVAILABLE);
         }
-        validate(body);
+        JsonNode root = validate(body);
+        String outBody = bedrock != null ? toBedrock(root) : body;
+        String outBeta = bedrock != null ? withoutFallbackBeta(beta) : beta;
         limits.rate("claude:" + FirebaseAuthFilter.clientKey(request), hourly, Duration.ofHours(1));
 
         HttpRequest.Builder req = HttpRequest.newBuilder(endpoint)
@@ -104,9 +118,9 @@ public class ClaudeProxyController {
                 .header("content-type", "application/json")
                 .header("x-api-key", apiKey)
                 .header("anthropic-version", version == null || version.isBlank() ? DEFAULT_VERSION : version)
-                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
-        if (beta != null && !beta.isBlank()) {
-            req.header("anthropic-beta", beta);
+                .POST(HttpRequest.BodyPublishers.ofString(outBody, StandardCharsets.UTF_8));
+        if (outBeta != null && !outBeta.isBlank()) {
+            req.header("anthropic-beta", outBeta);
         }
         try {
             HttpResponse<String> res = http.send(req.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -126,8 +140,34 @@ public class ClaudeProxyController {
         }
     }
 
+    /** Bedrock 모델 이름으로 바꾸고, Bedrock이 지원하지 않는 서버 쪽 fallbacks를 뺀다 */
+    String toBedrock(JsonNode root) {
+        ObjectNode copy = root.deepCopy();
+        String model = copy.path("model").asText("");
+        String id = bedrock.modelId() != null && !bedrock.modelId().isBlank() ? bedrock.modelId().trim()
+                : model.startsWith("anthropic.") ? model : "anthropic." + model;
+        copy.put("model", id);
+        copy.remove("fallbacks");
+        try {
+            return mapper.writeValueAsString(copy);
+        } catch (JsonProcessingException e) {
+            throw ApiException.badRequest("body", "JSON으로 바꾸지 못했습니다.");
+        }
+    }
+
+    /** 서버 쪽 fallbacks 베타(server-side-fallback-*)만 빼고 나머지 베타는 그대로. 남는 게 없으면 null */
+    static String withoutFallbackBeta(String beta) {
+        if (beta == null) {
+            return null;
+        }
+        String kept = Arrays.stream(beta.split(",")).map(String::trim)
+                .filter(b -> !b.isEmpty() && !b.startsWith("server-side-fallback"))
+                .collect(Collectors.joining(","));
+        return kept.isEmpty() ? null : kept;
+    }
+
     /** 스트리밍 없이, 허용한 모델과 최대 토큰 안에서만 */
-    void validate(String body) {
+    JsonNode validate(String body) {
         JsonNode root;
         try {
             root = mapper.readTree(body);
@@ -147,6 +187,7 @@ public class ClaudeProxyController {
         if (root.path("stream").asBoolean(false)) {
             throw ApiException.forbidden("스트리밍은 지원하지 않습니다.");
         }
+        return root;
     }
 
     static boolean isLocal(String address) {

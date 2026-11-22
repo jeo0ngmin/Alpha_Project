@@ -928,7 +928,7 @@
           "Chatbot"
         ],
         "summary": "영양제 챗봇 Claude 호출 중계",
-        "description": "앱의 anthropic-java SDK가 baseUrl을 `{서버}/claude`로 두면 Anthropic Messages API 요청 본문이 그대로 온다. 서버가 자기 키(`CLAUDE_API_KEY` 또는 `pill-classifier/.anthropic_key`)를 붙여 보내고 Anthropic 응답을 그대로 돌려준다(오류 포함).\n허용한 모델(`CLAUDE_ALLOWED_MODELS`, 기본 `claude-opus-5-5`)과 최대 토큰(`CLAUDE_MAX_TOKENS`, 기본 4096) 안에서만, 스트리밍 없이 보낸다. 사용자(또는 IP)당 시간당 `MEDIMATE_HOURLY_CLAUDE`(기본 60)회. 로그인 확인이 꺼져 있으면 이 PC(에뮬레이터 포함)에서 온 요청만 받는다.\n",
+        "description": "앱의 anthropic-java SDK가 baseUrl을 `{서버}/claude`로 두면 Anthropic Messages API 요청 본문이 그대로 온다. 서버가 자기 키(`CLAUDE_API_KEY` 또는 `pill-classifier/.anthropic_key`)를 붙여 보내고 Anthropic 응답을 그대로 돌려준다(오류 포함).\n허용한 모델(`CLAUDE_ALLOWED_MODELS`, 기본 `claude-opus-5-5`)과 최대 토큰(`CLAUDE_MAX_TOKENS`, 기본 4096) 안에서만, 스트리밍 없이 보낸다. 사용자(또는 IP)당 시간당 `MEDIMATE_HOURLY_CLAUDE`(기본 60)회. 로그인 확인이 꺼져 있으면 이 PC(에뮬레이터 포함)에서 온 요청만 받는다.\n`AWS_BEARER_TOKEN_BEDROCK`가 있으면 Anthropic 대신 Claude in Amazon Bedrock(bedrock-mantle, `BEDROCK_REGION`)으로 보낸다. 이때 모델은 `anthropic.` 접두사가 붙고(`BEDROCK_MODEL_ID`로 지정 가능), Bedrock이 지원하지 않는 `fallbacks`와 `server-side-fallback-*` 베타는 빼고 보낸다.\n",
         "requestBody": {
           "required": true,
           "content": {

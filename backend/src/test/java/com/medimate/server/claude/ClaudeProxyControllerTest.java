@@ -61,7 +61,14 @@ class ClaudeProxyControllerTest {
     private ClaudeProxyController controller(String key, String firebaseProject, int hourly) {
         MedimateProperties props = new MedimateProperties(null, null, null, null,
                 new MedimateProperties.Auth(firebaseProject, null),
-                new MedimateProperties.Claude(key, null, "claude-opus-5-5", 4096, hourly));
+                new MedimateProperties.Claude(key, null, "claude-opus-5-5", 4096, hourly, null));
+        return new ClaudeProxyController(props, new ObjectMapper(), new Limits(), endpoint);
+    }
+
+    private ClaudeProxyController bedrockController(String modelId) {
+        MedimateProperties props = new MedimateProperties(null, null, null, null, null,
+                new MedimateProperties.Claude("anthropic-key", null, "claude-opus-5-5", 4096, 60,
+                        new MedimateProperties.Bedrock("bedrock-token", "ap-northeast-2", modelId)));
         return new ClaudeProxyController(props, new ObjectMapper(), new Limits(), endpoint);
     }
 
@@ -128,5 +135,42 @@ class ClaudeProxyControllerTest {
         assertThat(ClaudeProxyController.resolveKey("", file.toString())).isEqualTo("sk-plain");
         assertThat(ClaudeProxyController.resolveKey(" env ", file.toString())).isEqualTo("env");
         assertThat(ClaudeProxyController.resolveKey(null, dir.resolve("없음").toString())).isNull();
+    }
+
+    @Test
+    void bedrockUsesBedrockKeyPrefixedModelAndDropsFallbacks() throws IOException {
+        String body = "{\"model\":\"claude-opus-5-5\",\"max_tokens\":100,\"fallbacks\":\"default\","
+                + "\"output_config\":{\"effort\":\"low\"},\"messages\":[{\"role\":\"user\",\"content\":\"피곤해요\"}]}";
+        ResponseEntity<String> res = bedrockController(null).messages(request("127.0.0.1"), null,
+                "server-side-fallback-2026-07-01, other-beta", body);
+
+        assertThat(res.getStatusCode().value()).isEqualTo(200);
+        assertThat(seenKey.get()).isEqualTo("bedrock-token");
+        assertThat(seenBeta.get()).isEqualTo("other-beta");
+        var sent = new ObjectMapper().readTree(seenBody.get());
+        assertThat(sent.path("model").asText()).isEqualTo("anthropic.claude-opus-5-5");
+        assertThat(sent.has("fallbacks")).isFalse();
+        assertThat(sent.path("output_config").path("effort").asText()).isEqualTo("low");
+        assertThat(sent.path("messages").get(0).path("content").asText()).isEqualTo("피곤해요");
+    }
+
+    @Test
+    void bedrockModelIdOverrideAndBetaFilter() throws IOException {
+        bedrockController("global.anthropic.claude-opus-5-5").messages(request("127.0.0.1"), null,
+                "server-side-fallback-2026-07-01", OK_BODY);
+        assertThat(new ObjectMapper().readTree(seenBody.get()).path("model").asText())
+                .isEqualTo("global.anthropic.claude-opus-5-5");
+        assertThat(seenBeta.get()).isNull();
+        assertThat(ClaudeProxyController.withoutFallbackBeta(null)).isNull();
+    }
+
+    @Test
+    void bedrockEndpointUsesRegion() {
+        MedimateProperties props = new MedimateProperties(null, null, null, null, null,
+                new MedimateProperties.Claude(null, null, "claude-opus-5-5", 4096, 60,
+                        new MedimateProperties.Bedrock("t", "ap-northeast-2", null)));
+        ClaudeProxyController c = new ClaudeProxyController(props, new ObjectMapper(), new Limits());
+        assertThat(c).extracting("endpoint").hasToString(
+                "https://bedrock-mantle.ap-northeast-2.api.aws/anthropic/v1/messages");
     }
 }

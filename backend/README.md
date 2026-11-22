@@ -93,6 +93,21 @@ backend\run_backend.bat
 - **로그인:** `FIREBASE_PROJECT_ID`를 설정하면 다른 API처럼 로그인 토큰이 필요합니다. 설정하지 않으면 **이 PC(에뮬레이터 포함)에서 온 요청만** 받습니다. 키를 외부에 열어 두지 않기 위해서입니다.
 - 앱이 보낸 `x-api-key`는 버리고, Anthropic의 응답(오류 포함)을 그대로 돌려줍니다. 대화 본문은 로그에 남기지 않습니다.
 
+### Amazon Bedrock으로 보내기
+
+Bedrock API 키를 넣으면 Anthropic 대신 **Claude in Amazon Bedrock**(`https://bedrock-mantle.{리전}.api.aws/anthropic/v1/messages`)으로 보냅니다. 키만 넣으면 되고 앱은 바꾸지 않습니다.
+
+| 환경변수 | 기본값 | 설명 |
+|---|---|---|
+| `AWS_BEARER_TOKEN_BEDROCK` | 없음 | Bedrock API 키. 넣으면 Bedrock을 씁니다. 비우면 Anthropic 키(`CLAUDE_API_KEY`)를 씁니다. |
+| `BEDROCK_REGION` | `ap-northeast-2` (서울) | 키를 만든 리전 (단기 키는 만든 리전에서만 동작) |
+| `BEDROCK_MODEL_ID` | 비움 | 비우면 앱이 보낸 모델 앞에 `anthropic.`을 붙입니다 (`anthropic.claude-opus-5-5`). |
+
+- Bedrock은 서버 쪽 `fallbacks`를 지원하지 않아서, 앱이 보낸 `fallbacks`와 `server-side-fallback-*` 베타를 빼고 보냅니다. 거절(`stop_reason: refusal`)되면 앱이 "다시 말씀해 주세요"로 안내합니다.
+- 구조화 출력(`output_config.format`)과 `effort`는 Bedrock에서도 그대로 동작합니다.
+- **AWS에서 할 일:** Bedrock 콘솔에서 Claude Opus 5.5 모델 접근 신청 → API 키 발급(키 주인 IAM에 `bedrock-mantle:CallWithBearerToken`, `bedrock-mantle:CreateInference` 권한) → 서버 환경변수 `AWS_BEARER_TOKEN_BEDROCK`에 넣고 backend 재시작. 시작 로그에 `챗봇 중계: Amazon Bedrock (ap-northeast-2)`가 보이면 켜진 것입니다.
+- 2026-11-22 가짜 키로 서울 Bedrock 주소에 보내 `401 Invalid bearer token` 응답을 확인했습니다(주소·인증 방식 확인). 실제 키로는 아직 확인하지 못했습니다.
+
 ## 로그인 (Firebase)
 
 `FIREBASE_PROJECT_ID`를 설정하면 위 API는 Firebase 로그인 토큰이 있어야 쓸 수 있습니다. 서명 링크로 여는 사진과 `/docs`는 예외입니다.
