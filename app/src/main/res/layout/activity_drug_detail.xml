@@ -39,6 +39,15 @@
             android:text="@string/detail_add_schedule"
             android:textSize="20sp" />
 
+        <Button
+            android:id="@+id/button_add_my_drug"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="64dp"
+            android:text="@string/detail_add_my_drug"
+            android:textSize="20sp" />
+
         <include
             android:id="@+id/section_dosage"
             layout="@layout/section_drug_detail" />

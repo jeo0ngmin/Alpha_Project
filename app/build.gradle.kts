@@ -32,7 +32,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         listOf("CLOVA_OCR_INVOKE_URL", "CLOVA_OCR_SECRET", "OPENAI_API_KEY", "DATA_GO_KR_SERVICE_KEY",
-               "KAKAO_NATIVE_APP_KEY", "CLAUDE_API_KEY").forEach { key ->
+               "KAKAO_NATIVE_APP_KEY", "CLAUDE_API_KEY", "SERVER_BASE_URL").forEach { key ->
             buildConfigField("String", key, "\"${secrets.getProperty(key, "")}\"")
         }
         // 카카오 AuthCodeHandlerActivity의 scheme(kakao{키})에 쓴다 (README 7-5)

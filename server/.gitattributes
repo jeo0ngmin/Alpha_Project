@@ -1,0 +1,6 @@
+# 리눅스 서버에서 실행하는 파일은 항상 LF
+gradlew text eol=lf
+*.sh text eol=lf
+Caddyfile text eol=lf
+*.yml text eol=lf
+.env.example text eol=lf

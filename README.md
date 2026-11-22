@@ -127,6 +127,9 @@ OPENAI_API_KEY=sk-...
 # Anthropic Claude (영양제 챗봇의 증상 파악, 8-6)
 CLAUDE_API_KEY=sk-ant-...
 
+# 우리 서버 주소 (server/README.md). 넣으면 Claude 요청을 서버가 대신 보내고 위 키는 쓰지 않는다
+SERVER_BASE_URL=https://1-2-3-4.sslip.io
+
 # 공공데이터포털 일반 인증키 (64자리, 3-4 참고)
 DATA_GO_KR_SERVICE_KEY=...
 
@@ -620,7 +623,7 @@ Gradle: 플러그인 `com.google.gms.google-services`, 의존성 `firebase-bom`,
 ### 7-6. 공통
 
 - 로그아웃: `FirebaseAuth.signOut()` + 카카오 `UserApiClient.logout()`
-- 탈퇴: 계정 삭제 + Firestore의 내 데이터 삭제 (2차)
+- 탈퇴 (2026-11-22 구현, 내 정보 화면): 확인 창(낭독) → `users/{uid}` 아래 전체 삭제(`UserRepository.deleteAllData`) → Firebase 계정 삭제(`AuthRepository.deleteAccount`) → 기기 안 복약 데이터·알림 정리(9-6). 로그인한 지 4분이 넘었으면 데이터를 지우기 전에 다시 로그인하게 한다(Firebase가 오래된 로그인의 계정 삭제를 막기 때문). 서버 없이 로그인한 카카오 사용자는 저장된 데이터가 없어 로그아웃만 안내한다
 - 모든 로그인 버튼은 48dp 이상, `contentDescription` 지정, 실패 사유는 TTS로 안내
 
 ---
@@ -754,7 +757,7 @@ com.medimate.ui.recommend
 | 규칙 표 최소 5개 + 챗봇 답변 + 낭독 | 규칙 표 전체 작성 (출처 포함) |
 | — | 복용 약과의 상호작용 주의 표시 (8-8에서 시작 자료 규칙으로 디버그 빌드 시연 중, 전문가 검토 필요) |
 | — | 건강기능식품 API로 실제 제품 표시 (활용신청 후 실제 응답으로 모델 작성) |
-| — | Claude 호출을 서버(Firebase Functions)로 옮겨 앱에서 키 제거 (8-6) |
+| — | Claude 호출을 서버로 옮겨 앱에서 키 제거 (8-6) — 2026-11-22 서버 코드 준비됨(`server/`), 서버 구매 후 배포·확인 대기 |
 | — | 응급 증상 안내 (8-8에서 시작 자료 규칙으로 디버그 빌드 시연 중, 전문가 검토 필요) |
 
 ### 8-6. Claude 증상 파악 규격
@@ -768,7 +771,7 @@ com.medimate.ui.recommend
 | 생각 깊이 | `effort: low` (분류 작업이라 빠른 응답 우선) |
 | 출력 | 구조화된 출력(`output_config.format`, JSON 스키마). 고민 이름·병원 안내·응급 분류·연결 대상은 목록을 `enum`으로 넣어 **표에 없는 이름은 나올 수 없게** 합니다 |
 | 거절 대비 | `fallbacks: "default"` (베타 `server-side-fallback-2026-07-01`). 그래도 거절되면 "다시 말씀해 주세요"로 안내합니다 |
-| 키 | `BuildConfig.CLAUDE_API_KEY` (3-3) |
+| 키 | `SERVER_BASE_URL`이 있으면 **서버가 키를 붙여 대신 호출** (앱은 Firebase ID 토큰만 붙임, `server/README.md`). 비어 있으면 `BuildConfig.CLAUDE_API_KEY`로 직접 호출 (3-3) |
 
 **보내는 것**: 시스템 프롬프트(역할·규칙·목록) + 이번 상담의 대화. 고민 목록에는 이름과 함께 **그 고민이 다루는 범위**(규칙 표 `reason`을 이어 붙인 것, `RecommendEngine.concernScopes()`)를 넣어, 이름만 보고 넓혀 고르지 않게 합니다. 사용자 말은 `user`, 봇의 질문은 `assistant`로 넣습니다.
 
@@ -951,11 +954,11 @@ users/{uid}
   ├─ name, birthYear, gender, provider("phone" | "google" | "kakao"), createdAt
   ├─ healthConcerns: ["...", "..."]
   │
-  ├─ medications/{medicationId}        // 내 약
-  │     itemSeq, name, dosage, storage, source("ocr" | "manual"), createdAt
+  ├─ medications/{medicationId}        // 내 약. id는 itemSeq (없으면 "name_" + 이름 해시) → 같은 약은 한 번만
+  │     itemSeq, name, dosage, storage, source("ocr" | "manual"), createdAt, updatedAt
   │
-  └─ recommendations/{recommendationId} // 추천 기록
-        concerns[], ingredients[], createdAt
+  └─ recommendations/{recommendationId} // 추천 기록. 성분을 추천한 답변마다 한 건 (대화 본문·지병·약은 저장 안 함)
+        concerns[], ingredients[], createdAt   // concerns: 규칙 표 고민 + AI가 추천한 표 밖 증상
 ```
 
 - 약의 효능·주의사항 본문은 Firestore에 넣지 않습니다. `itemSeq`만 저장하고 본문은 Room 캐시나 e약은요에서 가져옵니다.
@@ -986,8 +989,8 @@ service cloud.firestore {
 ```
 com.medimate.data
 ├── UserRepository.java            // 프로필 저장·조회
-├── MedicationRepository.java      // 내 약 추가·목록·삭제
-├── RecommendationRepository.java  // 추천 기록 저장·조회
+├── MyDrugRepository.java          // 내 약 추가·목록·삭제 (복약 일정은 medication/MedicationRepository)
+├── RecommendationRepository.java  // 추천 기록 저장
 └── firestore/                     // 위 인터페이스의 Firestore 구현
 ```
 
@@ -1012,6 +1015,7 @@ users/{uid}
 - **저장 순서**: 기기(Room `medication.db`)에 먼저 저장하고 `MedicationSyncWorker`가 서버로 보낸다. 일시적 오류는 "동기화 대기"로 자동 재시도, 권한 거부 등은 "저장 실패"로 표시한다. 보안 규칙은 9-3이 하위 컬렉션까지 적용되어 추가 설정이 없다.
 - **수정·삭제**: 오늘부터 적용한다. 복용 완료 기록은 이름·복용량·시각을 복사해 두어 일정이 바뀌어도 그대로 보인다.
 - **알림**: 슬롯마다 다음 회차 하나만 AlarmManager 일회성 알람으로 걸고, 울리면 다음 회차를 건다. 재부팅·앱 업데이트·시간 변경·앱 실행 때 다시 건다. 지난 회차는 걸지 않아 한꺼번에 울리지 않는다.
+- **알림 시간 고르기** (2026-11-22): 시계 모양 선택기 대신 위아래로 돌리는 휠(`TimePicker` spinner 모드, 1.3배 크기, `ui/schedule/TimeChoiceDialog`). 열 때 지금 값을, "확인"을 누르면 고른 시간을 "오후 8시 20분"처럼 읽어 준다.
 - **시간대 정책**: 복용 시각은 벽시계 기준이다. 오전 8시 약은 시간대가 바뀌어도 그 지역의 오전 8시에 울린다. 저장된 기록은 바꾸지 않는다.
 - **알림이 제한되는 경우**: 앱 강제 중지(다음 실행까지), 기기 전원 꺼짐(그 사이 알림은 울리지 않고 화면에 "복용 확인 필요"로 남음), 알림 권한 거부, 정확한 알람 권한 없음(늦을 수 있음), 일부 제조사의 절전 정책.
 - **로그아웃·계정 전환**: 이전 사용자의 알람·알림·기기 데이터를 지운다. 이때 아직 못 보낸 변경은 함께 사라진다. 다시 로그인하면 서버에서 일정을 받아 알람을 다시 건다 (2026-11-06 전화번호 테스트 계정으로 확인).
@@ -1047,8 +1051,8 @@ users/{uid}
 | C1 | 챗봇 입력 화면 (8-3) — 증상을 채팅으로 입력, Claude가 증상 파악·추가 질문 (8-6) | 모호한 증상엔 추가 질문, 답하면 규칙 표의 고민으로 분류됨 | 코드 완료, Claude 요청 PC에서 확인됨, 에뮬레이터 확인 대기 |
 | C2 | 규칙 표(최소 5개) + 추천 엔진 + 챗봇 답변 + 낭독 (8-5) | 분류된 고민에 맞는 성분이 표시·낭독 | 완료 (규칙 표 12개 + 섭취 시 주의사항, 출처는 팀 검토 필요) |
 | D1 | Firestore 연결, 프로필 저장 (9-2), 보안 규칙 (9-3) | 첫 로그인 정보가 콘솔에 보임 | 완료 (전화번호 테스트 계정으로 에뮬레이터 확인, 구글·카카오는 B2·B4 확인 대기) |
-| D2 | 내 약 저장·목록 — A5 결과에 "내 약에 추가" | 앱을 다시 켜도 내 약이 남아 있음 | |
-| D3 | 추천 기록 저장 | 추천 결과가 콘솔에 보임 | |
+| D2 | 내 약 저장·목록 — A5 결과에 "내 약에 추가" | 앱을 다시 켜도 내 약이 남아 있음 | 코드 완료 (약 상세 "내 약에 추가" → Main "내 약" 목록, 누르면 낭독·지우기), 빌드·단위테스트 통과, 에뮬레이터 확인 대기 |
+| D3 | 추천 기록 저장 | 추천 결과가 콘솔에 보임 | 코드 완료 (성분을 추천한 답변마다 `recommendations`에 고민·성분 저장), 에뮬레이터 확인 대기 |
 
 **1차가 끝나면** 로그인 → 약 찍기 → 내 약에 저장 → 영양제 추천까지 한 번에 시연할 수 있습니다.
 
@@ -1059,9 +1063,9 @@ users/{uid}
 | 영역 | 내용 |
 |---|---|
 | A 약 인식 | 사진 자르기(UCrop) · 이름 정규화 전체 규칙 (6-1) · 여러 건일 때 후보 제시 + 음성 확인 (6-2) · e약은요 Room 캐시 (6-4) · 낭독 문장 변환 (6-3) · 낱알식별 전량 적재 (5-3) |
-| B 로그인 | 카카오–Firebase 정식 연결 (7-5) · 첫 로그인 프로필 입력 · 탈퇴 |
+| B 로그인 | 카카오–Firebase 정식 연결 (7-5) · 첫 로그인 프로필 입력 · ~~탈퇴~~ (2026-11-22 구현) |
 | C 추천 | 규칙 표 전체 + 출처 · 복용 약 상호작용 주의 · 건강기능식품 API 제품 표시 (8-4) · Claude 호출 서버 이전 · 응급 증상 안내 (8-5) |
-| D DB | 민감정보 동의 화면 (9-5) · 탈퇴 시 데이터 삭제 · 오프라인 동작 확인 |
+| D DB | 민감정보 동의 화면 (9-5) · ~~탈퇴 시 데이터 삭제~~ (2026-11-22 구현) · 오프라인 동작 확인 · 내 약에서 약 상세 다시 보기 |
 | 공통 | 오류별 음성 안내 문구 · TalkBack 실기기 점검 · 화면 디자인 · HTTP 로그 정리 (13장) |
 | 보류 | CLOVA OCR 전환 (4-1 ~ 4-3) — 결제·증빙 정리 후, ML Kit 실측 결과를 보고 결정 |
 

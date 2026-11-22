@@ -1,0 +1,32 @@
+# 서버에서: docker compose up -d --build   (server/README.md 4단계)
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      FIREBASE_CREDENTIALS: /run/secrets/firebase.json
+    volumes:
+      - ./secrets/firebase-service-account.json:/run/secrets/firebase.json:ro
+    expose:
+      - "8080"
+
+  # HTTPS 인증서(Let's Encrypt)를 자동으로 받고 갱신한다
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

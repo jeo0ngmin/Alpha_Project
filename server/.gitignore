@@ -1,0 +1,5 @@
+# 키·인증서는 커밋하지 않는다
+.env
+secrets/
+.gradle/
+build/

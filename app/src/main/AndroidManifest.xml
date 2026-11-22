@@ -58,6 +58,9 @@
             android:name=".ui.drug.DrugDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.drug.MyDrugsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.recommend.RecommendChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

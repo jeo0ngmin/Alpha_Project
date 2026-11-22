@@ -13,6 +13,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.medimate.R;
+import com.medimate.data.MyDrugRepository;
+import com.medimate.data.firestore.FirestoreMyDrugRepository;
 import com.medimate.data.medication.MedicationRepository;
 import com.medimate.model.Drug;
 import com.medimate.tts.TtsManager;
@@ -27,6 +29,7 @@ public class DrugDetailActivity extends AppCompatActivity {
 
     private static final String EXTRA_DRUG = "drug";
     private static final String NONE = "정보가 없어요";
+    private static final String MSG_MY_DRUG_ADDED = "내 약에 추가했어요.";
 
     private TtsManager tts;
 
@@ -72,6 +75,25 @@ public class DrugDetailActivity extends AppCompatActivity {
                 startActivity(MedicationRepository.get(this).currentOwner() == null
                         ? MedicationScheduleActivity.newIntent(this, null)
                         : ScheduleEditActivity.fromDrug(this, drug)));
+
+        // 효능·주의사항 본문은 저장하지 않는다 (README 9-2)
+        findViewById(R.id.button_add_my_drug).setOnClickListener(v -> {
+            v.setEnabled(false);
+            new FirestoreMyDrugRepository().add(drug.getItemSeq(), drug.getName(), drug.getDosage(),
+                    drug.getStorage(), MyDrugRepository.SOURCE_OCR, new MyDrugRepository.Callback<Void>() {
+                        @Override
+                        public void onSuccess(Void value) {
+                            v.setEnabled(true);
+                            tts.speak(MSG_MY_DRUG_ADDED);
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            v.setEnabled(true);
+                            tts.speak(message);
+                        }
+                    });
+        });
 
         if (savedInstanceState == null) {
             tts.speak(all);

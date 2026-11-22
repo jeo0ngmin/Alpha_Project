@@ -27,4 +27,15 @@ public interface UserRepository {
      * @param provider PROVIDER_GOOGLE / PROVIDER_PHONE / PROVIDER_KAKAO
      */
     void ensureProfile(String uid, @Nullable String name, String provider, Callback callback);
+
+    interface DeleteCallback {
+        /** 메인 스레드에서 불린다 */
+        void onDeleted();
+
+        /** 메인 스레드에서 불린다. message는 사용자에게 읽어 줄 문장 */
+        void onError(String message);
+    }
+
+    /** 탈퇴: users/{uid} 아래 데이터를 모두 지운다 (README 9-5). 서버에서 직접 지우므로 인터넷이 필요하다 */
+    void deleteAllData(String uid, DeleteCallback callback);
 }

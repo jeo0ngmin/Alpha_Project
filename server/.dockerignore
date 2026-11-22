@@ -1,0 +1,6 @@
+.env
+.env.*
+secrets/
+build/
+.gradle/
+deploy/
