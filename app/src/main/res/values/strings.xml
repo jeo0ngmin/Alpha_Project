@@ -20,6 +20,10 @@
     <string name="profile_method_kakao">카카오</string>
     <string name="profile_method_unknown">알 수 없음</string>
     <string name="profile_sign_out">로그아웃</string>
+    <string name="profile_method_email">이메일</string>
+    <string name="profile_email">이메일: %1$s</string>
+    <string name="profile_phone">전화번호: %1$s</string>
+    <string name="profile_none">없음</string>
     <string name="my_drugs_empty">저장한 약이 없어요.</string>
     <string name="my_drugs_remove">%1$s 지우기</string>
     <string name="recommend_title">영양제 추천</string>

@@ -11,6 +11,7 @@ public interface UserRepository {
     String PROVIDER_GOOGLE = "google";
     String PROVIDER_PHONE = "phone";
     String PROVIDER_KAKAO = "kakao";
+    String PROVIDER_EMAIL = "email";
 
     interface Callback {
         /** @param created 이번에 새로 만들었으면 true, 이미 있었으면 false. 메인 스레드에서 불린다 */
@@ -24,7 +25,7 @@ public interface UserRepository {
      * 프로필 문서가 없으면 만든다 (첫 로그인). 이미 있으면 건드리지 않는다.
      *
      * @param name     로그인 계정의 이름. 모르면 null (생년·성별은 프로필 입력 화면에서 받는다, 2차)
-     * @param provider PROVIDER_GOOGLE / PROVIDER_PHONE / PROVIDER_KAKAO
+     * @param provider PROVIDER_GOOGLE / PROVIDER_PHONE / PROVIDER_KAKAO / PROVIDER_EMAIL
      */
     void ensureProfile(String uid, @Nullable String name, String provider, Callback callback);
 

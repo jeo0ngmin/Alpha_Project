@@ -621,6 +621,13 @@ Gradle: 플러그인 `com.google.gms.google-services`, 의존성 `firebase-bom`,
 
 정식 연결 전에는 카카오 사용자가 Firebase 사용자로 인식되지 않아 **Firestore 보안 규칙(9-3)을 통과하지 못합니다.** 1차에서는 카카오 로그인 사용자의 DB 저장을 건너뛰고, 정식 방식은 요금제(무료 범위)를 확인한 뒤 팀이 정합니다.
 
+### 7-5-1. 이메일 회원가입 (2026-11-22, JE 화면 SignupActivity)
+
+- 입력 확인(`auth/SignupValidator`): 이메일 형식, 비밀번호 8자 이상·영문과 숫자, 재입력 일치, 약관 동의. 문제가 있으면 읽어 준다.
+- `AuthRepository.signUpWithEmail` → 프로필 생성(provider `email`) → 메인. **Firebase 콘솔 → Authentication → 로그인 방법에서 "이메일/비밀번호"를 사용 설정해야 한다.**
+- 내 정보: 이메일·전화번호 실제 값 표시(누르면 낭독), 비밀번호 변경은 이메일 가입자에게만 변경 메일 발송, 로그아웃 버튼.
+- **빈틈:** 로그인 화면에 이메일 로그인 칸이 없어서, 이메일로 가입한 사람이 로그아웃하면 다시 로그인할 방법이 없다. 이메일 로그인은 만들지 않기로 함(2026-11-22 사용자 결정).
+
 ### 7-6. 공통
 
 - 로그아웃: `FirebaseAuth.signOut()` + 카카오 `UserApiClient.logout()`

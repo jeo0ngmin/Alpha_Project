@@ -112,10 +112,22 @@
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_withdraw"
+            android:id="@+id/btn_logout"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="16dp"
+            android:text="@string/profile_sign_out"
+            android:textColor="@color/text_primary"
+            app:backgroundTint="@color/white"
+            app:cornerRadius="14dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_withdraw"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="10dp"
             android:text="Medimate 탈퇴하기"
             android:textColor="@color/text_primary"
             app:backgroundTint="@color/white"
