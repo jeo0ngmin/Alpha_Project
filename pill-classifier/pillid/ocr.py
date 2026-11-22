@@ -22,6 +22,9 @@ ALLOWLIST = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-"
 _SEPARATOR = re.compile(r"십자분할선|분할선|마크|각인|없음|\s+")
 _HANGUL = re.compile(r"[가-힣]")
 # OCR이 자주 혼동하는 글자를 한쪽으로 통일해 비교한다
+# 식약처 DB는 가로획 없는 A를 그리스 문자 Λ(838건)나 ∧(9건)로 적는다 (예: 알리코제약 "ΛC", "TΛV").
+# 지우면 "CTΛ"(아세클낙정)가 "CT"(에페리손정)와 같아지고 OCR이 읽은 "CTA"와는 맞지 않았다. 2026-11
+_LETTER_LIKE = str.maketrans({"Λ": "A", "∧": "A"})
 _CONFUSABLE = str.maketrans({"0": "O", "1": "I", "5": "S", "8": "B", "2": "Z"})
 
 # 점수 상수. scripts/tune_scoring.py로 조정용 표본(식약처 참조 사진 200품목)에서 고르고
@@ -44,7 +47,7 @@ OUTLINE_FRAC = 0.8    # 한 글자 상자가 알약 짧은 변의 이 비율 이
 def _raw_tokens(text) -> list[str]:
     if not text:
         return []
-    parts = (re.sub(r"[^0-9A-Z가-힣]", "", p) for p in _SEPARATOR.split(str(text).upper()))
+    parts = (re.sub(r"[^0-9A-Z가-힣]", "", p) for p in _SEPARATOR.split(str(text).upper().translate(_LETTER_LIKE)))
     return [p for p in parts if p]
 
 

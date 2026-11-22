@@ -96,6 +96,24 @@ def test_tilted_photo_keeps_dose_on_the_drug_line():
     assert [l.text for l in lines] == ["자누리틴콤비정 | 1회 2정", "데스모엠정 | 1회 1정"]
 
 
+def test_sideways_and_upside_down_photos_are_turned_upright():
+    """옆으로 눕히거나 거꾸로 찍어도 같은 줄이 나온다 (글자 상자 윗변 방향으로 사진 방향을 정한다)."""
+    import math
+    flat = [("자누리틴콤비정", 50, 100, 200), ("1회 2정", 520, 100, 80), ("데스모엠정", 50, 125, 140), ("1회 1정", 520, 125, 80)]
+    want = ["자누리틴콤비정 | 1회 2정", "데스모엠정 | 1회 1정"]
+    W, H = 800, 600
+    for turn in (90, 180, 270):
+        t = math.radians(turn)
+        fields = []
+        for text, x, y, w in flat:
+            corners = [(x, y), (x + w, y), (x, y + 20), (x + w, y + 20)]
+            # 사진을 시계 반대로 turn만큼 돌렸을 때의 좌표 (원점은 그대로 두어도 줄 나누기에는 상관없다)
+            pts = [(px * math.cos(t) - py * math.sin(t), px * math.sin(t) + py * math.cos(t)) for px, py in corners]
+            xs, ys = zip(*pts)
+            fields.append(OcrField(text, 0.95, min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys), t))
+        assert [l.text for l in assemble_lines(fields)] == want, turn
+
+
 def test_personal_information_is_masked():
     lines = [Line(1, 1, "환자명 : 홍길동  주민번호 900101-2345678"), Line(2, 1, "약국 전화 02-123-4567"),
              Line(3, 1, "교부번호 : 2026-1234"), Line(4, 1, "타이레놀정 1정")]
@@ -105,6 +123,19 @@ def test_personal_information_is_masked():
     assert "홍길동" not in text and "900101" not in text and "4567" not in text and "1234" not in text
     assert "[이름]" in text and "[주민번호]" in text and "[전화]" in text and "[번호]" in text
     assert masked[3].text == "타이레놀정 1정"
+
+
+def test_names_in_real_bag_layouts_are_masked():
+    # 실제 약봉투(2026-11): 맨 위 "이름 님", OCR이 끼워 넣은 글자, 조제약사, 이름표 없는 다른 줄
+    lines = [Line(1, 1, "홍길동 님 (만 29세/남)"),
+             Line(2, 1, "조제일 | 2026-05-19 조제약사 김약사 | 환 자 성 명 자 | 홍길동 영수"),
+             Line(3, 1, "홍길동"), Line(4, 1, "환자님 복용 시 약사와 상의하세요"), Line(5, 1, "타이레놀정 1정")]
+    masked, patient = mask_lines(lines)
+    text = "\n".join(l.text for l in masked)
+    assert patient == "홍O동"
+    assert "홍길동" not in text and "김약사" not in text
+    assert masked[2].text == "[이름]"
+    assert masked[3].text == "환자님 복용 시 약사와 상의하세요" and masked[4].text == "타이레놀정 1정"
 
 
 def test_too_little_or_blurry_text_asks_for_retake():

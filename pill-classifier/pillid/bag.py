@@ -156,13 +156,34 @@ def page_skew(fields: list[OcrField]) -> float:
     return float(angles[np.searchsorted(cum, cum[-1] / 2)])
 
 
+def upright(fields: list[OcrField]) -> list[OcrField]:
+    """사진이 90°·180° 돌아가 있으면 글자 상자 좌표를 바로 세운다. 글자 상자 윗변 방향(angle)을 90° 단위로
+    반올림해 글자 수가 가장 많은 방향을 사진 방향으로 본다. 옆으로 눕혀 찍은 실제 약봉투에서 줄이 세로로 엉켜
+    환자 이름을 못 가리고 약 이름 줄이 섞였다 (2026-11)."""
+    votes = np.zeros(4)
+    for f in fields:
+        votes[int(round(f.angle / (np.pi / 2))) % 4] += len(f.text.strip())
+    k = int(votes.argmax())
+    if k == 0:
+        return fields
+    turn = k * np.pi / 2
+    c, s = round(np.cos(turn)), round(np.sin(turn))
+    out = []
+    for f in fields:
+        xs, ys = zip(*((x * c + y * s, -x * s + y * c)
+                       for x, y in ((f.x, f.y), (f.x + f.w, f.y), (f.x, f.y + f.h), (f.x + f.w, f.y + f.h))))
+        angle = (f.angle - turn + np.pi) % (2 * np.pi) - np.pi
+        out.append(OcrField(f.text, f.conf, min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys), angle))
+    return out
+
+
 def assemble_lines(fields: list[OcrField]) -> list[Line]:
     """세로 위치가 비슷한 글자 덩어리를 한 줄로 묶고, 간격이 넓으면 표의 칸으로 보고 ' | '를 넣는다.
 
     사진이 기울면 오른쪽 칸(용량)이 왼쪽 칸(약 이름)보다 한 줄 아래로 내려가 다른 약과 묶인다.
     그래서 글자 상자의 기울기로 사진을 바로 세운 좌표에서 줄을 나눈다.
     """
-    fields = [f for f in fields if f.text.strip()]
+    fields = upright([f for f in fields if f.text.strip()])
     if not fields:
         return []
     skew = page_skew(fields)
@@ -214,7 +235,14 @@ def lines_from_text(text: str) -> list[Line]:
 
 _RRN = re.compile(r"\d{6}\s*[-–]\s*[1-8][\d*]{6}|\d{6}\s*[-–]\s*[1-8]\*+")
 _PHONE = re.compile(r"(?<!\d)0\d{1,2}[-\s)]?\d{3,4}[-\s]?\d{4}(?!\d)")
-_NAME = re.compile(r"(환\s*자\s*명|성\s*명|수\s*진\s*자|이\s*름|환\s*자\s*[:：])\s*[:：]?\s*([가-힣]{2,4})")
+# 이름표 뒤의 이름. OCR이 이름표와 이름 사이에 글자 하나나 구분선을 끼워 넣어도 잡는다 ("환 자 성 명 자 | 홍길동")
+_NAME = re.compile(r"(환\s*자\s*성\s*명|환\s*자\s*명|성\s*명|수\s*진\s*자|이\s*름|환\s*자\s*[:：])"
+                   r"(?:\s*[:：|]\s*|\s+[가-힣](?=\s))*\s*([가-힣]{2,4})")
+# 약봉투 맨 위의 "홍길동 님" (실제 약봉투 3장 중 2장이 이 형식이었다, 2026-11)
+_HONORIFIC = re.compile(r"(?<![가-힣])([가-힣]{2,4})\s*님(?![가-힣])")
+_NOT_NAMES = {"환자", "고객", "보호자", "약사", "선생", "어르신", "회원", "고객분", "환자분"}
+# 조제한 약사의 이름도 개인정보다
+_PHARMACIST = re.compile(r"(조\s*제\s*약\s*사)(?:\s*[:：|]\s*|\s+)([가-힣]{2,4})")
 _NUMBER = re.compile(r"(교부\s*번호|요양\s*기관\s*번호|기관\s*번호|처방전?\s*번호|조제\s*번호|영수증\s*번호)\s*[:：]?\s*[\d\-]+")
 # 이름표와 다른 줄로 떨어진 교부번호·기관번호 (사진이 기울면 생긴다). 복약 정보에는 10자리 넘는 숫자가 없다
 _LONG_NUMBER = re.compile(r"(?<![\d.])\d[\d\-]{8,}\d(?![\d.])")
@@ -227,6 +255,7 @@ def mask_name(name: str) -> str:
 def mask_lines(lines: list[Line]) -> tuple[list[Line], str | None]:
     """식별 정보를 가린 줄과, 가린 환자 이름(예: 홍O동). 가리기 전 원문은 어디에도 남기지 않는다."""
     patient = None
+    found: set[str] = set()  # 가리기 전 이름. 이 함수 밖으로 나가지 않는다
     out = []
     for line in lines:
         text = _RRN.sub("[주민번호]", line.text)
@@ -237,9 +266,28 @@ def mask_lines(lines: list[Line]) -> tuple[list[Line], str | None]:
         def name(m):
             nonlocal patient
             patient = patient or mask_name(m.group(2))
+            found.add(m.group(2))
+            return m.group(1) + " [이름]"
+
+        def honorific(m):
+            nonlocal patient
+            if m.group(1) in _NOT_NAMES:
+                return m.group()
+            patient = patient or mask_name(m.group(1))
+            found.add(m.group(1))
+            return "[이름] 님"
+
+        def pharmacist(m):
+            found.add(m.group(2))
             return m.group(1) + " [이름]"
         text = _NAME.sub(name, text)
+        text = _HONORIFIC.sub(honorific, text)
+        text = _PHARMACIST.sub(pharmacist, text)
         out.append(Line(line.no, line.conf, text))
+    # 한 곳에서 찾은 이름은 이름표 없이 다른 줄에 나와도 가린다 (영수증 칸, 기울어 떨어진 줄).
+    # 두 글자 이름은 약 이름 속 글자와 겹칠 수 있어 이름표가 있는 곳만 가린다
+    for raw in sorted((n for n in found if len(n) >= 3), key=len, reverse=True):
+        out = [Line(l.no, l.conf, l.text.replace(raw, "[이름]")) for l in out]
     return out, patient
 
 

@@ -80,13 +80,13 @@ def pair(truth_meds: list[dict], items: list[dict]) -> list[tuple[dict, dict | N
 
 def field_values(t: dict, it: dict) -> dict:
     """(정답, 인식) 값 쌍. 인식 값이 None이면 '읽지 못함'."""
-    meal_truth = t["meal"]
+    meal_truth = t.get("meal")
     return {
         "name": (t["item_seq"], it.get("itemSeq")),
         "dose": (float(t["dose"]), None if it.get("dosageAmount") is None else float(it["dosageAmount"])),
         "unit": (t["unit"], it.get("dosageUnit")),
         "times": (t["times"], it.get("frequencyPerDay")),
-        "slots": (sorted(t["slots"]), None if it.get("slotsInferred") and not it.get("timeSlots") else sorted(it.get("timeSlots") or []) or None),
+        "slots": (sorted(t["slots"]) if t.get("slots") else None, None if it.get("slotsInferred") and not it.get("timeSlots") else sorted(it.get("timeSlots") or []) or None),
         # 봉투에 식사 관계가 적혀 있지 않은 약(ANYTIME)은 비워 두는 것도 맞다
         "meal": (meal_truth, it.get("mealRelation") or ("ANYTIME" if meal_truth == "ANYTIME" else None)),
         "days": (t["days"], it.get("durationDays")),
@@ -139,6 +139,8 @@ def main():
             all_ok = True
             for f, (want, got) in field_values(tm, it).items():
                 s = stats[f]
+                if want is None:  # 실제 약봉투에 적혀 있지 않은 항목은 채점하지 않는다
+                    continue
                 if got is None:
                     s["missing"] += 1
                     all_ok = False

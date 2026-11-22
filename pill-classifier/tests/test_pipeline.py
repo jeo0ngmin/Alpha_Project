@@ -159,6 +159,8 @@ def test_imprint_matching():
     assert canonical_imprint("1O5") == canonical_imprint("IOS")  # 혼동 문자 통일
     assert canonical_imprint("V분할선T") == "VT" and canonical_imprint("KDC NTC     8") == "KDCNTCB"
     assert imprint_tokens("TONEX-F 마크") == ("TONEXF",)
+    # 식약처 DB의 Λ·∧는 가로획 없는 A다 (아세클낙정 "CTΛ"를 OCR은 "CTA"로 읽는다)
+    assert canonical_imprint("CTΛ") == "CTA" != canonical_imprint("CT") and canonical_imprint("∧V") == "AV"
     assert imprint_similarity("TYLENOL", "TYLENOL") == 1.0
     # 일부만 읽힘: 정확히 읽은 것보다는 낮고, 무관한 글자보다는 높다
     assert imprint_similarity("XYZ", "TYLENOL") < imprint_similarity("TYLEN", "TYLENOL") < 1.0
@@ -318,3 +320,25 @@ def test_exact_imprint_on_untrained_rival_blocks_confidence(tmp_path):
     assert [c.item_seq for c in ident.imprint_candidates(close)] == ["2", "3"]  # 2위와 가까우면 더한다
     ident.trusted_items = {"2"}
     assert [c.item_seq for c in ident.imprint_candidates(sure)] == ["2", "3"]  # 학습하지 않은 1위면 더한다
+
+
+def test_glare_and_partial_regions_are_dropped():
+    import cv2
+
+    from pillid.imaging import _region_from_contour, drop_glare_and_partial
+
+    img = np.full((200, 200, 3), 60, np.uint8)
+
+    def disc(cx, cy, r, color):
+        cv2.circle(img, (cx, cy), r, color, -1)
+        mask = np.zeros(img.shape[:2], np.uint8)
+        cv2.circle(mask, (cx, cy), r, 255, -1)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        return _region_from_contour(contours[0], img.shape[:2])
+
+    glare = disc(50, 50, 25, (255, 255, 255))     # 하얗게 날아간 조명 반사
+    pill = disc(120, 120, 20, (235, 230, 225))    # 흰 알약 (날아가지 않음)
+    edge = disc(195, 60, 20, (40, 120, 200))      # 가장자리에 잘린 다른 알약
+    assert drop_glare_and_partial(img, [glare, pill, edge]) == [pill]
+    assert drop_glare_and_partial(img, [glare, edge]) == [edge]  # 온전한 것이 없으면 잘린 것도 쓴다
+    assert drop_glare_and_partial(img, [glare]) == [glare]  # 남는 것이 없으면 (강한 조명의 흰 알약일 수 있다) 쓴다

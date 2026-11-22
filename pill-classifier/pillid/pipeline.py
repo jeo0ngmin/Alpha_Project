@@ -9,7 +9,8 @@ from .attributes import (ELONGATED_SHAPES, color_set_similarity, estimate_colors
                          estimate_shape, parse_colors, shape_similarity)
 from .db import PillDB
 from .detect import PillDetector
-from .imaging import PillRegion, canonical_crop, preprocess, read_image, region_in_original
+from .imaging import (PillRegion, canonical_crop, drop_glare_and_partial, preprocess, read_image,
+                      region_in_original)
 from .ocr import ImprintReader, imprint_pair_score, imprint_tokens
 
 # 사용 가능한 단서만 골라 합이 1이 되도록 다시 정규화해서 쓴다.
@@ -171,7 +172,7 @@ class PillIdentifier:
         """BGR 이미지 속 알약들을 면적이 큰 순서로 관측한다."""
         original = img
         img, scale = preprocess(img)
-        regions = self.detector(img)
+        regions = drop_glare_and_partial(img, self.detector(img))
         # 각인 판독(OCR)이 가장 오래 걸린다. 가장 큰 알약보다 훨씬 작은 덩어리(그림자, 부스러기)는 읽지 않는다
         largest = regions[0].area if regions else 0
         return [self.observe(img, r, read_imprint=r.area >= OCR_MIN_AREA_RATIO * largest, original=original, scale=scale)
