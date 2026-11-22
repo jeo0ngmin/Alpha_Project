@@ -24,7 +24,7 @@ pillid/            라이브러리
   embedding.py     PillEmbedder, ArcFaceHead, 추론용 Embedder
   pipeline.py      PillIdentifier (전체 식별 흐름과 점수 계산)
   db.py            식약처 데이터 SQLite
-  vision.py        Claude Fable 5.1 비전 보조 (관찰, 재순위)
+  vision.py        Claude Opus 5.5 비전 보조 (관찰, 재순위)
   prompts/         Claude 시스템 프롬프트 (버전별 파일)
   enums.py         식약처 한글 분류값 ↔ MediMate API enum 변환
   demo.py          서비스키 없이 시험하는 데모 DB·합성 사진
@@ -73,7 +73,7 @@ $env:PILL_DB = "data\demo\pills.db"; $env:PILL_USE_OCR = "0"
 
 입출력은 모두 MediMate API enum(`ROUND`, `WHITE` 등)을 씁니다. 사진은 저장하지 않습니다.
 
-## Claude Fable 5.1 비전 보조
+## Claude Opus 5.5 비전 보조
 
 `docs/03_AI_OCR_연동설계서.md` §6의 관찰과 재순위를 이 서버가 직접 수행합니다 ([pillid/vision.py](pillid/vision.py), 프롬프트는 [pillid/prompts/](pillid/prompts/)).
 
@@ -97,7 +97,7 @@ $env:PILL_AI_PROVIDER = "anthropic"; $env:ANTHROPIC_API_KEY = "..."
 | 환경변수 | 설명 |
 |---|---|
 | `PILL_AI_PROVIDER` | `none`(기본) / `bedrock` / `anthropic` |
-| `PILL_AI_MODEL` | 비우면 `anthropic.claude-fable-5-1`(Bedrock) 또는 `claude-fable-5-1` |
+| `PILL_AI_MODEL` | 비우면 `anthropic.claude-opus-5-5`(Bedrock) 또는 `claude-opus-5-5`. 2026-11-22 Fable 5.1에서 바꿈(요금 2.5배 차이) |
 | `PILL_AI_FALLBACK_MODEL` | 안전 분류기가 거절했을 때 1회 재시도할 모델. 비우면 재시도 없음 |
 | `PILL_AI_TIMEOUT` | 요청 제한 시간(초), 기본 40 |
 
@@ -110,8 +110,8 @@ python scripts/check_claude.py
 데모 캡슐 사진을 Claude에 보내 관찰 결과를 출력합니다. 실패하면 원인 종류가 나옵니다: `BAD_REQUEST`(모델 ID·스키마·권한), `UNAVAILABLE`(네트워크·한도), `REFUSED`(안전 분류기).
 
 ### 알아 둘 점
-- **아직 실제 API로는 호출해 보지 못했습니다.** 요청 구성, 재시도 규칙, 응답 처리는 가짜 응답 테스트로만 확인했습니다. 모델 ID나 출력 스키마가 실제 환경에서 거절되면 `check_claude.py`에서 `BAD_REQUEST`로 드러납니다.
-- Fable 5.1 호출 규칙(설계서 §3.3)을 따릅니다: `thinking`·`temperature`를 보내지 않고, 도구 대신 구조화 출력을 쓰며, 깊이는 effort로만 조절합니다.
+- 이 README의 Claude 보조 평가 수치는 모두 Fable 5.1(Anthropic API 직접)로 잰 것입니다. **Opus 5.5로는 아직 실제로 호출해 보지 못했습니다**(2026-11-22 크레딧 소진). 모델 ID나 출력 스키마가 거절되면 `check_claude.py`에서 `BAD_REQUEST`로 드러납니다.
+- 설계서 §3.3의 호출 규칙(Fable 5.1 기준, Opus 5.5도 같음)을 따릅니다: `thinking`·`temperature`를 보내지 않고, 도구 대신 구조화 출력을 쓰며, 깊이는 effort로만 조절합니다.
 - 사진은 긴 변 1,024px JPEG로 줄여서 보냅니다(이미지 토큰 ≈ 가로×세로÷750).
 - 켜면 응답이 느려집니다(관찰 한 번 + 필요 시 재순위 한 번, 각각 최대 40초).
 - 사용자의 알약 사진이 외부(해외 리전일 수 있음)로 전송됩니다. 설계서 02 §8의 국외 이전 동의가 필요합니다.
@@ -432,6 +432,8 @@ python scripts/eval_photos.py data/synthetic_photos
 | **두 규칙 후** | **Top-1 123 (91.1%), 확신 오답 0** | **Top-1 272 (98.6%), 확신 264, 오답 0** |
 
 학습한 약에서 줄어든 3장은 모두 같은 약(아스피린 장용정, 각인 `AA`)입니다. OCR이 `AST`로 읽어 각인이 정확히 맞는 다른 약(`AST`)이 재비교에 들어갔고, Claude가 정답을 '다른 약'으로 봐서 7위로 밀렸습니다. 확신 표시가 아니라 '확실하지 않음'으로 나가는 오답입니다. DB 대부분이 AI Hub 사진이 없는 약이라 이 교환을 택했습니다.
+
+이어서 **1위가 학습한 약이고 임베딩 0.6 이상, 2위와 0.05 이상 벌어져 있으면 추가 후보를 넣지 않게** 했습니다(`EXTRA_SKIP_MARGIN`). 사진 분석만으로 기록해 보니 아스피린 3장은 2위와 0.06~0.10, 추가 후보로 정답을 찾은 처음 보는 약 사진은 0.01~0.02 차이였습니다. Claude 보조 평가는 도중에 API 크레딧이 떨어져 앞 118장만 됐고, 그 안에서 아스피린 3장은 다시 1위(각인 `AST`인 학습 안 된 약이 있어 '확실하지 않음')였습니다. **처음 보는 약 135쌍은 아직 재지 못했습니다**(같은 시점에 기본 모델을 Opus 5.5로 바꿔서, 다음 평가는 두 변경을 함께 잽니다). `eval_identify_api.py`는 이제 끝에 Claude 토큰 수와 요금을 출력합니다.
 
 각인 판독 방식도 실제 폰 사진(NIH 239장)으로 비교했지만 원본 해상도 크롭, 크롭 크기 480/720/960, 대비 강화 끄기·음각 반전·선명화 모두 정확 판독 23~26장으로 차이가 없었습니다. 폰 사진의 각인은 흐림과 조명이 한계이고, 어려운 경우는 Claude 보조가 맡습니다. 원본 해상도 크롭(`region_in_original`)은 해가 없어 남겨 두었습니다(긴 변 1600px 넘는 사진만 해당).
 

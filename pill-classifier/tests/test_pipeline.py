@@ -308,3 +308,13 @@ def test_exact_imprint_on_untrained_rival_blocks_confidence(tmp_path):
     assert [c.item_seq for c in ident.imprint_candidates(res)] == ["2", "3"]
     assert [c.item_seq for c in ident.imprint_candidates(res, skip=["2"])] == ["3"]
     assert ident.imprint_candidates(observe("GG")) == []
+    # 1위가 학습한 약이고 임베딩이 높으며 2위와 충분히 벌어져 있으면 더하지 않는다 (잘못 읽은 각인이 끌어온 약 방지)
+    import dataclasses
+    top = dataclasses.replace(res.candidates[0], item_seq="1", score=0.75, parts={"embedding": 0.75})
+    low = dataclasses.replace(res.candidates[0], item_seq="9", score=0.65, parts={"embedding": 0.5})
+    sure = dataclasses.replace(res, candidates=[top, low])
+    assert ident.imprint_candidates(sure) == []
+    close = dataclasses.replace(res, candidates=[top, dataclasses.replace(low, score=0.73)])
+    assert [c.item_seq for c in ident.imprint_candidates(close)] == ["2", "3"]  # 2위와 가까우면 더한다
+    ident.trusted_items = {"2"}
+    assert [c.item_seq for c in ident.imprint_candidates(sure)] == ["2", "3"]  # 학습하지 않은 1위면 더한다

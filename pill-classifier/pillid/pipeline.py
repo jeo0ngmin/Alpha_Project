@@ -48,6 +48,10 @@ RIVAL_MIN_LEN = 3
 # 위와 같은 정확 일치 약은 순위가 낮아도 Claude 재비교에 이 개수까지 더 넣는다 (처음 보는 약 오답 17건 중 5건이
 # 각인을 정확히 읽었는데 정답이 2~8위였다)
 IMPRINT_EXTRA = 3
+# 단, 사진 분석 1위가 학습한 약이고 임베딩이 받쳐 주며 2위와 이만큼 벌어져 있으면 더하지 않는다. 학습한 아스피린(각인 AA)을
+# OCR이 AST로 읽자 각인 AST인 다른 약이 더해져 Claude가 그쪽을 골랐다(1위 정답 3장 → 저신뢰 오답). 사진 분석만 기록했을 때
+# 이 3장은 2위와 0.06~0.10, 추가 후보로 정답을 찾은 처음 보는 약 사진은 0.01~0.02 차이였다. 2026-11
+EXTRA_SKIP_MARGIN = 0.05
 
 
 @dataclass
@@ -267,6 +271,11 @@ class PillIdentifier:
         """읽은 각인이 정확히 맞는 약 중 skip(이미 비교할 후보)에 없는 것을 점수 순으로 limit개.
         AI Hub에 사진이 없는 약은 각인을 정확히 읽어도 학습한 비슷한 약에 밀려 6위 밖으로 나가, Claude 재비교가 정답을 보지 못했다."""
         if not res.exact_imprint or res.scores is None or limit <= 0:
+            return []
+        c = res.candidates
+        if (c and self.trusted_items is not None and c[0].item_seq in self.trusted_items
+                and c[0].parts.get("embedding", 0.0) >= LOW_CONF_EMB_SCORE - 1e-6
+                and (len(c) < 2 or c[0].score - c[1].score >= EXTRA_SKIP_MARGIN - 1e-6)):
             return []
         skip = set(skip)
         idx = [i for i in res.exact_imprint if self.items[i]["item_seq"] not in skip]

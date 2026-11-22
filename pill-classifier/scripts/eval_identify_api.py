@@ -33,6 +33,7 @@ def main():
     ap.add_argument("--model", help="임베딩 모델 (기본: models/embedder.onnx, --index와 함께 쓸 때)")
     ap.add_argument("--trusted", help="확신해도 되는 약 목록 파일 (기본: models/trained_items.txt)")
     ap.add_argument("--out", help="사진별 결과 CSV")
+    ap.add_argument("--price", default="4,20", help="요금 추정용 입력,출력 달러/100만 토큰 (기본 Opus 5.5: 4,20)")
     args = ap.parse_args()
 
     if args.no_ai:
@@ -90,6 +91,12 @@ def main():
     print(f"확신 표시 {stats['conf']}/{n} ({stats['conf'] / n:.0%})   그중 정답 {stats['conf_ok']}/{max(stats['conf'], 1)}"
           f"   (확신했는데 오답 {stats['conf'] - stats['conf_ok']}건)")
     print(f"Claude 관찰 {stats['ai']}건, 재비교 {stats['rerank']}건, 실패 {stats['fail']}건")
+    from pillid.vision import USAGE
+    if USAGE["calls"]:
+        p_in, p_out = (float(x) for x in args.price.split(","))
+        cost = (USAGE["input_tokens"] * p_in + USAGE["output_tokens"] * p_out) / 1e6
+        print(f"Claude 호출 {USAGE['calls']}번, 입력 {USAGE['input_tokens']:,} 토큰, 출력(사고 포함) "
+              f"{USAGE['output_tokens']:,} 토큰 → 약 ${cost:.2f} (입력 ${p_in:g}·출력 ${p_out:g}/100만 토큰)")
     if args.out:
         with open(args.out, "w", newline="", encoding="utf-8-sig") as f:
             w = csv.DictWriter(f, list(rows[0]))
