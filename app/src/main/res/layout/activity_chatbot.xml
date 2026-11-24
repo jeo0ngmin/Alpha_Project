@@ -9,6 +9,57 @@
 
 
     <!-- ========================= -->
+    <!-- 상단 헤더 -->
+    <!-- ========================= -->
+
+    <LinearLayout
+        android:id="@+id/header_chatbot"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="42dp"
+        android:layout_marginEnd="22dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- 뒤로가기 -->
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/back"
+            android:padding="12dp"
+            android:src="@drawable/ic_back"
+            app:tint="@color/medimate_icon_green" />
+
+        <!-- 제목 -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/chatbot_title"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="21sp"
+            android:textStyle="bold" />
+
+        <!-- 거북이 -->
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/medimate_logo"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_welcome_logo" />
+
+    </LinearLayout>
+
+
+    <!-- ========================= -->
     <!-- 하단 네비게이션 -->
     <!-- ========================= -->
 
@@ -50,7 +101,6 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp">
 
-
             <!-- 추가 버튼 -->
             <FrameLayout
                 android:layout_width="36dp"
@@ -73,13 +123,17 @@
             <EditText
                 android:id="@+id/et_chat_input"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_marginStart="11dp"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
+                android:gravity="center_vertical"
                 android:hint="@string/chat_input_hint"
                 android:inputType="textMultiLine"
                 android:maxLines="3"
+                android:minHeight="48dp"
+                android:paddingTop="0dp"
+                android:paddingBottom="0dp"
                 android:textColor="@color/medimate_text_main"
                 android:textColorHint="@color/medimate_text_sub"
                 android:textSize="14sp" />
@@ -115,9 +169,10 @@
         android:id="@+id/chat_scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="18dp"
         android:clipToPadding="false"
         android:fillViewport="true"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/header_chatbot"
         app:layout_constraintBottom_toTopOf="@id/card_input"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -127,52 +182,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingStart="22dp"
-            android:paddingTop="50dp"
             android:paddingEnd="22dp"
             android:paddingBottom="24dp">
-
-
-            <!-- ========================= -->
-            <!-- 상단 헤더 -->
-            <!-- ========================= -->
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageButton
-                    android:id="@+id/btn_back"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@android:color/transparent"
-                    android:contentDescription="@string/back"
-                    android:padding="9dp"
-                    android:src="@drawable/ic_back"
-                    app:tint="@color/medimate_text_main" />
-
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
-                    android:layout_weight="1"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="@string/chatbot_title"
-                    android:textColor="@color/medimate_text_main"
-                    android:textSize="21sp"
-                    android:textStyle="bold" />
-
-
-                <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:contentDescription="@string/medimate_logo"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_welcome_logo" />
-
-            </LinearLayout>
 
 
             <!-- ========================= -->
@@ -182,7 +193,6 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 app:cardBackgroundColor="@color/medimate_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
@@ -195,7 +205,6 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="15dp">
-
 
                     <!-- 알약 아이콘 -->
                     <FrameLayout
@@ -262,7 +271,6 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_dose"
                         android:layout_width="wrap_content"
@@ -276,7 +284,6 @@
                         app:cornerRadius="15dp"
                         app:strokeColor="@color/medimate_sage"
                         app:strokeWidth="1dp" />
-
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_side_effect"
@@ -293,7 +300,6 @@
                         app:strokeColor="@color/medimate_sage"
                         app:strokeWidth="1dp" />
 
-
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_together"
                         android:layout_width="wrap_content"
@@ -308,7 +314,6 @@
                         app:cornerRadius="15dp"
                         app:strokeColor="@color/medimate_sage"
                         app:strokeWidth="1dp" />
-
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chip_storage"
@@ -342,16 +347,12 @@
                 android:orientation="vertical">
 
 
-                <!-- ========================= -->
                 <!-- 챗봇 첫 인사 -->
-                <!-- ========================= -->
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="top"
                     android:orientation="horizontal">
-
 
                     <!-- 거북이 -->
                     <ImageView
@@ -370,7 +371,6 @@
                         android:layout_marginEnd="24dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
 
                         <com.google.android.material.card.MaterialCardView
                             android:layout_width="wrap_content"
@@ -393,7 +393,6 @@
 
                         </com.google.android.material.card.MaterialCardView>
 
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -407,17 +406,13 @@
                 </LinearLayout>
 
 
-                <!-- ========================= -->
                 <!-- 사용자 예시 질문 -->
-                <!-- ========================= -->
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:gravity="end"
                     android:orientation="vertical">
-
 
                     <!-- 사용자 말풍선 -->
                     <com.google.android.material.card.MaterialCardView
@@ -453,7 +448,6 @@
                         android:textSize="11sp" />
 
                 </LinearLayout>
-
 
             </LinearLayout>
 

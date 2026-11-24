@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Medimate</string>
     <string name="back">뒤로가기</string>
 
+    <!-- 알약 분석 -->
     <string name="pill_capture_title">알약 분석</string>
     <string name="pill_capture_heading">알약 사진을 등록해 주세요</string>
     <string name="pill_capture_description">알약 한 개가 화면 중앙에 오도록 선명하게 촬영해 주세요.</string>
@@ -20,6 +22,7 @@
     <string name="camera_file_error">카메라용 이미지 파일을 만들 수 없습니다.</string>
     <string name="select_image_first">먼저 알약 사진을 선택해 주세요.</string>
 
+    <!-- 약 봉투 분석 -->
     <string name="medicine_bag_heading">약 봉투 사진을 등록해 주세요</string>
     <string name="medicine_bag_description">약 이름과 복용 정보가 잘 보이도록 약 봉투 전체를 선명하게 촬영해 주세요.</string>
     <string name="medicine_bag_preview_empty">촬영한 약 봉투 사진이 여기에 표시돼요</string>
@@ -29,11 +32,13 @@
     <string name="medicine_bag_image">촬영한 약 봉투 사진</string>
     <string name="select_medicine_bag_first">먼저 약 봉투 사진을 선택해 주세요.</string>
 
+    <!-- 하단 메뉴 -->
     <string name="nav_home">홈</string>
     <string name="nav_reminder">복약알림</string>
     <string name="nav_analysis">분석</string>
     <string name="nav_chatbot">챗봇</string>
 
+    <!-- 챗봇 -->
     <string name="chatbot_title">Medimate 챗봇</string>
     <string name="chatbot_intro_title">복약 관련 궁금한 점을 물어보세요</string>
     <string name="chatbot_intro_description">복용법, 부작용, 병용 여부 등\n복약에 대한 궁금증을 도와드릴게요.</string>
@@ -60,4 +65,67 @@
 
     <string name="chat_empty_question">질문을 입력해 주세요.</string>
     <string name="chat_question_sent">질문을 전송했습니다.</string>
+
+    <!-- 복용 알림 추가 -->
+    <string name="add_reminder_title">복용 알림 추가</string>
+    <string name="add_reminder_medicine_info">약 정보</string>
+    <string name="add_reminder_medicine_name">약 이름</string>
+    <string name="add_reminder_dose">1회 복용량</string>
+    <string name="add_reminder_dose_hint">예: 1정, 10mL</string>
+    <string name="add_reminder_time">복용 시간</string>
+    <string name="add_reminder_add_time">+ 시간 추가</string>
+    <string name="add_reminder_repeat">반복 요일</string>
+    <string name="add_reminder_repeat_description">약을 복용할 요일을 선택해 주세요.</string>
+    <string name="add_reminder_mon">월</string>
+    <string name="add_reminder_tue">화</string>
+    <string name="add_reminder_wed">수</string>
+    <string name="add_reminder_thu">목</string>
+    <string name="add_reminder_fri">금</string>
+    <string name="add_reminder_sat">토</string>
+    <string name="add_reminder_sun">일</string>
+    <string name="add_reminder_period">복용 기간</string>
+    <string name="add_reminder_start_date">시작일</string>
+    <string name="add_reminder_end_date">종료일</string>
+    <string name="add_reminder_today">오늘</string>
+    <string name="add_reminder_no_end_date">종료일 없음</string>
+    <string name="add_reminder_notification">알림</string>
+    <string name="add_reminder_notification_title">복용 시간 알림</string>
+    <string name="add_reminder_notification_description">복용 시간에 알림을 받을 수 있어요.</string>
+    <string name="add_reminder_save">저장하기</string>
+
+    <!-- 약봉투 인식 결과 확인 -->
+    <string name="confirm_medicine_title">인식 결과 확인</string>
+    <string name="confirm_medicine_description">인식된 약 정보가 맞는지 확인해 주세요.\n등록할 약만 선택할 수 있어요.</string>
+    <string name="confirm_detected_result">약봉투에서 인식된 결과</string>
+    <string name="confirm_count_sample">인식된 약 3개 · 선택 3개</string>
+    <string name="confirm_medicine_list">인식된 약</string>
+    <string name="confirm_retry">다시 분석</string>
+    <string name="confirm_complete">확인 완료</string>
+
+    <!-- 전화번호 변경 -->
+    <string name="change_phone_title">전화번호 변경</string>
+    <string name="change_phone_description">새 전화번호를 인증하면 계정의 전화번호를 변경할 수 있어요.</string>
+    <string name="change_phone_current">현재 전화번호</string>
+    <string name="change_phone_current_sample">010-****-****</string>
+    <string name="change_phone_new">새 전화번호</string>
+    <string name="change_phone_new_description">변경할 전화번호를 입력해 주세요.</string>
+    <string name="change_phone_hint">010-0000-0000</string>
+    <string name="change_phone_send_code">인증번호 받기</string>
+    <string name="change_phone_code">인증번호</string>
+    <string name="change_phone_code_hint">인증번호 입력</string>
+    <string name="change_phone_notice">인증이 완료된 전화번호로 변경됩니다.</string>
+    <string name="change_phone_button">전화번호 변경</string>
+
+    <!-- 비밀번호 변경 -->
+    <string name="change_password_title">비밀번호 변경</string>
+    <string name="change_password_description">현재 비밀번호를 확인한 후 새로운 비밀번호로 변경해 주세요.</string>
+    <string name="change_password_current">현재 비밀번호</string>
+    <string name="change_password_current_hint">현재 비밀번호 입력</string>
+    <string name="change_password_new">새 비밀번호</string>
+    <string name="change_password_new_hint">새 비밀번호 입력</string>
+    <string name="change_password_confirm">새 비밀번호 확인</string>
+    <string name="change_password_confirm_hint">새 비밀번호 다시 입력</string>
+    <string name="change_password_notice">새 비밀번호와 확인 값이 동일한지 확인해 주세요.</string>
+    <string name="change_password_button">비밀번호 변경</string>
+
 </resources>

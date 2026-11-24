@@ -26,25 +26,30 @@
 
         </activity>
 
+
         <!-- 회원가입 -->
         <activity
             android:name=".SignupActivity"
             android:exported="false" />
+
 
         <!-- 로그인 -->
         <activity
             android:name=".LoginActivity"
             android:exported="false" />
 
+
         <!-- 개인 정보 -->
         <activity
             android:name=".ProfileActivity"
             android:exported="false" />
 
+
         <!-- 회원 탈퇴 -->
         <activity
             android:name=".WithdrawActivity"
             android:exported="false" />
+
 
         <!-- 기존 메인 화면 -->
         <activity
@@ -52,15 +57,24 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+
         <!-- OCR 결과 화면 -->
         <activity
             android:name=".OcrResultActivity"
             android:exported="false" />
 
+
         <!-- OCR 결과 상세 분석 화면 -->
         <activity
             android:name=".MedicineDetailActivity"
             android:exported="false" />
+
+
+        <!-- 내 약 목록 화면 -->
+        <activity
+            android:name=".MyMedicineActivity"
+            android:exported="false" />
+
 
         <!-- 알약 사진 촬영 및 선택 화면 -->
         <activity
@@ -68,15 +82,18 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+
         <!-- 알약 분석 중 화면 -->
         <activity
             android:name=".PillAnalyzingActivity"
             android:exported="false" />
 
+
         <!-- 챗봇 화면 -->
         <activity
             android:name=".ChatbotActivity"
             android:exported="false" />
+
 
         <!-- 카메라 촬영 이미지 저장용 FileProvider -->
         <provider
@@ -91,6 +108,27 @@
 
         </provider>
 
+        <!-- 복용 알림 추가 화면 -->
+        <activity
+            android:name=".AddMedicationReminderActivity"
+            android:exported="false" />
+
+        <!-- 약봉투 인식 결과 확인 -->
+        <activity
+            android:name=".MedicineConfirmActivity"
+            android:exported="false" />
+
+        <!-- 전화번호 변경 -->
+        <activity
+            android:name=".ChangePhoneActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- 비밀번호 변경 -->
+        <activity
+            android:name=".ChangePasswordActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

@@ -3,7 +3,6 @@ package com.medimate;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -82,32 +81,18 @@ public class MedicationReminderActivity extends AppCompatActivity {
 
 
         // =========================
-        // 상단 알림 추가 버튼
-        // =========================
-
-        findViewById(R.id.btn_add_reminder)
-                .setOnClickListener(v -> {
-
-                    Toast.makeText(
-                            MedicationReminderActivity.this,
-                            "복약 알림 추가 기능은 다음 단계에서 연결할 예정입니다.",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
-
-
-        // =========================
-        // 하단 복용 알림 추가 버튼
+        // 복용 알림 추가 화면 이동
         // =========================
 
         findViewById(R.id.btn_add_med_schedule)
                 .setOnClickListener(v -> {
 
-                    Toast.makeText(
+                    Intent intent = new Intent(
                             MedicationReminderActivity.this,
-                            "복용 시간을 추가하는 화면은 다음 단계에서 연결할 예정입니다.",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                            AddMedicationReminderActivity.class
+                    );
+
+                    startActivity(intent);
                 });
     }
 }

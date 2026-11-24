@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 눌러서 선택된 상태 -->
+    <item
+        android:color="@color/medimate_sage"
+        android:state_checked="true" />
+
+    <!-- 기본 상태 -->
+    <item
+        android:color="@color/medimate_card" />
+
+</selector>

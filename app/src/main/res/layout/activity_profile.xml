@@ -7,121 +7,179 @@
     android:layout_height="match_parent"
     android:background="@color/medimate_bg">
 
-    <!-- 상단 -->
-    <View
-        android:id="@+id/header"
-        android:layout_width="0dp"
-        android:layout_height="105dp"
-        android:background="@color/medimate_green"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
 
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="개인 정보"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        android:textStyle="bold"
+    <!-- ========================= -->
+    <!-- 상단 헤더 -->
+    <!-- ========================= -->
+
+    <LinearLayout
+        android:id="@+id/header_profile"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="42dp"
+        android:layout_marginEnd="22dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/header"
-        android:layout_marginBottom="22dp" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- 뒤로가기 -->
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/back"
+            android:padding="12dp"
+            android:src="@drawable/ic_back"
+            app:tint="@color/medimate_icon_green" />
+
+        <!-- 제목 -->
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="개인 정보"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+
+    <!-- ========================= -->
+    <!-- 내용 -->
+    <!-- ========================= -->
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="28dp"
-        android:layout_marginEnd="28dp"
-        android:layout_marginTop="36dp"
+        android:layout_marginStart="22dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="22dp"
         android:orientation="vertical"
-        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintTop_toBottomOf="@id/header_profile"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+
+        <!-- ========================= -->
+        <!-- 계정 -->
+        <!-- ========================= -->
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
             android:text="계정"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/medimate_text_main"
             android:textSize="18sp"
             android:textStyle="bold" />
 
+
+        <!-- 아이디 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_id"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="58dp"
+            android:layout_marginTop="14dp"
             android:gravity="start|center_vertical"
             android:text="아이디 표시"
-            android:textColor="@color/text_secondary"
-            app:backgroundTint="@color/white"
-            app:cornerRadius="14dp"
-            app:strokeColor="@color/card_border"
+            android:textAllCaps="false"
+            android:textColor="@color/medimate_text_sub"
+            android:textSize="14sp"
+            app:backgroundTint="@color/medimate_card"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/medimate_border"
             app:strokeWidth="1dp" />
 
+
+        <!-- 이메일 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_email"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="58dp"
             android:layout_marginTop="10dp"
             android:gravity="start|center_vertical"
-            android:text="이메일 표시(변경불가)"
-            android:textColor="@color/text_secondary"
-            app:backgroundTint="@color/white"
-            app:cornerRadius="14dp"
-            app:strokeColor="@color/card_border"
+            android:text="이메일 표시"
+            android:textAllCaps="false"
+            android:textColor="@color/medimate_text_sub"
+            android:textSize="14sp"
+            app:backgroundTint="@color/medimate_card"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/medimate_border"
             app:strokeWidth="1dp" />
 
+
+        <!-- 전화번호 변경 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_phone"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="58dp"
             android:layout_marginTop="10dp"
             android:gravity="start|center_vertical"
-            android:text="전화번호 표시"
-            android:textColor="@color/text_secondary"
-            app:backgroundTint="@color/white"
-            app:cornerRadius="14dp"
-            app:strokeColor="@color/card_border"
+            android:text="전화번호 변경"
+            android:textAllCaps="false"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="14sp"
+            app:backgroundTint="@color/medimate_card"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/medimate_border"
             app:strokeWidth="1dp" />
 
+
+        <!-- 비밀번호 변경 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_password"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="58dp"
             android:layout_marginTop="10dp"
             android:gravity="start|center_vertical"
             android:text="비밀번호 변경"
-            android:textColor="@color/text_secondary"
-            app:backgroundTint="@color/white"
-            app:cornerRadius="14dp"
-            app:strokeColor="@color/card_border"
+            android:textAllCaps="false"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="14sp"
+            app:backgroundTint="@color/medimate_card"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/medimate_border"
             app:strokeWidth="1dp" />
+
+
+        <!-- ========================= -->
+        <!-- 기타 -->
+        <!-- ========================= -->
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="38dp"
+            android:layout_marginTop="32dp"
+            android:fontFamily="sans-serif-medium"
             android:text="기타"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/medimate_text_main"
             android:textSize="18sp"
             android:textStyle="bold" />
 
+
+        <!-- 회원 탈퇴 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_withdraw"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="58dp"
+            android:layout_marginTop="14dp"
             android:text="Medimate 탈퇴하기"
-            android:textColor="@color/text_primary"
-            app:backgroundTint="@color/white"
-            app:cornerRadius="14dp"
-            app:strokeColor="@color/card_border"
+            android:textAllCaps="false"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="14sp"
+            app:backgroundTint="@color/medimate_card"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/medimate_border"
             app:strokeWidth="1dp" />
 
     </LinearLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -25,6 +25,7 @@
             android:paddingEnd="22dp"
             android:paddingBottom="28dp">
 
+
             <!-- 로고 -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -233,12 +234,13 @@
                         app:layout_constraintTop_toBottomOf="@id/tv_morning" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:layout_width="90dp"
-                        android:layout_height="44dp"
+                        android:layout_width="95dp"
+                        android:layout_height="48dp"
+                        android:minHeight="48dp"
                         android:layout_marginEnd="14dp"
                         android:text="복용완료"
                         android:textColor="@color/white"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         app:backgroundTint="@color/medimate_sage"
                         app:cornerRadius="15dp"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -309,12 +311,13 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_lunch_take"
-                        android:layout_width="90dp"
-                        android:layout_height="44dp"
+                        android:layout_width="95dp"
+                        android:layout_height="48dp"
+                        android:minHeight="48dp"
                         android:layout_marginEnd="14dp"
                         android:text="복용하기"
                         android:textColor="@color/medimate_sage_dark"
-                        android:textSize="11sp"
+                        android:textSize="12sp"
                         app:backgroundTint="@color/medimate_card"
                         app:cornerRadius="15dp"
                         app:strokeColor="@color/medimate_sage"
@@ -339,12 +342,15 @@
                 android:textSize="19sp"
                 android:textStyle="bold" />
 
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="122dp"
                 android:layout_marginTop="13dp"
                 android:orientation="horizontal">
 
+
+                <!-- 약 봉투 분석 -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_bag_analysis"
                     android:layout_width="0dp"
@@ -394,6 +400,7 @@
                 </com.google.android.material.card.MaterialCardView>
 
 
+                <!-- 알약 분석 -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_pill_analysis"
                     android:layout_width="0dp"
@@ -448,6 +455,7 @@
     </androidx.core.widget.NestedScrollView>
 
 
+    <!-- 하단 네비게이션 -->
     <include
         android:id="@+id/include_bottom_nav"
         layout="@layout/layout_bottom_nav"

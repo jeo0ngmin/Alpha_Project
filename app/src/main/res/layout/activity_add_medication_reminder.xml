@@ -1,0 +1,640 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/medimate_bg">
+
+
+    <!-- 뒤로가기 -->
+    <ImageButton
+        android:id="@+id/btn_back"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="42dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/back"
+        android:padding="12dp"
+        android:src="@drawable/ic_back"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/medimate_icon_green" />
+
+
+    <!-- 제목 -->
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="@string/add_reminder_title"
+        android:textColor="@color/medimate_text_main"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/btn_back"
+        app:layout_constraintStart_toEndOf="@id/btn_back"
+        app:layout_constraintTop_toTopOf="@id/btn_back" />
+
+
+    <!-- 본문 -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/reminder_add_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="18dp"
+        android:layout_marginBottom="12dp"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@id/btn_save_reminder"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_back">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="22dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="24dp">
+
+
+            <!-- ========================= -->
+            <!-- 약 정보 -->
+            <!-- ========================= -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/add_reminder_medicine_info"
+                android:textColor="@color/medimate_text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+
+                    <!-- 약 이름 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:labelFor="@id/et_medicine_name"
+                        android:text="@string/add_reminder_medicine_name"
+                        android:textColor="@color/medimate_text_main"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_medicine_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        app:boxBackgroundColor="@color/medimate_card"
+                        app:boxBackgroundMode="outline"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:boxStrokeColor="@color/medimate_border">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_medicine_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:hint="@string/add_reminder_medicine_name"
+                            android:inputType="text"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:textColor="@color/medimate_text_main"
+                            android:textColorHint="@color/medimate_text_sub"
+                            android:textSize="14sp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+
+                    <!-- 1회 복용량 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:labelFor="@id/et_dose"
+                        android:text="@string/add_reminder_dose"
+                        android:textColor="@color/medimate_text_main"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_dose"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        app:boxBackgroundColor="@color/medimate_card"
+                        app:boxBackgroundMode="outline"
+                        app:boxCornerRadiusBottomEnd="14dp"
+                        app:boxCornerRadiusBottomStart="14dp"
+                        app:boxCornerRadiusTopEnd="14dp"
+                        app:boxCornerRadiusTopStart="14dp"
+                        app:boxStrokeColor="@color/medimate_border">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_dose"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:hint="@string/add_reminder_dose_hint"
+                            android:inputType="text"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:textColor="@color/medimate_text_main"
+                            android:textColorHint="@color/medimate_text_sub"
+                            android:textSize="14sp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- ========================= -->
+            <!-- 복용 시간 -->
+            <!-- ========================= -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/add_reminder_time"
+                android:textColor="@color/medimate_text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chip_group_times"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:chipSpacingHorizontal="8dp"
+                        app:chipSpacingVertical="8dp" />
+
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_add_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="12dp"
+                        android:minHeight="48dp"
+                        android:text="@string/add_reminder_add_time"
+                        android:textColor="@color/medimate_sage_dark"
+                        android:textSize="14sp"
+                        app:backgroundTint="@color/medimate_card"
+                        app:cornerRadius="15dp"
+                        app:strokeColor="@color/medimate_sage"
+                        app:strokeWidth="1dp" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- ========================= -->
+            <!-- 반복 요일 -->
+            <!-- ========================= -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/add_reminder_repeat"
+                android:textColor="@color/medimate_text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/add_reminder_repeat_description"
+                android:textColor="@color/medimate_text_sub"
+                android:textSize="12sp" />
+
+
+            <!-- 요일 7개 -->
+            <LinearLayout
+                android:id="@+id/layout_days"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="14dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chip_mon"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="2dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:text="@string/add_reminder_mon"
+                    android:textAllCaps="false"
+                    android:textColor="@color/medimate_sage_dark"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/medimate_card"
+                    app:checkable="true"
+                    app:cornerRadius="16dp"
+                    app:insetBottom="4dp"
+                    app:insetTop="4dp"
+                    app:strokeColor="@color/medimate_sage"
+                    app:strokeWidth="1dp" />
+
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chip_tue"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:text="@string/add_reminder_tue"
+                    android:textAllCaps="false"
+                    android:textColor="@color/medimate_sage_dark"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/medimate_card"
+                    app:checkable="true"
+                    app:cornerRadius="16dp"
+                    app:insetBottom="4dp"
+                    app:insetTop="4dp"
+                    app:strokeColor="@color/medimate_sage"
+                    app:strokeWidth="1dp" />
+
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chip_wed"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:text="@string/add_reminder_wed"
+                    android:textAllCaps="false"
+                    android:textColor="@color/medimate_sage_dark"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/medimate_card"
+                    app:checkable="true"
+                    app:cornerRadius="16dp"
+                    app:insetBottom="4dp"
+                    app:insetTop="4dp"
+                    app:strokeColor="@color/medimate_sage"
+                    app:strokeWidth="1dp" />
+
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chip_thu"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:text="@string/add_reminder_thu"
+                    android:textAllCaps="false"
+                    android:textColor="@color/medimate_sage_dark"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/medimate_card"
+                    app:checkable="true"
+                    app:cornerRadius="16dp"
+                    app:insetBottom="4dp"
+                    app:insetTop="4dp"
+                    app:strokeColor="@color/medimate_sage"
+                    app:strokeWidth="1dp" />
+
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chip_fri"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:text="@string/add_reminder_fri"
+                    android:textAllCaps="false"
+                    android:textColor="@color/medimate_sage_dark"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/medimate_card"
+                    app:checkable="true"
+                    app:cornerRadius="16dp"
+                    app:insetBottom="4dp"
+                    app:insetTop="4dp"
+                    app:strokeColor="@color/medimate_sage"
+                    app:strokeWidth="1dp" />
+
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chip_sat"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:text="@string/add_reminder_sat"
+                    android:textAllCaps="false"
+                    android:textColor="@color/medimate_sage_dark"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/medimate_card"
+                    app:checkable="true"
+                    app:cornerRadius="16dp"
+                    app:insetBottom="4dp"
+                    app:insetTop="4dp"
+                    app:strokeColor="@color/medimate_sage"
+                    app:strokeWidth="1dp" />
+
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/chip_sun"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="2dp"
+                    android:layout_weight="1"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:text="@string/add_reminder_sun"
+                    android:textAllCaps="false"
+                    android:textColor="@color/medimate_sage_dark"
+                    android:textSize="14sp"
+                    app:backgroundTint="@color/medimate_card"
+                    app:checkable="true"
+                    app:cornerRadius="16dp"
+                    app:insetBottom="4dp"
+                    app:insetTop="4dp"
+                    app:strokeColor="@color/medimate_sage"
+                    app:strokeWidth="1dp" />
+
+            </LinearLayout>
+
+
+            <!-- ========================= -->
+            <!-- 복용 기간 -->
+            <!-- ========================= -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/add_reminder_period"
+                android:textColor="@color/medimate_text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+
+                    <!-- 시작일 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/add_reminder_start_date"
+                            android:textColor="@color/medimate_text_main"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_start_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:minWidth="48dp"
+                            android:minHeight="48dp"
+                            android:text="@string/add_reminder_today"
+                            android:textColor="@color/medimate_sage_dark"
+                            android:textSize="13sp"
+                            app:backgroundTint="@color/medimate_sage_soft"
+                            app:cornerRadius="14dp" />
+
+                    </LinearLayout>
+
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="6dp"
+                        android:background="@color/medimate_border" />
+
+
+                    <!-- 종료일 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/add_reminder_end_date"
+                            android:textColor="@color/medimate_text_main"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_end_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:minWidth="48dp"
+                            android:minHeight="48dp"
+                            android:text="@string/add_reminder_no_end_date"
+                            android:textColor="@color/medimate_sage_dark"
+                            android:textSize="13sp"
+                            app:backgroundTint="@color/medimate_sage_soft"
+                            app:cornerRadius="14dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <!-- ========================= -->
+            <!-- 알림 -->
+            <!-- ========================= -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/add_reminder_notification"
+                android:textColor="@color/medimate_text_main"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="76dp"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/medimate_card"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/medimate_border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/add_reminder_notification_title"
+                            android:textColor="@color/medimate_text_main"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/add_reminder_notification_description"
+                            android:textColor="@color/medimate_text_sub"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switch_notification"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+
+    <!-- 저장하기 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_save_reminder"
+        android:layout_width="0dp"
+        android:layout_height="58dp"
+        android:layout_marginStart="22dp"
+        android:layout_marginEnd="22dp"
+        android:layout_marginBottom="28dp"
+        android:text="@string/add_reminder_save"
+        android:textColor="@color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/medimate_sage"
+        app:cornerRadius="17dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
