@@ -285,10 +285,10 @@
                     android:textColor="@color/medimate_sage_dark"
                     android:textSize="14sp"
                     app:backgroundTint="@color/medimate_card"
-                    app:checkable="true"
+                    android:checkable="true"
                     app:cornerRadius="16dp"
-                    app:insetBottom="4dp"
-                    app:insetTop="4dp"
+                    android:insetBottom="4dp"
+                    android:insetTop="4dp"
                     app:strokeColor="@color/medimate_sage"
                     app:strokeWidth="1dp" />
 
@@ -309,10 +309,10 @@
                     android:textColor="@color/medimate_sage_dark"
                     android:textSize="14sp"
                     app:backgroundTint="@color/medimate_card"
-                    app:checkable="true"
+                    android:checkable="true"
                     app:cornerRadius="16dp"
-                    app:insetBottom="4dp"
-                    app:insetTop="4dp"
+                    android:insetBottom="4dp"
+                    android:insetTop="4dp"
                     app:strokeColor="@color/medimate_sage"
                     app:strokeWidth="1dp" />
 
@@ -333,10 +333,10 @@
                     android:textColor="@color/medimate_sage_dark"
                     android:textSize="14sp"
                     app:backgroundTint="@color/medimate_card"
-                    app:checkable="true"
+                    android:checkable="true"
                     app:cornerRadius="16dp"
-                    app:insetBottom="4dp"
-                    app:insetTop="4dp"
+                    android:insetBottom="4dp"
+                    android:insetTop="4dp"
                     app:strokeColor="@color/medimate_sage"
                     app:strokeWidth="1dp" />
 
@@ -357,10 +357,10 @@
                     android:textColor="@color/medimate_sage_dark"
                     android:textSize="14sp"
                     app:backgroundTint="@color/medimate_card"
-                    app:checkable="true"
+                    android:checkable="true"
                     app:cornerRadius="16dp"
-                    app:insetBottom="4dp"
-                    app:insetTop="4dp"
+                    android:insetBottom="4dp"
+                    android:insetTop="4dp"
                     app:strokeColor="@color/medimate_sage"
                     app:strokeWidth="1dp" />
 
@@ -381,10 +381,10 @@
                     android:textColor="@color/medimate_sage_dark"
                     android:textSize="14sp"
                     app:backgroundTint="@color/medimate_card"
-                    app:checkable="true"
+                    android:checkable="true"
                     app:cornerRadius="16dp"
-                    app:insetBottom="4dp"
-                    app:insetTop="4dp"
+                    android:insetBottom="4dp"
+                    android:insetTop="4dp"
                     app:strokeColor="@color/medimate_sage"
                     app:strokeWidth="1dp" />
 
@@ -405,10 +405,10 @@
                     android:textColor="@color/medimate_sage_dark"
                     android:textSize="14sp"
                     app:backgroundTint="@color/medimate_card"
-                    app:checkable="true"
+                    android:checkable="true"
                     app:cornerRadius="16dp"
-                    app:insetBottom="4dp"
-                    app:insetTop="4dp"
+                    android:insetBottom="4dp"
+                    android:insetTop="4dp"
                     app:strokeColor="@color/medimate_sage"
                     app:strokeWidth="1dp" />
 
@@ -428,10 +428,10 @@
                     android:textColor="@color/medimate_sage_dark"
                     android:textSize="14sp"
                     app:backgroundTint="@color/medimate_card"
-                    app:checkable="true"
+                    android:checkable="true"
                     app:cornerRadius="16dp"
-                    app:insetBottom="4dp"
-                    app:insetTop="4dp"
+                    android:insetBottom="4dp"
+                    android:insetTop="4dp"
                     app:strokeColor="@color/medimate_sage"
                     app:strokeWidth="1dp" />
 
