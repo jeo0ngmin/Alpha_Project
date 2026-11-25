@@ -1,5 +1,7 @@
 package com.medimate;
 
+import com.medimate.ui.LoginActivity;
+
 import android.content.Intent;
 import android.os.Bundle;
 

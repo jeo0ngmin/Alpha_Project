@@ -1,0 +1,2255 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MediMate 알약·약봉투 API",
+    "description": "SwaggerHub kookmin-c88/medimate-api 1.0.0 중 알약 식별, 약봉투 인식, 약 상세 부분. 복약 일정은 앱이 Firestore에 저장하므로 서버에는 일정 API가 없다(약봉투 확정은 일정 초안만 돌려준다). 로그인은 Firebase ID 토큰이며, 서버에 프로젝트 ID를 설정했을 때만 확인한다.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "MediMate Team"
+    },
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "이 PC"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Files",
+      "description": "이미지 업로드"
+    },
+    {
+      "name": "PillIdentification",
+      "description": "알약 식별"
+    },
+    {
+      "name": "Recognition",
+      "description": "OCR 인식 (약봉투 · 처방전)"
+    },
+    {
+      "name": "Medications",
+      "description": "약품 정보 (식약처 공공데이터)"
+    }
+  ],
+  "security": [
+    {
+      "firebaseIdToken": []
+    }
+  ],
+  "paths": {
+    "/files/images": {
+      "post": {
+        "tags": [
+          "Files"
+        ],
+        "summary": "이미지 업로드",
+        "description": "EXIF 회전 적용 후 위치정보를 제거하고 서버 디스크에 저장한다.\n업로드 즉시 밝기·선명도를 검사해 기준 미달이면 `422`로 재촬영을 요청한다.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "purpose"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "MEDICATION_BAG",
+                      "PRESCRIPTION",
+                      "PILL",
+                      "PROFILE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "업로드 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/UploadedFile"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "10MB 초과 (MM-FIL-4130)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "지원하지 않는 포맷 (MM-FIL-4150)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "이미지 품질 미달 (MM-FIL-4220 / 4221 / 4222)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/pill-identification": {
+      "post": {
+        "tags": [
+          "PillIdentification"
+        ],
+        "summary": "알약 식별 요청 (비동기)",
+        "description": "낱알 상태로 보관 중인 약을 촬영해 모양·색·각인·크기로 식약처 낱알식별 데이터와 매칭한다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PillIdentificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "식별 요청 접수",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/JobAccepted"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/pill-identification/{jobId}": {
+      "get": {
+        "tags": [
+          "PillIdentification"
+        ],
+        "summary": "알약 식별 결과 조회",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "pid_01J9XM4R7TQ2K8N0B3V5X7Z9A1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/PillIdentificationJob"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "410": {
+            "$ref": "#/components/responses/Gone"
+          }
+        }
+      }
+    },
+    "/pill-identification/{jobId}/select": {
+      "post": {
+        "tags": [
+          "PillIdentification"
+        ],
+        "summary": "후보 선택 확정",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "itemSeq"
+                ],
+                "properties": {
+                  "itemSeq": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "확정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "medication": {
+                              "$ref": "#/components/schemas/MedicationDetail"
+                            },
+                            "draftPlan": {
+                              "$ref": "#/components/schemas/MedicationPlanRequest"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "410": {
+            "$ref": "#/components/responses/Gone"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
+        }
+      }
+    },
+    "/pill-identification/search": {
+      "get": {
+        "tags": [
+          "PillIdentification"
+        ],
+        "summary": "조건 기반 수동 검색",
+        "description": "카메라 인식 실패 시의 폴백. 식약처 낱알식별 데이터를 메디메이트 스키마로 정규화해 반환한다.",
+        "parameters": [
+          {
+            "name": "drugShape",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DrugShape"
+            }
+          },
+          {
+            "name": "colorClass",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ColorClass"
+              }
+            }
+          },
+          {
+            "name": "printText",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lineFront",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LineType"
+            }
+          },
+          {
+            "name": "itemName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/MedicationSummary"
+                              }
+                            },
+                            "pageInfo": {
+                              "$ref": "#/components/schemas/PageInfo"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
+        }
+      }
+    },
+    "/files/images/{fileId}/content": {
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "summary": "서명 URL로 사진 내려받기",
+        "description": "업로드 응답의 signedUrl 형식. 서명이 맞고 기한 안일 때만 열린다.",
+        "parameters": [
+          {
+            "name": "fileId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "exp",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "sig",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "사진",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "security": []
+      }
+    },
+    "/recognition/medication-bags": {
+      "post": {
+        "tags": [
+          "Recognition"
+        ],
+        "summary": "약봉투 인식 요청 (비동기)",
+        "description": "업로드한 약봉투 사진(`purpose=MEDICATION_BAG`)을 서버가 CLOVA OCR로 읽고, 환자 이름·전화번호 등을 가린 글자만 Claude로 정리한 뒤 식약처 품목과 대조한다. 앱이 `ocrRawText`를 보내면 CLOVA OCR을 건너뛴다. 즉시 `202`로 jobId를 돌려준다. 결과는 사용자가 확인하기 전의 초안이다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecognitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "인식 요청 접수",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/JobAccepted"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/recognition/jobs/{jobId}": {
+      "get": {
+        "tags": [
+          "Recognition"
+        ],
+        "summary": "인식 결과 조회",
+        "description": "폴링 권장 간격 2초. 보통 10~30초 걸린다. 실패하면 status=FAILED이고 error.ttsMessage를 읽어 준다.",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "rcg_01J9XKB2M8QE7V0T4C6H9D1F3G"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RecognitionJob"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "410": {
+            "$ref": "#/components/responses/Gone"
+          }
+        }
+      }
+    },
+    "/recognition/jobs/{jobId}/items/{itemId}": {
+      "patch": {
+        "tags": [
+          "Recognition"
+        ],
+        "summary": "인식 항목 수정",
+        "description": "사용자가 항목을 확인하거나 고친다. 확정 전에만 가능하다. 빈 본문 `{}`도 '맞게 들었다'는 확인으로 보고 needsReview를 해제한다. 단, 1회량·복용 시간·일수가 비어 있으면 계속 needsReview다. itemSeq는 수동 검색(`/pill-identification/search`)이나 candidates에서 고른 품목기준코드다.",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "itemSeq": {
+                    "type": "string"
+                  },
+                  "dosageAmount": {
+                    "type": "number",
+                    "format": "double"
+                  },
+                  "frequencyPerDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 6
+                  },
+                  "timeSlots": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TimeSlot"
+                    }
+                  },
+                  "mealRelation": {
+                    "$ref": "#/components/schemas/MealRelation"
+                  },
+                  "durationDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  },
+                  "excluded": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "수정된 항목",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RecognitionItem"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/recognition/jobs/{jobId}/confirm": {
+      "post": {
+        "tags": [
+          "Recognition"
+        ],
+        "summary": "인식 결과 확정 → 복약 일정 저장",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "excludeItemIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "timeSlotOverrides": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "example": "07:30"
+                    }
+                  },
+                  "acceptAll": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "true면 약마다 확인 없이 확정한다. 복용량·횟수·일수를 읽지 못한 약과 이미 복용 중인 약은 빼고 skippedItems로 알린다."
+                  },
+                  "currentMedications": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "$ref": "#/components/schemas/CurrentMedication"
+                    },
+                    "description": "앱에 저장된 복용 중인 약. 보내지 않으면 겹치는지 확인하지 않는다."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "확정 및 계획 생성 완료",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/RecognitionConfirmResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "description": "확정할 항목 없음 (MM-RCG-4223)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "410": {
+            "$ref": "#/components/responses/Gone"
+          }
+        },
+        "description": "needsReview인 약이 남아 있으면 409(MM-RCG-4091)다. 확정해도 서버에는 아무것도 저장되지 않는다. 약마다 일정 초안(plans)을 돌려주고, 앱이 그것을 Firestore에 저장하고 알람을 만든다. 이미 먹는 약인지는 앱이 보낸 currentMedications로만 판단한다: 겹치는 약(또는 봉투 안에서 같은 약이 두 번)이 있으면 409(MM-RCG-4094), acceptAll이면 그 약을 빼고 skippedItems로 알린다. 앱은 ttsScript를 읽은 뒤 alarmQuestion(\"알람으로 설정할까요?\")을 묻고, 답에 따라 plans의 notificationEnabled를 정해 저장한다. 같은 작업을 다시 확정하면 처음 결과를 돌려준다."
+      }
+    },
+    "/medications/{itemSeq}": {
+      "get": {
+        "tags": [
+          "Medications"
+        ],
+        "summary": "약품 상세 조회",
+        "parameters": [
+          {
+            "name": "itemSeq",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "197000037"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/MedicationDetail"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
+        },
+        "description": "품목 정보와 식약처 e약은요 설명(info)을 돌려준다. sections는 앱의 '약 상세 정보' 화면 버튼용이다: 약 설명, 주의사항, 복용방법, 보관방법은 항상 있고(내용이 없으면 text 없이 ttsText로 안내), 함께 먹으면 안 되는 것과 부작용은 내용이 있을 때만 있다. infoStatus: FOUND | NOT_IN_MFDS | UNAVAILABLE | NOT_CONFIGURED. e약은요에는 주로 일반의약품만 있어 전문의약품은 NOT_IN_MFDS가 많다."
+      }
+    },
+    "/medications/{itemSeq}/tts-script": {
+      "get": {
+        "tags": [
+          "Medications"
+        ],
+        "summary": "음성 안내 스크립트 조회",
+        "description": "식약처 원문을 한국어 TTS 로 읽기 좋게 재구성한 문장을 반환한다.\n`500mg` → `오백 밀리그램` 처럼 단위·숫자를 한글로 풀어 써 TTS 오독을 방지한다.\n",
+        "parameters": [
+          {
+            "name": "itemSeq",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sections",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "NAME",
+                  "EFFICACY",
+                  "USE_METHOD",
+                  "WARNING",
+                  "SIDE_EFFECT",
+                  "DEPOSIT"
+                ]
+              }
+            }
+          },
+          {
+            "name": "verbosity",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SIMPLE",
+                "DETAILED"
+              ],
+              "default": "SIMPLE"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/TtsScript"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "description": "이전 응답의 nextCursor",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Size": {
+        "name": "size",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "description": "중복 처리 방지용 클라이언트 생성 ULID",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Sort": {
+        "name": "sort",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "default": "createdAt,desc"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "요청 값 검증 실패",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "권한 없음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "리소스 없음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "상태 충돌 / 중복",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Gone": {
+        "description": "만료된 Job",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Rate Limit 초과",
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "외부 API 오류",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestId": {
+            "type": "string",
+            "example": "01J9XK7Q4ZQH8F2M3N5P6R7S8T"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "MM-{도메인}-{HTTP}{일련번호} 체계",
+            "example": "MM-RCG-4220"
+          },
+          "message": {
+            "type": "string",
+            "description": "화면 표시용 메시지",
+            "example": "약봉투에서 약품 정보를 추출하지 못했습니다."
+          },
+          "ttsMessage": {
+            "type": "string",
+            "description": "**메디메이트 고유 규약.** 화면을 보지 않는 사용자를 위해 즉시 음성으로 읽어도\n자연스러운 한 문장. 앱은 에러 발생 시 message 대신 이 값을 TTS 로 출력한다.\n",
+            "example": "약봉투 글씨를 읽지 못했어요. 평평하게 놓고 다시 찍어 주세요."
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "retryable": {
+            "type": "boolean",
+            "description": "true 면 클라이언트가 지수 백오프로 자동 재시도한다."
+          }
+        }
+      },
+      "PageInfo": {
+        "type": "object",
+        "properties": {
+          "size": {
+            "type": "integer"
+          },
+          "hasNext": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer"
+          }
+        }
+      },
+      "JobAccepted": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "PROCESSING"
+          },
+          "estimatedSeconds": {
+            "type": "integer"
+          },
+          "pollAfterMs": {
+            "type": "integer"
+          },
+          "ttsMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "TimeSlot": {
+        "type": "string",
+        "enum": [
+          "MORNING",
+          "LUNCH",
+          "DINNER",
+          "BEDTIME",
+          "CUSTOM"
+        ]
+      },
+      "MealRelation": {
+        "type": "string",
+        "enum": [
+          "BEFORE_MEAL",
+          "AFTER_MEAL",
+          "WITH_MEAL",
+          "EMPTY_STOMACH",
+          "ANYTIME"
+        ]
+      },
+      "DosageUnit": {
+        "type": "string",
+        "enum": [
+          "TABLET",
+          "CAPSULE",
+          "ML",
+          "PACK",
+          "DROP",
+          "PUFF",
+          "UNIT"
+        ]
+      },
+      "FrequencyType": {
+        "type": "string",
+        "enum": [
+          "DAILY",
+          "INTERVAL_DAYS",
+          "WEEKLY",
+          "AS_NEEDED"
+        ]
+      },
+      "PillJobStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "PROCESSING",
+          "COMPLETED",
+          "NOT_FOUND",
+          "FAILED",
+          "SELECTED"
+        ]
+      },
+      "DrugShape": {
+        "type": "string",
+        "enum": [
+          "ROUND",
+          "OVAL",
+          "OBLONG",
+          "TRIANGLE",
+          "SQUARE",
+          "DIAMOND",
+          "PENTAGON",
+          "HEXAGON",
+          "OCTAGON",
+          "CAPSULE",
+          "OTHER"
+        ]
+      },
+      "ColorClass": {
+        "type": "string",
+        "enum": [
+          "WHITE",
+          "YELLOW",
+          "ORANGE",
+          "PINK",
+          "RED",
+          "BROWN",
+          "LIGHT_GREEN",
+          "GREEN",
+          "BLUE",
+          "NAVY",
+          "PURPLE",
+          "GRAY",
+          "BLACK",
+          "TRANSPARENT"
+        ]
+      },
+      "LineType": {
+        "type": "string",
+        "enum": [
+          "NONE",
+          "MINUS",
+          "PLUS",
+          "OTHER"
+        ]
+      },
+      "UploadedFile": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "example": "f_01J9XK7Q4ZQH8F2M3N5P6R7S8T"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "width": {
+            "type": "integer"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "signedUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "10분 유효 서명 URL"
+          },
+          "signedUrlExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "자동 삭제 예정 시각(업로드 +7일)"
+          }
+        }
+      },
+      "PillIdentificationRequest": {
+        "type": "object",
+        "required": [
+          "fileId"
+        ],
+        "properties": {
+          "fileId": {
+            "type": "string"
+          },
+          "frontFileId": {
+            "type": "string"
+          },
+          "backFileId": {
+            "type": "string"
+          },
+          "hints": {
+            "type": "object",
+            "properties": {
+              "drugShape": {
+                "$ref": "#/components/schemas/DrugShape"
+              },
+              "colorClass": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ColorClass"
+                }
+              },
+              "printText": {
+                "type": "string"
+              }
+            }
+          },
+          "currentMedications": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/CurrentMedication"
+            },
+            "description": "복용 중인 약. 후보의 isInMyMedications 표시에만 쓴다(선택)."
+          }
+        }
+      },
+      "PillIdentificationJob": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PillJobStatus"
+          },
+          "extractedFeatures": {
+            "$ref": "#/components/schemas/PillFeatures"
+          },
+          "topMatch": {
+            "$ref": "#/components/schemas/PillCandidate"
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PillCandidate"
+            }
+          },
+          "requiresUserSelection": {
+            "type": "boolean",
+            "description": "1·2위 matchScore 차이가 0.15 미만이면 true"
+          },
+          "fallbackAction": {
+            "type": "string",
+            "enum": [
+              "MANUAL_SEARCH",
+              "RETAKE"
+            ],
+            "nullable": true
+          },
+          "ttsScript": {
+            "type": "string"
+          }
+        }
+      },
+      "PillFeatures": {
+        "type": "object",
+        "description": "비전 모듈이 추출한 물리 특징. 식약처 낱알식별 API 요청 파라미터와 1:1 대응한다.",
+        "properties": {
+          "drugShape": {
+            "$ref": "#/components/schemas/DrugShape"
+          },
+          "colorClass1": {
+            "$ref": "#/components/schemas/ColorClass"
+          },
+          "colorClass2": {
+            "$ref": "#/components/schemas/ColorClass"
+          },
+          "printFront": {
+            "type": "string",
+            "nullable": true
+          },
+          "printBack": {
+            "type": "string",
+            "nullable": true
+          },
+          "lineFront": {
+            "$ref": "#/components/schemas/LineType"
+          },
+          "lengLong": {
+            "type": "number",
+            "format": "double",
+            "description": "mm"
+          },
+          "lengShort": {
+            "type": "number",
+            "format": "double"
+          },
+          "thick": {
+            "type": "number",
+            "format": "double"
+          },
+          "featureConfidence": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "PillCandidate": {
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer"
+          },
+          "itemSeq": {
+            "type": "string"
+          },
+          "itemName": {
+            "type": "string"
+          },
+          "entpName": {
+            "type": "string"
+          },
+          "className": {
+            "type": "string"
+          },
+          "etcOtcName": {
+            "type": "string"
+          },
+          "itemImageUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "matchScore": {
+            "type": "number",
+            "format": "double",
+            "description": "0.35×각인 + 0.25×모양 + 0.2×색상 + 0.2×크기"
+          },
+          "isInMyMedications": {
+            "type": "boolean",
+            "description": "식별 요청 때 보낸 currentMedications에 있는 약인지 (소분 보관 약 확인 시나리오)"
+          }
+        }
+      },
+      "MedicationSummary": {
+        "type": "object",
+        "properties": {
+          "itemSeq": {
+            "type": "string"
+          },
+          "itemName": {
+            "type": "string"
+          },
+          "entpName": {
+            "type": "string"
+          },
+          "className": {
+            "type": "string"
+          },
+          "etcOtcName": {
+            "type": "string"
+          },
+          "dosageForm": {
+            "type": "string"
+          },
+          "drugShape": {
+            "$ref": "#/components/schemas/DrugShape"
+          },
+          "colorClass1": {
+            "$ref": "#/components/schemas/ColorClass"
+          },
+          "printFront": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemImageUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "cachedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MedicationDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MedicationSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "itemPermitDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "appearance": {
+                "$ref": "#/components/schemas/PillFeatures"
+              },
+              "info": {
+                "type": "object",
+                "properties": {
+                  "efficacy": {
+                    "type": "string",
+                    "description": "MFDS efcyQesitm"
+                  },
+                  "useMethod": {
+                    "type": "string",
+                    "description": "MFDS useMethodQesitm"
+                  },
+                  "warning": {
+                    "type": "string",
+                    "description": "MFDS atpnWarnQesitm"
+                  },
+                  "precaution": {
+                    "type": "string",
+                    "description": "MFDS atpnQesitm"
+                  },
+                  "interaction": {
+                    "type": "string",
+                    "description": "MFDS intrcQesitm"
+                  },
+                  "sideEffect": {
+                    "type": "string",
+                    "description": "MFDS seQesitm"
+                  },
+                  "depositMethod": {
+                    "type": "string",
+                    "description": "MFDS depositMethodQesitm"
+                  }
+                }
+              },
+              "source": {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "example": "MFDS"
+                  },
+                  "dataset": {
+                    "type": "string",
+                    "example": "DrbEasyDrugInfoService"
+                  },
+                  "fetchedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              "infoStatus": {
+                "type": "string",
+                "enum": [
+                  "FOUND",
+                  "NOT_IN_MFDS",
+                  "UNAVAILABLE",
+                  "NOT_CONFIGURED"
+                ]
+              },
+              "sections": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "enum": [
+                        "DESCRIPTION",
+                        "CAUTION",
+                        "USE_METHOD",
+                        "STORAGE",
+                        "INTERACTION",
+                        "SIDE_EFFECT"
+                      ]
+                    },
+                    "title": {
+                      "type": "string",
+                      "example": "약 설명"
+                    },
+                    "text": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "화면에 보여 줄 원문"
+                    },
+                    "ttsText": {
+                      "type": "string",
+                      "description": "읽어 줄 문장 (숫자·단위를 한글로 풀어 씀)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "TimeSlotEntry": {
+        "type": "object",
+        "required": [
+          "slot",
+          "time"
+        ],
+        "properties": {
+          "slot": {
+            "$ref": "#/components/schemas/TimeSlot"
+          },
+          "time": {
+            "type": "string",
+            "example": "07:30"
+          }
+        }
+      },
+      "MedicationPlanRequest": {
+        "type": "object",
+        "required": [
+          "dosageAmount",
+          "dosageUnit",
+          "frequencyType",
+          "timeSlots",
+          "startDate"
+        ],
+        "properties": {
+          "itemSeq": {
+            "type": "string",
+            "description": "customName 과 택일"
+          },
+          "customName": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "미등록 약·영양제. itemSeq 와 택일"
+          },
+          "nickname": {
+            "type": "string",
+            "maxLength": 30,
+            "example": "혈압약"
+          },
+          "dosageAmount": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0.25,
+            "maximum": 20
+          },
+          "dosageUnit": {
+            "$ref": "#/components/schemas/DosageUnit"
+          },
+          "frequencyType": {
+            "$ref": "#/components/schemas/FrequencyType"
+          },
+          "frequencyPerDay": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6
+          },
+          "intervalDays": {
+            "type": "integer",
+            "minimum": 2
+          },
+          "daysOfWeek": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT",
+                "SUN"
+              ]
+            }
+          },
+          "timeSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeSlotEntry"
+            }
+          },
+          "mealRelation": {
+            "$ref": "#/components/schemas/MealRelation"
+          },
+          "mealOffsetMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "미지정 시 무기한(만성질환약)"
+          },
+          "durationDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "remainingQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "notificationEnabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "memo": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "description": "복약 일정 초안(알약 선택의 draftPlan, 약봉투 확정의 plans). 서버는 저장하지 않는다. 앱이 Firestore에 저장하고 알람을 만든다."
+      },
+      "RecognitionJob": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MEDICATION_BAG",
+              "PRESCRIPTION"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecognitionStatus"
+          },
+          "overallConfidence": {
+            "type": "number",
+            "format": "double"
+          },
+          "processedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processingMs": {
+            "type": "integer"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "pharmacyName": {
+                "type": "string",
+                "nullable": true
+              },
+              "hospitalName": {
+                "type": "string",
+                "nullable": true
+              },
+              "dispensedDate": {
+                "type": "string",
+                "format": "date",
+                "nullable": true
+              },
+              "patientNameMasked": {
+                "type": "string",
+                "example": "홍O동"
+              }
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecognitionItem"
+            }
+          },
+          "reviewRequiredCount": {
+            "type": "integer"
+          },
+          "summaryTtsScript": {
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          },
+          "generalInstructions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "generalCautions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "모든 약에 해당하는 주의사항"
+          }
+        }
+      },
+      "RecognitionItem": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "rawText": {
+            "type": "string"
+          },
+          "refinedName": {
+            "type": "string",
+            "description": "OCR 오탈자만 고친 약품명 (예 '밀리그람' → '밀리그램'). 다른 약으로 바꾸지 않는다."
+          },
+          "matched": {
+            "type": "boolean",
+            "description": "식약처 공공데이터에서 itemSeq 확정 여부"
+          },
+          "itemSeq": {
+            "type": "string",
+            "nullable": true
+          },
+          "entpName": {
+            "type": "string",
+            "nullable": true
+          },
+          "dosageForm": {
+            "type": "string",
+            "nullable": true
+          },
+          "dosageAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "dosageUnit": {
+            "type": "string"
+          },
+          "frequencyPerDay": {
+            "type": "integer"
+          },
+          "timeSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeSlot"
+            }
+          },
+          "mealRelation": {
+            "$ref": "#/components/schemas/MealRelation"
+          },
+          "mealOffsetMinutes": {
+            "type": "integer"
+          },
+          "durationDays": {
+            "type": "integer"
+          },
+          "totalQuantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "confidence": {
+            "type": "number",
+            "format": "double",
+            "description": "0.6 × OCR신뢰도 + 0.4 × 약품명 매칭 유사도. 0.7 미만이면 needsReview=true"
+          },
+          "needsReview": {
+            "type": "boolean"
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemSeq": {
+                  "type": "string"
+                },
+                "itemName": {
+                  "type": "string"
+                },
+                "entpName": {
+                  "type": "string"
+                },
+                "similarity": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          },
+          "ttsScript": {
+            "type": "string",
+            "description": "숫자·단위를 한글로 풀어 쓴 낭독용 문장"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "SIMILAR_NAME",
+                    "DUPLICATE_INGREDIENT",
+                    "INTERACTION"
+                  ]
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true,
+            "description": "식약처 품목명 (matched일 때)"
+          },
+          "strength": {
+            "type": "string",
+            "nullable": true,
+            "description": "봉투에 적힌 함량"
+          },
+          "slotsInferred": {
+            "type": "boolean",
+            "description": "봉투에 시점이 없어 기본 시점(1회 아침, 2회 아침·저녁…)으로 채웠는지"
+          },
+          "reviewReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "확인이 필요한 이유 (읽어 줄 수 있는 문장)"
+          },
+          "instructions": {
+            "type": "string",
+            "nullable": true,
+            "description": "봉투에 적힌 이 약의 안내 문구"
+          },
+          "excluded": {
+            "type": "boolean",
+            "description": "사용자가 목록에서 뺀 약"
+          },
+          "cautions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "봉투에 적힌 이 약의 주의사항 (문서에 있는 문장만)"
+          },
+          "displayText": {
+            "type": "string",
+            "example": "1회 1정 · 하루 3회 · 아침, 점심, 저녁 · 식후 30분 · 5일분"
+          },
+          "sections": {
+            "type": "array",
+            "description": "약 상세 정보 화면용 항목. 약 설명, 주의사항, 복용방법, 보관방법은 항상 있고, 함께 먹으면 안 되는 것과 부작용은 내용이 있을 때만 있다. 식약처 e약은요 기준.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "DESCRIPTION",
+                    "CAUTION",
+                    "USE_METHOD",
+                    "STORAGE",
+                    "INTERACTION",
+                    "SIDE_EFFECT"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "example": "약 설명"
+                },
+                "text": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "화면에 보여 줄 원문. 내용이 없으면 비어 있다"
+                },
+                "ttsText": {
+                  "type": "string",
+                  "description": "읽어 줄 문장"
+                }
+              }
+            }
+          },
+          "infoStatus": {
+            "type": "string",
+            "enum": [
+              "FOUND",
+              "NOT_IN_MFDS",
+              "UNAVAILABLE",
+              "NOT_CONFIGURED",
+              "NOT_MATCHED"
+            ]
+          }
+        }
+      },
+      "RecognitionStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "PROCESSING",
+          "COMPLETED",
+          "PARTIAL",
+          "FAILED",
+          "CONFIRMED"
+        ]
+      },
+      "RecognitionConfirmResult": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "CONFIRMED"
+          },
+          "totalDoseCount": {
+            "type": "integer"
+          },
+          "firstDoseAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "interactionWarnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InteractionWarning"
+            }
+          },
+          "ttsScript": {
+            "type": "string"
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicationPlanRequest"
+            },
+            "description": "복약 일정 초안. 약마다 하나. 앱이 Firestore에 저장하고 알람을 만든다."
+          },
+          "alarmQuestion": {
+            "type": "string",
+            "example": "알람으로 설정할까요?"
+          },
+          "skippedItems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "acceptAll일 때 일정에서 뺀 약과 이유"
+          },
+          "summaries": {
+            "type": "array",
+            "description": "화면용 요약. plans와 같은 순서.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string",
+                  "description": "결과 목록(items)의 약"
+                },
+                "itemSeq": {
+                  "type": "string"
+                },
+                "itemName": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "generatedDoseCount": {
+                  "type": "integer",
+                  "description": "지금 이후 알림이 울릴 횟수"
+                }
+              }
+            }
+          }
+        }
+      },
+      "InteractionWarning": {
+        "type": "object",
+        "description": "경고만 제공하며 등록을 막지 않는다. 최종 판단은 사용자와 의료진의 몫이다.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "DUPLICATE_INGREDIENT",
+              "INTERACTION",
+              "SIMILAR_NAME"
+            ]
+          },
+          "level": {
+            "$ref": "#/components/schemas/InteractionLevel"
+          },
+          "withItemName": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "ttsMessage": {
+            "type": "string"
+          },
+          "withItemSeq": {
+            "type": "string",
+            "nullable": true,
+            "description": "겹치는 복용 중인 약 (currentMedications 중)"
+          }
+        }
+      },
+      "InteractionLevel": {
+        "type": "string",
+        "enum": [
+          "INFO",
+          "WARNING",
+          "CRITICAL"
+        ]
+      },
+      "RecognitionRequest": {
+        "type": "object",
+        "required": [
+          "fileId"
+        ],
+        "properties": {
+          "fileId": {
+            "type": "string"
+          },
+          "ocrRawText": {
+            "type": "string",
+            "description": "앱이 직접 읽은 글자. 주면 서버는 CLOVA OCR을 부르지 않는다."
+          },
+          "ocrBlocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "boundingBox": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "integer"
+                    },
+                    "y": {
+                      "type": "integer"
+                    },
+                    "width": {
+                      "type": "integer"
+                    },
+                    "height": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "confidence": {
+                  "type": "number",
+                  "format": "double"
+                }
+              }
+            }
+          },
+          "hintDispensedDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "TtsScript": {
+        "type": "object",
+        "properties": {
+          "itemSeq": {
+            "type": "string"
+          },
+          "verbosity": {
+            "type": "string",
+            "enum": [
+              "SIMPLE",
+              "DETAILED"
+            ]
+          },
+          "estimatedDurationSeconds": {
+            "type": "integer"
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "section": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "integer"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "emphasis": {
+                  "type": "boolean",
+                  "description": "true 면 속도 0.9배·볼륨 상향 재생"
+                },
+                "pauseAfterMs": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "fullText": {
+            "type": "string"
+          }
+        }
+      },
+      "CurrentMedication": {
+        "type": "object",
+        "description": "앱(Firestore)에 저장된 복용 중인 약 하나. itemSeq가 있으면 그것으로, 없으면 이름(공백 무시)으로 비교한다.",
+        "properties": {
+          "itemSeq": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 400
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "firebaseIdToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Firebase 로그인 ID 토큰 (FirebaseUser.getIdToken). 서버에 FIREBASE_PROJECT_ID가 설정됐을 때만 확인한다."
+      }
+    }
+  }
+}
