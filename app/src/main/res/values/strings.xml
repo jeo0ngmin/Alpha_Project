@@ -1,101 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <resources>
+
+    <!-- ========================= -->
+    <!-- 기본 -->
+    <!-- ========================= -->
+
     <string name="app_name">Medimate</string>
+    <string name="back">뒤로가기</string>
+
+
+    <!-- ========================= -->
+    <!-- 메인 -->
+    <!-- ========================= -->
+
     <string name="main_scan">약 찍기</string>
     <string name="main_my_drugs">내 약</string>
     <string name="main_recommend">영양제 추천</string>
     <string name="main_profile">내 정보</string>
+    <string name="main_schedule">복약 스케줄</string>
+
+
+    <!-- ========================= -->
+    <!-- 로그인 -->
+    <!-- ========================= -->
+
     <string name="login_phone">전화번호로 로그인</string>
     <string name="login_phone_desc">전화번호로 로그인 버튼</string>
+
     <string name="login_google">구글로 로그인</string>
     <string name="login_google_desc">구글 계정으로 로그인 버튼</string>
+
     <string name="login_kakao">카카오로 로그인</string>
     <string name="login_kakao_desc">카카오 계정으로 로그인 버튼</string>
+
     <string name="phone_input_hint">전화번호 (예: 010-1234-5678)</string>
     <string name="phone_send_code">인증번호 받기</string>
     <string name="phone_code_hint">인증번호 여섯 자리</string>
     <string name="phone_verify_code">확인</string>
+
+
+    <!-- ========================= -->
+    <!-- 개인정보 -->
+    <!-- ========================= -->
+
     <string name="profile_login_method">로그인 방식: %1$s</string>
+
     <string name="profile_method_phone">전화번호</string>
     <string name="profile_method_google">구글</string>
     <string name="profile_method_kakao">카카오</string>
     <string name="profile_method_unknown">알 수 없음</string>
-    <string name="profile_sign_out">로그아웃</string>
     <string name="profile_method_email">이메일</string>
+
     <string name="profile_email">이메일: %1$s</string>
     <string name="profile_phone">전화번호: %1$s</string>
     <string name="profile_none">없음</string>
+
+    <string name="profile_sign_out">로그아웃</string>
+
+
+    <!-- ========================= -->
+    <!-- 내 약 -->
+    <!-- ========================= -->
+
     <string name="my_drugs_empty">저장한 약이 없어요.</string>
     <string name="my_drugs_remove">%1$s 지우기</string>
+
+
+    <!-- ========================= -->
+    <!-- 영양제 추천 -->
+    <!-- ========================= -->
+
     <string name="recommend_title">영양제 추천</string>
     <string name="recommend_hint">건강 고민을 적어 주세요</string>
     <string name="recommend_send">보내기</string>
     <string name="recommend_send_desc">보내기 버튼</string>
     <string name="recommend_thinking">답변을 준비하고 있어요</string>
-    <string name="main_schedule">복약 스케줄</string>
+
+
+    <!-- ========================= -->
+    <!-- 복약 스케줄 -->
+    <!-- ========================= -->
+
     <string name="schedule_title">복약 스케줄</string>
     <string name="schedule_today">오늘</string>
+
     <string name="schedule_month_expand_desc">%1$s. 누르면 달력을 한 달로 펼쳐요</string>
     <string name="schedule_month_collapse_desc">%1$s. 누르면 달력을 일주일로 접어요</string>
+
     <string name="schedule_previous_week_desc">이전 주</string>
     <string name="schedule_next_week_desc">다음 주</string>
     <string name="schedule_previous_month_desc">이전 달</string>
     <string name="schedule_next_month_desc">다음 달</string>
+
     <string name="schedule_summary">%1$s · 전체 %2$d회 중 %3$d회 복용 완료</string>
+
     <string name="schedule_empty">등록된 복약 일정이 없어요</string>
     <string name="schedule_add">일정 추가</string>
     <string name="schedule_more_desc">%1$s %2$s 일정 더보기</string>
+
     <string name="schedule_menu_edit">일정 수정</string>
     <string name="schedule_menu_delete">일정 삭제</string>
+
     <string name="schedule_dialog_keep">닫기</string>
+
     <string name="schedule_taken_recorded">%1$s 복용 완료로 기록했어요.</string>
+
     <string name="schedule_early_title">예정 시각 전이에요</string>
     <string name="schedule_early_message">%1$s 예정인 %2$s을 지금 복용 완료로 기록할까요?</string>
     <string name="schedule_early_confirm">복용 완료로 기록</string>
+
     <string name="schedule_cancel_title">복용 완료 취소</string>
     <string name="schedule_cancel_message">%1$s %2$s 복용 완료 기록을 취소할까요?</string>
     <string name="schedule_cancel_confirm">기록 취소</string>
+
     <string name="schedule_delete_title">일정 삭제</string>
     <string name="schedule_delete_message">%1$s 일정을 오늘부터 삭제할까요? 지난 복용 기록은 남아 있어요.</string>
+
     <string name="schedule_notifications_off">알림 꺼짐: 알림 권한이나 앱 알림 설정이 꺼져 있어 복약 알림이 오지 않아요.</string>
+
     <string name="schedule_exact_alarm_needed">정확한 시간 알림 설정 필요: 지금은 복약 알림이 예정 시각보다 늦게 올 수 있어요.</string>
+
     <string name="schedule_open_settings">설정 열기</string>
+
     <string name="schedule_settings_unavailable">설정 화면을 열지 못했어요. 휴대폰 설정에서 메디메이트 알림을 확인해 주세요.</string>
+
     <string name="schedule_sync_pending">동기화 대기 %1$d건: 기기에 저장했어요. 인터넷이 연결되면 서버에 저장해요.</string>
+
     <string name="schedule_sync_failed">저장 실패 %1$d건: 서버에 저장하지 못했어요. 기기에는 남아 있어요.</string>
+
     <string name="schedule_sync_retry">다시 시도</string>
+
+
+    <!-- ========================= -->
+    <!-- 시간 선택 -->
+    <!-- ========================= -->
+
     <string name="time_dialog_title">알림 시간</string>
+
     <string name="time_dialog_spoken">알림 시간을 골라 주세요. 오전 오후, 시, 분을 위아래로 돌려 맞춘 뒤 확인을 누르세요. 지금은 %1$s예요.</string>
+
     <string name="time_picked_spoken">알림 시간을 정했어요. %1$s.</string>
+
     <string name="time_confirm">확인</string>
     <string name="time_cancel">취소</string>
+
+
+    <!-- ========================= -->
+    <!-- 복약 일정 등록 / 수정 -->
+    <!-- ========================= -->
+
     <string name="schedule_add_title">복약 일정 등록</string>
     <string name="schedule_edit_title">복약 일정 수정</string>
+
     <string name="schedule_drug_name">약 이름</string>
+
     <string name="schedule_dosage">1회 복용량 (예: 1정)</string>
+
     <string name="schedule_dosage_ocr_hint">약봉투 복용법: %1$s</string>
+
     <string name="schedule_start_date">시작일: %1$s</string>
     <string name="schedule_end_date">종료일: %1$s</string>
+
     <string name="schedule_edit_applies_today">수정 내용은 오늘부터 적용돼요. 지난 일정과 복용 기록은 바뀌지 않아요.</string>
+
     <string name="schedule_no_end">종료일 없음</string>
+
     <string name="schedule_repeat">반복</string>
     <string name="schedule_every_day">매일</string>
     <string name="schedule_selected_days">선택한 요일</string>
+
     <string name="schedule_times">복용 시간</string>
     <string name="schedule_add_time">시간 추가</string>
+
     <string name="schedule_time_change_desc">%1$s. 누르면 시간을 바꿔요</string>
     <string name="schedule_time_remove_desc">%1$s 삭제</string>
+
     <string name="schedule_reminders">알림 받기</string>
     <string name="schedule_save">저장</string>
+
+
+    <!-- ========================= -->
+    <!-- 복약 알림 -->
+    <!-- ========================= -->
+
     <string name="reminder_channel_name">복약 알림</string>
+
     <string name="reminder_channel_desc">등록한 복용 시간에 알려 줍니다.</string>
+
     <string name="reminder_title">약 드실 시간이에요</string>
+
     <string name="reminder_action_done">복용 완료</string>
-    <!-- JE 화면 문구 -->
+
+
+    <!-- ========================= -->
+    <!-- 알약 분석 -->
+    <!-- ========================= -->
+
     <string name="pill_capture_title">알약 분석</string>
+
     <string name="pill_capture_heading">알약 사진을 등록해 주세요</string>
+
     <string name="pill_capture_description">알약 한 개만 어두운 천이나 종이 위에 놓고, 가까이서 선명하게 찍어 주세요.</string>
 
     <string name="pill_preview_empty">촬영한 알약 사진이 여기에 표시돼요</string>
+
     <string name="pill_preview_hint">흰 알약은 검은 바탕에서 가장 잘 보여요.</string>
 
     <string name="take_photo">카메라로 촬영</string>
@@ -103,25 +212,39 @@
     <string name="start_analysis">분석 시작</string>
 
     <string name="pill_capture_tip">촬영 팁\n• 어두운 단색 천이나 종이 위에 놓고 촬영\n• 화면에는 알약 한 개만 (다른 약은 치워 주세요)\n• 유리나 반짝이는 탁자는 조명이 비쳐요. 천을 깔아 주세요\n• 글자나 숫자가 있는 면이 위로 오게\n• 알약이 화면의 4분의 1쯤 차도록 가까이</string>
-    <!-- 카메라 버튼을 누르면 읽어 주는 안내 (화면을 보지 못하는 사용자용) -->
+
     <string name="pill_capture_voice_guide">알약 한 개만 어두운 천이나 종이 위에 놓고, 글자가 있는 면을 위로 해서 가까이 찍어 주세요.</string>
+
     <string name="pill_photo_ready">사진을 넣었어요. 아래의 분석 시작 버튼을 눌러 주세요.</string>
 
     <string name="pill_analyzing_headline">알약을 분석하고 있어요</string>
+
     <string name="pill_analyzing_description">사진의 모양, 색상, 각인을 확인하고 있습니다.\n잠시만 기다려 주세요.</string>
+
     <string name="cancel_analysis">분석 취소</string>
 
-    <string name="back">뒤로가기</string>
     <string name="pill_icon">알약 아이콘</string>
     <string name="pill_image">촬영한 알약 사진</string>
 
     <string name="camera_file_error">카메라용 이미지 파일을 만들 수 없습니다.</string>
+
     <string name="select_image_first">먼저 알약 사진을 선택해 주세요.</string>
-    <!-- 약 봉투 분석 화면 -->
+
+
+    <!-- ========================= -->
+    <!-- 약봉투 분석 -->
+    <!-- ========================= -->
+
+    <string name="medicine_bag_heading">약 봉투 사진을 등록해 주세요</string>
+
+    <string name="medicine_bag_description">약 이름과 복용 정보가 잘 보이도록 약 봉투 전체를 선명하게 촬영해 주세요.</string>
+
     <string name="medicine_bag_preview_empty">촬영한 약 봉투 사진이 여기에 표시돼요</string>
+
     <string name="medicine_bag_preview_hint">약 이름과 복용 정보가 보이도록 촬영해 주세요.</string>
 
     <string name="medicine_bag_capture_tip">촬영 팁\n• 약 봉투를 평평하게 펴고 전체가 화면에 들어오게\n• 약 이름, 하루 횟수, 일수가 적힌 면을 촬영\n• 밝은 곳에서 흔들리지 않게\n• 빛이 비쳐 글자가 하얗게 보이지 않게</string>
+
     <string name="medicine_bag_voice_guide">약 봉투를 평평하게 펴고, 약 이름이 적힌 면 전체가 화면에 들어오게 찍어 주세요.</string>
 
     <string name="medicine_bag_start_analysis">약 정보 분석 시작</string>
@@ -130,7 +253,181 @@
 
     <string name="select_medicine_bag_first">먼저 약 봉투 사진을 선택해 주세요.</string>
 
-    <string name="medicine_bag_heading">약 봉투 사진을 등록해 주세요</string>
 
-    <string name="medicine_bag_description">약 이름과 복용 정보가 잘 보이도록 약 봉투 전체를 선명하게 촬영해 주세요.</string>
+    <!-- ========================= -->
+    <!-- 하단 메뉴 -->
+    <!-- ========================= -->
+
+    <string name="nav_home">홈</string>
+    <string name="nav_reminder">복약알림</string>
+    <string name="nav_analysis">분석</string>
+    <string name="nav_chatbot">챗봇</string>
+
+
+    <!-- ========================= -->
+    <!-- 챗봇 -->
+    <!-- ========================= -->
+
+    <string name="chatbot_title">Medimate 챗봇</string>
+
+    <string name="chatbot_intro_title">복약 관련 궁금한 점을 물어보세요</string>
+
+    <string name="chatbot_intro_description">복용법, 부작용, 병용 여부 등\n복약에 대한 궁금증을 도와드릴게요.</string>
+
+    <string name="chat_input_hint">질문을 입력하세요</string>
+
+    <string name="chat_add">추가</string>
+    <string name="chat_send">전송</string>
+
+    <string name="chatbot_icon">챗봇</string>
+    <string name="medimate_logo">Medimate 로고</string>
+
+    <string name="chat_chip_dose">복용 시간</string>
+    <string name="chat_chip_side_effect">부작용</string>
+    <string name="chat_chip_together">같이 먹어도 되나요?</string>
+    <string name="chat_chip_storage">보관 방법</string>
+
+    <string name="chat_quick_dose_question">이 약은 언제 복용하는 게 좋나요?</string>
+
+    <string name="chat_quick_side_effect_question">이 약의 대표적인 부작용은 무엇인가요?</string>
+
+    <string name="chat_quick_together_question">두 가지 약을 같이 먹어도 되나요?</string>
+
+    <string name="chat_quick_storage_question">이 약은 어떻게 보관해야 하나요?</string>
+
+    <string name="chat_bot_welcome">안녕하세요! 복약과 관련해 궁금한 점을 편하게 물어보세요. 궁금한 약의 이름이나 복용 정보를 알려주시면 더 자세히 도와드릴게요.</string>
+
+    <string name="chat_bot_name">Medimate 챗봇</string>
+
+    <string name="chat_sample_user_question">혈압약은 언제 먹는 게 좋아요?</string>
+
+    <string name="chat_sample_time">오전 9:42</string>
+
+    <string name="chat_empty_question">질문을 입력해 주세요.</string>
+
+    <string name="chat_question_sent">질문을 전송했습니다.</string>
+
+
+    <!-- ========================= -->
+    <!-- JE 복용 알림 추가 -->
+    <!-- ========================= -->
+
+    <string name="add_reminder_title">복용 알림 추가</string>
+
+    <string name="add_reminder_medicine_info">약 정보</string>
+
+    <string name="add_reminder_medicine_name">약 이름</string>
+
+    <string name="add_reminder_dose">1회 복용량</string>
+
+    <string name="add_reminder_dose_hint">예: 1정, 10mL</string>
+
+    <string name="add_reminder_time">복용 시간</string>
+
+    <string name="add_reminder_add_time">+ 시간 추가</string>
+
+    <string name="add_reminder_repeat">반복 요일</string>
+
+    <string name="add_reminder_repeat_description">약을 복용할 요일을 선택해 주세요.</string>
+
+    <string name="add_reminder_mon">월</string>
+    <string name="add_reminder_tue">화</string>
+    <string name="add_reminder_wed">수</string>
+    <string name="add_reminder_thu">목</string>
+    <string name="add_reminder_fri">금</string>
+    <string name="add_reminder_sat">토</string>
+    <string name="add_reminder_sun">일</string>
+
+    <string name="add_reminder_period">복용 기간</string>
+
+    <string name="add_reminder_start_date">시작일</string>
+
+    <string name="add_reminder_end_date">종료일</string>
+
+    <string name="add_reminder_today">오늘</string>
+
+    <string name="add_reminder_no_end_date">종료일 없음</string>
+
+    <string name="add_reminder_notification">알림</string>
+
+    <string name="add_reminder_notification_title">복용 시간 알림</string>
+
+    <string name="add_reminder_notification_description">복용 시간에 알림을 받을 수 있어요.</string>
+
+    <string name="add_reminder_save">저장하기</string>
+
+
+    <!-- ========================= -->
+    <!-- 약봉투 인식 결과 확인 -->
+    <!-- ========================= -->
+
+    <string name="confirm_medicine_title">인식 결과 확인</string>
+
+    <string name="confirm_medicine_description">인식된 약 정보가 맞는지 확인해 주세요.\n등록할 약만 선택할 수 있어요.</string>
+
+    <string name="confirm_detected_result">약봉투에서 인식된 결과</string>
+
+    <string name="confirm_count_sample">인식된 약 3개 · 선택 3개</string>
+
+    <string name="confirm_medicine_list">인식된 약</string>
+
+    <string name="confirm_retry">다시 분석</string>
+
+    <string name="confirm_complete">확인 완료</string>
+
+
+    <!-- ========================= -->
+    <!-- 전화번호 변경 -->
+    <!-- ========================= -->
+
+    <string name="change_phone_title">전화번호 변경</string>
+
+    <string name="change_phone_description">새 전화번호를 인증하면 계정의 전화번호를 변경할 수 있어요.</string>
+
+    <string name="change_phone_current">현재 전화번호</string>
+
+    <string name="change_phone_current_sample">010-****-****</string>
+
+    <string name="change_phone_new">새 전화번호</string>
+
+    <string name="change_phone_new_description">변경할 전화번호를 입력해 주세요.</string>
+
+    <string name="change_phone_hint">010-0000-0000</string>
+
+    <string name="change_phone_send_code">인증번호 받기</string>
+
+    <string name="change_phone_code">인증번호</string>
+
+    <string name="change_phone_code_hint">인증번호 입력</string>
+
+    <string name="change_phone_notice">인증이 완료된 전화번호로 변경됩니다.</string>
+
+    <string name="change_phone_button">전화번호 변경</string>
+
+
+    <!-- ========================= -->
+    <!-- 비밀번호 변경 -->
+    <!-- ========================= -->
+
+    <string name="change_password_title">비밀번호 변경</string>
+
+    <string name="change_password_description">현재 비밀번호 확인 후 새 비밀번호를 입력해 주세요.</string>
+
+    <string name="change_password_current">현재 비밀번호</string>
+
+    <string name="change_password_current_hint">현재 비밀번호 입력</string>
+
+    <string name="change_password_new">새 비밀번호</string>
+
+    <string name="change_password_new_hint">새 비밀번호 입력</string>
+
+    <string name="change_password_confirm">새 비밀번호 확인</string>
+
+    <string name="change_password_confirm_hint">새 비밀번호 다시 입력</string>
+
+    <string name="change_password_notice">새 비밀번호와 확인 값이 동일한지 확인해 주세요.</string>
+
+    <string name="change_password_button">비밀번호 변경</string>
+
+
 </resources>

@@ -5,9 +5,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/medimate_bg">
 
+
+    <!-- ========================= -->
     <!-- 뒤로가기 -->
+    <!-- ========================= -->
+
     <ImageButton
         android:id="@+id/btn_back"
         android:layout_width="48dp"
@@ -23,7 +27,28 @@
         app:tint="@color/medimate_icon_green" />
 
 
+    <!-- ========================= -->
+    <!-- 화면 제목 -->
+    <!-- ========================= -->
+
+    <TextView
+        android:id="@+id/tv_capture_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="알약 사진 등록"
+        android:textColor="@color/text_primary"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/btn_back"
+        app:layout_constraintStart_toEndOf="@id/btn_back"
+        app:layout_constraintTop_toTopOf="@id/btn_back" />
+
+
+    <!-- ========================= -->
     <!-- 스크롤되는 본문 -->
+    <!-- ========================= -->
+
     <androidx.core.widget.NestedScrollView
         android:id="@+id/capture_scroll"
         android:layout_width="0dp"
@@ -45,26 +70,25 @@
             android:paddingEnd="24dp"
             android:paddingBottom="20dp">
 
-            <!-- 안내 제목 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/pill_capture_heading"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
 
+            <!-- ========================= -->
             <!-- 안내 설명 -->
+            <!-- ========================= -->
+
             <TextView
+                android:id="@+id/tv_capture_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:lineSpacingExtra="2dp"
                 android:text="@string/pill_capture_description"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
+
+            <!-- ========================= -->
             <!-- 사진 미리보기 카드 -->
+            <!-- ========================= -->
+
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_photo_preview"
                 android:layout_width="match_parent"
@@ -80,6 +104,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
+
                     <!-- 선택된 사진 -->
                     <ImageView
                         android:id="@+id/img_pill_preview"
@@ -89,6 +114,7 @@
                         android:scaleType="centerCrop"
                         android:visibility="gone" />
 
+
                     <!-- 사진이 없을 때 표시 -->
                     <LinearLayout
                         android:id="@+id/layout_empty_preview"
@@ -97,6 +123,7 @@
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="24dp">
+
 
                         <!-- 알약 아이콘 원 -->
                         <FrameLayout
@@ -113,6 +140,8 @@
 
                         </FrameLayout>
 
+
+                        <!-- 미리보기 안내 -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -123,6 +152,8 @@
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
+
+                        <!-- 미리보기 설명 -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -138,13 +169,19 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+
+            <!-- ========================= -->
             <!-- 카메라 / 갤러리 버튼 -->
+            <!-- ========================= -->
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
+
+                <!-- 카메라 -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_camera"
                     android:layout_width="0dp"
@@ -162,10 +199,13 @@
                     app:strokeColor="@color/medimate_icon_green"
                     app:strokeWidth="1dp" />
 
+
                 <Space
                     android:layout_width="12dp"
                     android:layout_height="match_parent" />
 
+
+                <!-- 갤러리 -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_gallery"
                     android:layout_width="0dp"
@@ -185,7 +225,11 @@
 
             </LinearLayout>
 
+
+            <!-- ========================= -->
             <!-- 촬영 팁 -->
+            <!-- ========================= -->
+
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -212,7 +256,11 @@
 
     </androidx.core.widget.NestedScrollView>
 
+
+    <!-- ========================= -->
     <!-- 분석 시작 -->
+    <!-- ========================= -->
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_start_analysis"
         android:layout_width="0dp"
