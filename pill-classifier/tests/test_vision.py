@@ -30,24 +30,24 @@ class FakeSdk:
 
 
 def complete(sdk, fallback=None):
-    return ClaudeJson(sdk, "claude-fable-5-1", fallback).complete(
+    return ClaudeJson(sdk, "claude-opus-5-5", fallback).complete(
         "pill-observe-v1", "system", [{"type": "text", "text": "x"}], {"type": "object"}, "low", 8000)
 
 
-def test_request_follows_fable_rules():
+def test_request_follows_model_rules():
     sdk = FakeSdk(message())
     assert complete(sdk) == {"ok": True}
     req = sdk.requests[0]
-    assert req["model"] == "claude-fable-5-1" and req["max_tokens"] == 8000
+    assert req["model"] == "claude-opus-5-5" and req["max_tokens"] == 8000
     assert req["output_config"] == {"effort": "low", "format": {"type": "json_schema", "schema": {"type": "object"}}}
-    # Fable 5.1은 thinking·temperature·tool_choice를 보내면 400이다
+    # Opus 5.5·Fable 5.1은 thinking 끄기·temperature·강제 tool_choice를 보내면 400이다
     assert not {"thinking", "temperature", "top_p", "tools", "tool_choice"} & set(req)
 
 
 def test_refusal_retries_once_on_fallback_model():
     sdk = FakeSdk(message("refusal"), message())
     assert complete(sdk, fallback="claude-opus-4-8") == {"ok": True}
-    assert [r["model"] for r in sdk.requests] == ["claude-fable-5-1", "claude-opus-4-8"]
+    assert [r["model"] for r in sdk.requests] == ["claude-opus-5-5", "claude-opus-4-8"]
 
 
 def test_refusal_without_fallback_raises():
@@ -100,3 +100,7 @@ def test_rerank_scoring():
 
     _, low = apply_rerank(cands, {"A": "POSSIBLE", "B": "POSSIBLE"})
     assert low is True  # '같아 보임' 판정이 없으면 여전히 저신뢰
+
+    # 판정받은 후보가 모두 '다른 약'이면 판정받지 않은 후보(D)를 올리지 않고 순서를 그대로 둔다
+    ranked, low = apply_rerank(cands, {"A": "DIFFERENT", "B": "DIFFERENT", "C": "DIFFERENT"})
+    assert [c["itemSeq"] for c in ranked] == ["A", "B", "C", "D"] and low is True

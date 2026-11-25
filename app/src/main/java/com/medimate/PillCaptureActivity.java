@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.button.MaterialButton;
+import com.medimate.tts.TtsManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class PillCaptureActivity extends AppCompatActivity {
     private LinearLayout layoutEmptyPreview;
     private MaterialButton btnStartAnalysis;
 
+    private TtsManager tts;
     private Uri selectedImageUri;
     private Uri pendingCameraUri;
 
@@ -40,6 +42,7 @@ public class PillCaptureActivity extends AppCompatActivity {
                     success -> {
                         if (success && pendingCameraUri != null) {
                             showSelectedImage(pendingCameraUri);
+                            say(getString(R.string.pill_photo_ready));
                         }
                     }
             );
@@ -53,6 +56,7 @@ public class PillCaptureActivity extends AppCompatActivity {
                     uri -> {
                         if (uri != null) {
                             showSelectedImage(uri);
+                            say(getString(R.string.pill_photo_ready));
                         }
                     }
             );
@@ -61,6 +65,7 @@ public class PillCaptureActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pill_capture);
+        tts = new TtsManager(this);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         MaterialButton btnCamera = findViewById(R.id.btn_camera);
@@ -93,8 +98,11 @@ public class PillCaptureActivity extends AppCompatActivity {
         // 뒤로가기
         btnBack.setOnClickListener(v -> finish());
 
-        // 카메라 실행
-        btnCamera.setOnClickListener(v -> openCamera());
+        // 카메라 실행. 화면을 보지 못하는 사용자를 위해 촬영 요령을 먼저 읽어 준다
+        btnCamera.setOnClickListener(v -> {
+            tts.speak(getString(R.string.pill_capture_voice_guide));
+            openCamera();
+        });
 
         // 갤러리 실행
         btnGallery.setOnClickListener(v ->
@@ -104,11 +112,7 @@ public class PillCaptureActivity extends AppCompatActivity {
         // 분석 화면으로 이동
         btnStartAnalysis.setOnClickListener(v -> {
             if (selectedImageUri == null) {
-                Toast.makeText(
-                        this,
-                        R.string.select_image_first,
-                        Toast.LENGTH_SHORT
-                ).show();
+                say(getString(R.string.select_image_first));
 
                 return;
             }
@@ -142,11 +146,7 @@ public class PillCaptureActivity extends AppCompatActivity {
             if (!imageDirectory.exists()
                     && !imageDirectory.mkdirs()) {
 
-                Toast.makeText(
-                        this,
-                        R.string.camera_file_error,
-                        Toast.LENGTH_SHORT
-                ).show();
+                say(getString(R.string.camera_file_error));
 
                 return;
             }
@@ -166,11 +166,7 @@ public class PillCaptureActivity extends AppCompatActivity {
             cameraLauncher.launch(pendingCameraUri);
 
         } catch (IOException exception) {
-            Toast.makeText(
-                    this,
-                    R.string.camera_file_error,
-                    Toast.LENGTH_SHORT
-            ).show();
+            say(getString(R.string.camera_file_error));
         }
     }
 
@@ -206,5 +202,17 @@ public class PillCaptureActivity extends AppCompatActivity {
                     pendingCameraUri.toString()
             );
         }
+    }
+
+    /** 안내는 짧게 보여 주고 읽어 준다 */
+    private void say(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        tts.speak(message);
+    }
+
+    @Override
+    protected void onDestroy() {
+        tts.shutdown();
+        super.onDestroy();
     }
 }

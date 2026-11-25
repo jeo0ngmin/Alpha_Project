@@ -9,14 +9,18 @@ from .attributes import (ELONGATED_SHAPES, color_set_similarity, estimate_colors
                          estimate_shape, parse_colors, shape_similarity)
 from .db import PillDB
 from .detect import PillDetector
-from .imaging import PillRegion, canonical_crop, preprocess, read_image
+from .imaging import (PillRegion, canonical_crop, drop_glare_and_partial, preprocess, read_image,
+                      region_in_original)
 from .ocr import ImprintReader, imprint_pair_score, imprint_tokens
 
 # 사용 가능한 단서만 골라 합이 1이 되도록 다시 정규화해서 쓴다.
 # 각인·색·모양의 비율(80:10:10)과 신뢰도 기준은 scripts/tune_scoring.py로 고른 값이다. 참조 사진으로 75:12.5:12.5를
 # 골랐다가, 실제 사진(AI Hub)에서는 색이 조명에 따라 자주 틀려서 각인 쪽으로 조금 더 옮겼다 (참조 사진 Top-1은 그대로,
-# 실제 사진 Top-1 55% → 60%). 임베딩 비중과 임베딩이 있을 때의 신뢰도 기준은 아직 검증하지 못했다.
-BASE_WEIGHTS = {"embedding": 0.45, "imprint": 0.44, "color": 0.055, "shape": 0.055}
+# 실제 사진 Top-1 55% → 60%).
+# 임베딩 비중 0.55: AI Hub 전체로 학습한 모델(2026-11)에서 임베딩이 정답을 가리키는데 잘못 읽은 각인이 뒤집는 일이
+# 많아 0.45에서 올렸다. AI Hub 실제 사진 276쌍을 품목 기준 반반으로 나눠 조정용에서 고르고 검증용에서 확인
+# (Top-1 조정용 95.7% → 97.1%, 검증용 93.4% → 95.6%, Top-5 100%). 각인·색·모양 비율 80:10:10은 그대로다.
+BASE_WEIGHTS = {"embedding": 0.55, "imprint": 0.36, "color": 0.045, "shape": 0.045}
 # 아래 셋을 모두 넘어야 '확신'으로 본다. 검증용 표본에서 확신 표시의 93%가 정답이었다.
 LOW_CONF_SCORE = 0.85
 OCR_MIN_AREA_RATIO = 0.25  # 서버가 "또 하나의 알약"으로 세는 기준(MAIN_PILL_AREA_RATIO)과 같다
@@ -29,6 +33,26 @@ LOW_CONF_EMB_SCORE = 0.6
 LOW_CONF_EMB_MARGIN = 0.03
 LOW_CONF_EMBEDDING = 0.7  # 1위 후보의 임베딩 점수가 이 이상이면 각인을 못 읽었어도 확신할 수 있다
 OCR_CROP_SIZE = 480
+# 질의 크롭을 90°씩 돌려 4번 임베딩하고 평균한다 (색인은 한 번씩). AI Hub 실제 사진 276쌍:
+# Top-1 270 → 272, 확신 표시 178 → 186, 확신 오답 0 그대로. 사진 한 장에 임베딩 33ms → 113ms (2026-11).
+EMBED_ROTATIONS = (0, 90, 180, 270)
+# 색인에 식약처 사진만 있는 약(AI Hub 촬영 사진이 없는 약, DB의 대부분)은 실제 사진과의 임베딩 유사도가 낮게 나와,
+# 촬영 사진이 있는 비슷한 약에 밀린다. AI Hub 실제 사진 276쌍에서 평가 약의 색인을 식약처 사진 2장만 남기면
+# Top-1 98.9% → 58.0%로 임베딩 없이(65.6%)보다도 나빴다. 이런 약의 임베딩 점수에 보정값을 더한다:
+# 0.15에서 식약처 사진만 남긴 경우 58.0% → 80.1%, 지금 색인(촬영 사진 있음)은 98.9% 그대로 (0.20부터 떨어짐). 2026-11
+REFERENCE_ONLY_MAX = 2
+REFERENCE_ONLY_BONUS = 0.15
+# 읽은 각인(이 글자 수 이상)이 학습하지 않은 같은 모양의 다른 약과 정확히 맞는데 1위는 각인이 맞지 않으면 확신하지 않는다.
+# AI Hub에 사진이 없는 약을 찍으면 임베딩이 학습한 비슷한 약을 1위로 올려 확신 오답이 났다(처음 보는 약 135쌍 중 3건:
+# 각인 GGZ를 정확히 읽었는데 ggr 약, PG 75 → 다른 회사 PG75). 학습한 약의 확신 표시는 262 → 253으로 줄었다. 2026-11
+RIVAL_MIN_LEN = 3
+# 위와 같은 정확 일치 약은 순위가 낮아도 Claude 재비교에 이 개수까지 더 넣는다 (처음 보는 약 오답 17건 중 5건이
+# 각인을 정확히 읽었는데 정답이 2~8위였다)
+IMPRINT_EXTRA = 3
+# 단, 사진 분석 1위가 학습한 약이고 임베딩이 받쳐 주며 2위와 이만큼 벌어져 있으면 더하지 않는다. 학습한 아스피린(각인 AA)을
+# OCR이 AST로 읽자 각인 AST인 다른 약이 더해져 Claude가 그쪽을 골랐다(1위 정답 3장 → 저신뢰 오답). 사진 분석만 기록했을 때
+# 이 3장은 2위와 0.06~0.10, 추가 후보로 정답을 찾은 처음 보는 약 사진은 0.01~0.02 차이였다. 2026-11
+EXTRA_SKIP_MARGIN = 0.05
 
 
 @dataclass
@@ -71,6 +95,11 @@ class Identification:
     candidates: list[Candidate]
     weights: dict[str, float]
     low_confidence: bool
+    # 읽은 각인이 정확히 맞는 품목 번호(self.items 기준)와 품목별 각인 점수. 각인을 충분히 읽지 못했으면 비어 있다
+    exact_imprint: list[int] = field(default_factory=list)
+    imprint_scores: np.ndarray | None = field(default=None, repr=False)
+    scores: np.ndarray | None = field(default=None, repr=False)
+    parts: dict | None = field(default=None, repr=False)
 
 
 class PillIdentifier:
@@ -85,6 +114,7 @@ class PillIdentifier:
         db.close()
         if not self.items:
             raise ValueError(f"DB가 비어 있습니다: {db_path} (scripts/build_db.py를 먼저 실행하세요)")
+        self._pos = {it["item_seq"]: i for i, it in enumerate(self.items)}
         for it in self.items:
             it["_imp"] = (imprint_tokens(it.get("print_front")), imprint_tokens(it.get("print_back")))
             it["_colors"] = tuple(parse_colors(it.get("color_class1"), it.get("color_class2")))
@@ -104,6 +134,9 @@ class PillIdentifier:
             valid = item_idx >= 0  # DB에 없는 라벨(예: AI Hub 전용 코드)은 제외
             self._gallery_embs = self.gallery.embs[valid]
             self._gallery_item = item_idx[valid]
+            counts = np.bincount(self._gallery_item, minlength=len(self.items))
+            # 색인에 식약처 사진(품목당 2장 이하)만 있는 품목. 실제 사진과의 유사도가 낮게 나온다
+            self._reference_only = (counts > 0) & (counts <= REFERENCE_ONLY_MAX)
             crop_size = self.embedder.img_size
         self.crop_size = crop_size
 
@@ -114,11 +147,16 @@ class PillIdentifier:
 
     # ── 관측 ──────────────────────────────────────────────────────────────
 
-    def observe(self, img: np.ndarray, region: PillRegion, read_imprint: bool = True) -> PillObservation:
+    def observe(self, img: np.ndarray, region: PillRegion, read_imprint: bool = True,
+                original: np.ndarray | None = None, scale: float = 1.0) -> PillObservation:
+        """original, scale: preprocess()로 줄이기 전 사진과 축소 배율. 주면 각인은 원본 해상도에서 읽는다."""
         shape = estimate_shape(region.contour)
         text, conf = "", 0.0
         if self.ocr is not None and read_imprint:
-            ocr_crop = canonical_crop(img, region, OCR_CROP_SIZE)
+            if original is not None and scale < 1.0:
+                ocr_crop = canonical_crop(*region_in_original(original, region, scale), OCR_CROP_SIZE)
+            else:
+                ocr_crop = canonical_crop(img, region, OCR_CROP_SIZE)
             text, conf = self.ocr.read(ocr_crop, all_rotations=shape not in ELONGATED_SHAPES)
         return PillObservation(
             crop=canonical_crop(img, region, self.crop_size),
@@ -132,11 +170,13 @@ class PillIdentifier:
 
     def observe_array(self, img: np.ndarray) -> list[PillObservation]:
         """BGR 이미지 속 알약들을 면적이 큰 순서로 관측한다."""
-        img, _ = preprocess(img)
-        regions = self.detector(img)
+        original = img
+        img, scale = preprocess(img)
+        regions = drop_glare_and_partial(img, self.detector(img))
         # 각인 판독(OCR)이 가장 오래 걸린다. 가장 큰 알약보다 훨씬 작은 덩어리(그림자, 부스러기)는 읽지 않는다
         largest = regions[0].area if regions else 0
-        return [self.observe(img, r, read_imprint=r.area >= OCR_MIN_AREA_RATIO * largest) for r in regions]
+        return [self.observe(img, r, read_imprint=r.area >= OCR_MIN_AREA_RATIO * largest, original=original, scale=scale)
+                for r in regions]
 
     def observe_photo(self, path) -> list[PillObservation]:
         return self.observe_array(read_image(path))
@@ -186,6 +226,9 @@ class PillIdentifier:
         if readings:
             parts["imprint"] = self._per_item(
                 "_imp", lambda v: max(imprint_pair_score(texts, v) for texts in readings))
+        exact = []
+        if readings and max(len("".join(texts[0])) for texts in readings if texts) >= RIVAL_MIN_LEN:
+            exact = np.flatnonzero(parts["imprint"] >= LOW_CONF_IMPRINT - 1e-6).tolist()
         if self.embedder is not None:
             parts["embedding"] = self._embedding_scores(obs)
 
@@ -196,15 +239,7 @@ class PillIdentifier:
         order = np.argsort(-score, kind="stable")[:topk]
         candidates = []
         for i in order:
-            it = self.items[i]
-            candidates.append(Candidate(
-                item_seq=it["item_seq"], item_name=it.get("item_name") or "",
-                entp_name=it.get("entp_name") or "", score=float(score[i]),
-                parts={k: float(v[i]) for k, v in parts.items()},
-                drug_shape=it["_shape"], colors=", ".join(it["_colors"]),
-                print_front=it.get("print_front") or "", print_back=it.get("print_back") or "",
-                image_url=it.get("item_image") or "",
-            ))
+            candidates.append(self._candidate(i, score, parts))
         top = candidates[0].score if candidates else 0.0
         second = candidates[1].score if len(candidates) > 1 else 0.0
         # 한 면만 각인이 있는 약을 정확히 읽으면 각인 점수가 (1.0 + BOTH_EMPTY) / 2 = 0.9로 기준과 같다.
@@ -217,9 +252,51 @@ class PillIdentifier:
                 imprint_ok or parts0.get("embedding", 0.0) >= LOW_CONF_EMBEDDING - eps)
         else:
             low = top < LOW_CONF_SCORE - eps or (top - second) < LOW_CONF_MARGIN - eps or not imprint_ok
-        if candidates and not self.is_trusted(candidates[0].item_seq):
-            low = True
-        return Identification(obs, candidates, weights, low)
+        res = Identification(obs, candidates, weights, low, exact, parts.get("imprint"), score, parts)
+        if candidates and (not self.is_trusted(candidates[0].item_seq) or self.imprint_rival(res, candidates[0].item_seq)):
+            res.low_confidence = True
+        return res
+
+    def _candidate(self, i: int, score: np.ndarray, parts: dict) -> Candidate:
+        it = self.items[i]
+        return Candidate(
+            item_seq=it["item_seq"], item_name=it.get("item_name") or "",
+            entp_name=it.get("entp_name") or "", score=float(score[i]),
+            parts={k: float(v[i]) for k, v in parts.items()},
+            drug_shape=it["_shape"], colors=", ".join(it["_colors"]),
+            print_front=it.get("print_front") or "", print_back=it.get("print_back") or "",
+            image_url=it.get("item_image") or "",
+        )
+
+    def imprint_candidates(self, res: Identification, limit: int = IMPRINT_EXTRA, skip=()) -> list[Candidate]:
+        """읽은 각인이 정확히 맞는 약 중 skip(이미 비교할 후보)에 없는 것을 점수 순으로 limit개.
+        AI Hub에 사진이 없는 약은 각인을 정확히 읽어도 학습한 비슷한 약에 밀려 6위 밖으로 나가, Claude 재비교가 정답을 보지 못했다."""
+        if not res.exact_imprint or res.scores is None or limit <= 0:
+            return []
+        c = res.candidates
+        if (c and self.trusted_items is not None and c[0].item_seq in self.trusted_items
+                and c[0].parts.get("embedding", 0.0) >= LOW_CONF_EMB_SCORE - 1e-6
+                and (len(c) < 2 or c[0].score - c[1].score >= EXTRA_SKIP_MARGIN - 1e-6)):
+            return []
+        skip = set(skip)
+        idx = [i for i in res.exact_imprint if self.items[i]["item_seq"] not in skip]
+        idx.sort(key=lambda i: -res.scores[i])
+        return [self._candidate(i, res.scores, res.parts) for i in idx[:limit]]
+
+    def imprint_rival(self, res: Identification, item_seq: str) -> str | None:
+        """1위(item_seq)의 각인은 맞지 않는데, 읽은 각인이 정확히 맞는 학습하지 않은 같은 모양의 약이 있으면 그 품목기준코드.
+        재비교로 1위가 바뀐 뒤에도 다시 확인할 수 있게 따로 둔다."""
+        if not res.exact_imprint or res.imprint_scores is None or self.trusted_items is None:
+            return None
+        top = self._pos.get(item_seq)
+        if top is None or res.imprint_scores[top] >= LOW_CONF_IMPRINT - 1e-6:
+            return None
+        shape = self.items[top]["_shape"]
+        for i in res.exact_imprint:
+            it = self.items[i]
+            if it["_shape"] == shape and it["item_seq"] not in self.trusted_items:
+                return it["item_seq"]
+        return None
 
     def is_trusted(self, item_seq: str) -> bool:
         """이 약을 1위로 냈을 때 확신해도 되는가. 학습하지 않은 약은 겉모습이 비슷한 다른 약과 자주 헷갈린다."""
@@ -237,11 +314,13 @@ class PillIdentifier:
         return out
 
     def _embedding_scores(self, obs: list[PillObservation]) -> np.ndarray:
-        q = self.embedder.embed_bgr([o.crop for o in obs])
+        crops = [np.ascontiguousarray(np.rot90(o.crop, r // 90)) for o in obs for r in EMBED_ROTATIONS]
+        q = self.embedder.embed_bgr(crops).reshape(len(obs), len(EMBED_ROTATIONS), -1).sum(axis=1)
+        q /= np.linalg.norm(q, axis=1, keepdims=True)
         per_obs = []
         for vec in q:
             sims = np.clip(self._gallery_embs @ vec, 0.0, 1.0)
             best = np.zeros(len(self.items), np.float32)  # 참조 이미지가 없는 품목은 0
             np.maximum.at(best, self._gallery_item, sims)  # 품목별 참조 이미지 중 최고 유사도
             per_obs.append(best)
-        return np.mean(per_obs, axis=0)
+        return np.minimum(np.mean(per_obs, axis=0) + REFERENCE_ONLY_BONUS * self._reference_only, 1.0)

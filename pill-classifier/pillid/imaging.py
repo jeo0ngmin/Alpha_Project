@@ -190,6 +190,33 @@ def segment_pills(img: np.ndarray, min_area_frac: float = 0.0005, max_pills: int
     return [_region_from_contour(c, (h, w)) for c in contours[:max_pills]]
 
 
+# 폰 사진에서 알약이 아닌 덩어리를 버리는 기준 (2026-11, 사용자가 유광 탁자 위에서 찍은 실제 사진 8장).
+# 조명 반사는 하얗게 날아간 픽셀(세 채널 모두 245 이상)이 덩어리의 35~53%, 실제 알약은 0~5%였다.
+GLARE_CLIP_LEVEL = 245
+GLARE_CLIP_FRAC = 0.25
+
+
+def drop_glare_and_partial(img: np.ndarray, regions: list[PillRegion]) -> list[PillRegion]:
+    """조명 반사 덩어리는 (다른 덩어리가 남을 때) 버리고, 사진 가장자리에 걸린(잘린) 덩어리는 온전한 덩어리가 하나라도 있으면 버린다.
+    가장자리에 걸린 다른 알약 때문에 '여러 개'로 판정되거나, 반사광이 가장 큰 '알약'이 되던 문제를 막는다."""
+    h, w = img.shape[:2]
+    kept = []
+    for r in regions:
+        px = img[r.mask > 0]
+        if len(px) and (px.min(axis=1) >= GLARE_CLIP_LEVEL).mean() >= GLARE_CLIP_FRAC:
+            continue
+        kept.append(r)
+    # 강한 조명의 흰 알약도 28%까지 날아갔다 (AI Hub 사진). 남는 덩어리가 없으면 반사광으로 본 것도 쓴다
+    kept = kept or list(regions)
+
+    def inside(r):
+        x, y, bw, bh = r.bbox
+        return x > 0 and y > 0 and x + bw < w and y + bh < h
+
+    whole = [r for r in kept if inside(r)]
+    return whole or kept
+
+
 def segment_reference(img: np.ndarray, threshold: float = REFERENCE_THRESHOLD) -> list[PillRegion]:
     """식약처 참조 사진(연한 단색 배경에 앞·뒷면이 좌우로 나란히)에서 [앞면, 뒷면]을 찾는다.
 
@@ -244,6 +271,27 @@ def major_axis_angle(contour: np.ndarray) -> float:
     if m["m00"] == 0:
         return 0.0
     return float(np.degrees(0.5 * np.arctan2(2 * m["mu11"], m["mu20"] - m["mu02"])))
+
+
+def region_in_original(original: np.ndarray, region: PillRegion, scale: float,
+                       margin: float = 0.15) -> tuple[np.ndarray, PillRegion]:
+    """축소한 사진에서 찾은 알약 영역을 원본 해상도로 옮긴다. (알약 주변만 자른 원본, 그 안의 영역)
+
+    preprocess()는 처리 속도를 위해 사진을 긴 변 1600px로 줄인다. 폰 사진(12MP, 4000px)은 이때 각인 해상도가
+    절반 이하로 떨어지므로, 각인 판독용 크롭은 원본에서 다시 자른다. 전체 크기 마스크를 만들지 않도록 주변만 자른다.
+    """
+    x, y, w, h = region.bbox
+    inv = 1.0 / scale
+    pad = int(np.hypot(w, h) * inv * (0.5 + margin)) + 4
+    cx, cy = (x + w / 2) * inv, (y + h / 2) * inv
+    H, W = original.shape[:2]
+    x0, y0 = max(0, int(cx - pad)), max(0, int(cy - pad))
+    x1, y1 = min(W, int(cx + pad) + 1), min(H, int(cy + pad) + 1)
+    roi = original[y0:y1, x0:x1]
+    contour = np.round(region.contour.astype(np.float64) * inv - [x0, y0]).astype(np.int32)
+    mask = np.zeros(roi.shape[:2], np.uint8)
+    cv2.drawContours(mask, [contour], -1, 255, thickness=cv2.FILLED)
+    return roi, PillRegion(contour, mask, tuple(int(v) for v in cv2.boundingRect(contour)))
 
 
 def canonical_crop(img: np.ndarray, region: PillRegion, size: int = 224,

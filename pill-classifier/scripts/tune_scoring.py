@@ -92,7 +92,7 @@ class Targets:
         return self.tables[False]["lengths"]
 
     def components(self, query: tuple) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
-        """ocr.imprint_components를 DB 각인 전체에 대해 한 번에 계산한다. 0번 자리는 쓰지 않는다."""
+        """ocr.imprint_components(+ 짧은 쪽 길이)를 DB 각인 전체에 대해 한 번에 계산한다. 0번 자리는 쓰지 않는다."""
         if not query:
             return None
         tb = self.tables[not any(ocr._HANGUL.search(x) for x in query)]
@@ -108,8 +108,9 @@ class Targets:
             partial = np.zeros_like(lev)
         partial[lev == 1.0] = 1.0
         coverage = np.minimum(len(qs), lengths) / np.maximum(len(qs), lengths)
+        min_len = np.minimum(len(qs), lengths)
         pad = np.zeros(1, np.float32)
-        return tuple(np.concatenate([pad, a]).astype(np.float32) for a in (lev, partial, coverage))
+        return tuple(np.concatenate([pad, a]).astype(np.float32) for a in (lev, partial, coverage, min_len))
 
 
 @dataclass
@@ -142,8 +143,11 @@ def side_similarity(components, p: Params) -> np.ndarray:
         out = np.full(len(TARGETS.lengths) + 1, p.missed, np.float32)
         out[0] = p.both_empty
         return out
-    lev, partial, coverage = components
+    lev, partial, coverage, min_len = components
     out = np.maximum(lev, p.alpha * partial * (p.beta + (1 - p.beta) * coverage))
+    if ocr.CONTAIN_BASE is not None:  # 읽은 글자가 정답 안에 그대로 있을 때 (ocr.CONTAIN_BASE, 조정하지 않고 그대로 쓴다)
+        contain = (partial >= 1.0) & (min_len >= ocr.CONTAIN_MIN_LEN)
+        out = np.where(contain, np.maximum(out, ocr.CONTAIN_BASE + (1 - ocr.CONTAIN_BASE) * coverage), out)
     out[0] = p.false_read
     return out
 

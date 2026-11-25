@@ -370,6 +370,16 @@ class PillApiTest {
     }
 
     @Test
+    void 같은_성분의_다른_회사_약이_있으면_알려_준다() throws Exception {
+        identifyBody = completed(false, 0.9, 0.4, "[]").replace("\"lowConfidence\":false", "\"lowConfidence\":false,\"sameIngredientCount\":3");
+        JsonNode d = finished(submit(""));
+        assertThat(d.path("ttsScript").asText()).contains("다른 회사 약도 있어서").contains("약사에게 꼭 확인");
+
+        identifyBody = completed(false, 0.9, 0.4, "[]");
+        assertThat(finished(submit("")).path("ttsScript").asText()).doesNotContain("다른 회사 약");
+    }
+
+    @Test
     void 뒷면과_힌트를_추론_서버에_넘긴다() throws Exception {
         identifyBody = completed(false, 0.9, 0.4, "[]");
         String back = uploaded().path("fileId").asText();

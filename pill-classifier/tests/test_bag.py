@@ -82,6 +82,38 @@ def test_fields_become_lines_and_table_cells():
     assert lines[0].conf == 0.8 and lines[0].no == 1
 
 
+def test_tilted_photo_keeps_dose_on_the_drug_line():
+    """사진이 3° 기울면 오른쪽 용량 칸이 한 줄(25px) 아래로 내려온다. 기울기를 되돌려 같은 줄로 묶는다."""
+    import math
+    a = math.radians(3)
+
+    def field(text, x, y, w, h=20):  # 기울어진 사진에서의 테두리 상자 (윗변 기울기 a)
+        return OcrField(text, 0.95, x, y + x * math.tan(a), w, h + w * math.sin(a), a)
+
+    fields = [field("자누리틴콤비정", 50, 100, 200), field("1회 2정", 520, 100, 80),
+              field("데스모엠정", 50, 125, 140), field("1회 1정", 520, 125, 80)]
+    lines = assemble_lines(fields)
+    assert [l.text for l in lines] == ["자누리틴콤비정 | 1회 2정", "데스모엠정 | 1회 1정"]
+
+
+def test_sideways_and_upside_down_photos_are_turned_upright():
+    """옆으로 눕히거나 거꾸로 찍어도 같은 줄이 나온다 (글자 상자 윗변 방향으로 사진 방향을 정한다)."""
+    import math
+    flat = [("자누리틴콤비정", 50, 100, 200), ("1회 2정", 520, 100, 80), ("데스모엠정", 50, 125, 140), ("1회 1정", 520, 125, 80)]
+    want = ["자누리틴콤비정 | 1회 2정", "데스모엠정 | 1회 1정"]
+    W, H = 800, 600
+    for turn in (90, 180, 270):
+        t = math.radians(turn)
+        fields = []
+        for text, x, y, w in flat:
+            corners = [(x, y), (x + w, y), (x, y + 20), (x + w, y + 20)]
+            # 사진을 시계 반대로 turn만큼 돌렸을 때의 좌표 (원점은 그대로 두어도 줄 나누기에는 상관없다)
+            pts = [(px * math.cos(t) - py * math.sin(t), px * math.sin(t) + py * math.cos(t)) for px, py in corners]
+            xs, ys = zip(*pts)
+            fields.append(OcrField(text, 0.95, min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys), t))
+        assert [l.text for l in assemble_lines(fields)] == want, turn
+
+
 def test_personal_information_is_masked():
     lines = [Line(1, 1, "환자명 : 홍길동  주민번호 900101-2345678"), Line(2, 1, "약국 전화 02-123-4567"),
              Line(3, 1, "교부번호 : 2026-1234"), Line(4, 1, "타이레놀정 1정")]
@@ -91,6 +123,19 @@ def test_personal_information_is_masked():
     assert "홍길동" not in text and "900101" not in text and "4567" not in text and "1234" not in text
     assert "[이름]" in text and "[주민번호]" in text and "[전화]" in text and "[번호]" in text
     assert masked[3].text == "타이레놀정 1정"
+
+
+def test_names_in_real_bag_layouts_are_masked():
+    # 실제 약봉투(2026-11): 맨 위 "이름 님", OCR이 끼워 넣은 글자, 조제약사, 이름표 없는 다른 줄
+    lines = [Line(1, 1, "홍길동 님 (만 29세/남)"),
+             Line(2, 1, "조제일 | 2026-05-19 조제약사 김약사 | 환 자 성 명 자 | 홍길동 영수"),
+             Line(3, 1, "홍길동"), Line(4, 1, "환자님 복용 시 약사와 상의하세요"), Line(5, 1, "타이레놀정 1정")]
+    masked, patient = mask_lines(lines)
+    text = "\n".join(l.text for l in masked)
+    assert patient == "홍O동"
+    assert "홍길동" not in text and "김약사" not in text
+    assert masked[2].text == "[이름]"
+    assert masked[3].text == "환자님 복용 시 약사와 상의하세요" and masked[4].text == "타이레놀정 1정"
 
 
 def test_too_little_or_blurry_text_asks_for_retake():
@@ -163,8 +208,17 @@ def test_bag_is_read_and_matched(tmp_path):
     assert len(claude.calls) == 1  # 문제가 없으면 재확인하지 않는다
 
 
+def test_low_confidence_on_an_exact_db_name_does_not_recheck():
+    # Claude가 낯선 제품명이라 LOW를 줘도, 인쇄된 이름이 식약처 품목명과 같고 근거가 맞으면 다시 묻지 않는다
+    claude = FakeClaude(extraction(med("뮤코스타정", lines=(5, 6), confidence="LOW")))
+    ocr_lines = ["행복약국 복약안내 약국", "약품명 | 1회 | 1일 | 일수", "기타 안내 문구입니다", "다른 줄입니다",
+                 "뮤코스타정 | 1 | 3 | 5", "매 식후 30분에 복용하세요"]
+    result = BagReader(ITEMS, claude, FakeOcr(ocr_lines)).recognize(photo())
+    assert result["rechecked"] is False and len(claude.calls) == 1
+
+
 def test_problems_trigger_one_recheck_with_the_photo():
-    first = extraction(med("뮤코스타정", lines=(5, 6), confidence="LOW"))
+    first = extraction(med("뮤코스타정", lines=(5, 6), confidence="LOW", quotes=["문서에 없는 문구"]))
     second = extraction(med("뮤코스타정", lines=(5, 6)))
     claude = FakeClaude(first, second)
     ocr_lines = ["행복약국 복약안내 약국", "약품명 | 1회 | 1일 | 일수", "기타 안내 문구입니다", "다른 줄입니다",
@@ -175,6 +229,30 @@ def test_problems_trigger_one_recheck_with_the_photo():
     assert claude.calls[1]["task"] == "bag-recheck-v2"
     assert claude.calls[1]["content"][0]["type"] == "image"
     assert "<problems>" in claude.calls[1]["content"][1]["text"]
+
+
+def test_unread_value_flags_same_column_of_other_drugs():
+    # 기운 사진에서 용량 칸이 한 줄 밀려, 첫 약의 1회량은 비우고 다음 약에는 밀린 값을 넣은 경우
+    claude = FakeClaude(extraction(med("타이레놀정500밀리그람", lines=(4, 6), quotes=["타이레놀정500밀리그람"], dose=None),
+                                   med("뮤코스타정", lines=(5, 6))))
+    ocr_lines = ["행복약국 복약안내", "환자명 : 홍길동", "약품명 | 1회 | 1일 | 일수", "타이레놀정500밀리그람 | 1 | 3 | 5",
+                 "뮤코스타정 | 1 | 3 | 5", "매 식후 30분에 복용하세요"]
+    result = BagReader(ITEMS, claude, FakeOcr(ocr_lines)).recognize(photo())
+    first, second = result["items"]
+    assert first["dosageAmount"] is None and first["needsReview"]
+    assert second["dosageAmount"] == 1 and second["needsReview"]
+    assert "다른 약의 1회량을 읽지 못해 이 약의 1회량도 확인이 필요합니다" in second["reviewReasons"]
+    assert result["status"] == "PARTIAL"
+
+
+def test_printed_name_still_matches_when_correction_drifts_to_ingredient_name():
+    # Claude가 제품명을 성분명처럼 고쳐도 인쇄된 이름이 정확하면 그 품목으로 정한다
+    from pillid.bag import Checked
+    reader = BagReader(ITEMS, None, None)
+    med = {"nameAsPrinted": "타이레놀정500밀리그람", "nameCorrected": "아세트아미노펜정500밀리그람", "dosePerTake": 1,
+           "timesPerDay": 3, "durationDays": 5, "slots": [], "evidenceLines": []}
+    item = reader._item(1, Checked(med), {})
+    assert item["matchGrade"] == "MATCHED" and item["itemSeq"] == "1001"
 
 
 def test_unknown_drug_needs_review_and_keeps_printed_name():

@@ -24,7 +24,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import threading
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from dataclasses import replace
@@ -36,7 +38,7 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, 
 from fastapi.responses import FileResponse
 
 from pillid import __version__
-from pillid.bag import BagReader, ClovaOcr, load_clova_config
+from pillid.bag import BagReader, ClovaOcr, load_clova_config, normalize_name, strength_of
 from pillid.attributes import COLORS, SHAPES, parse_colors
 from pillid.enums import (API_COLOR_MATCHES, API_TO_COLOR, API_TO_SHAPE, LINE_TYPES, color_to_api,
                           is_capsule, line_to_api, shape_to_api, to_float)
@@ -160,6 +162,20 @@ def observation_for_scoring(o: dict | None, hints: dict) -> tuple[AiObservation 
     ), raw_imprints if readable else [None, None]
 
 
+_INGREDIENT = re.compile(r"\(([^()]*)\)\s*$")
+
+
+def look_alike_key(it: dict) -> tuple | None:
+    """(성분, 함량, 모양, 색). 품목명 끝 괄호의 성분명과 이름의 함량이 있을 때만. 같으면 사진으로 구별하기 어려운 다른 회사 제품이다."""
+    name = it.get("item_name") or ""
+    m = _INGREDIENT.search(name)
+    strength = strength_of(normalize_name(name))
+    if not m or not strength:
+        return None
+    return (re.sub(r"\s", "", m.group(1)), strength, (it.get("drug_shape") or "").strip(),
+            (it.get("color_class1") or "").strip())
+
+
 def describe_item(it: dict) -> str:
     """재순위 프롬프트에 넣는 후보의 외형 설명 (식약처 기재 내용)."""
     return (f"모양 {it.get('drug_shape') or '미상'}, 색 {', '.join(it['_colors']) or '미상'}, "
@@ -253,6 +269,11 @@ def create_app(db_path=None, model_path=None, index_path=None, detector=None,
         log.info("확신 가능한 약: %s", "제한 없음" if ident.trusted_items is None else f"{len(ident.trusted_items)}종")
         state["ident"] = ident
         state["by_seq"] = {it["item_seq"]: it for it in ident.items}
+        # 같은 성분·함량·모양·색 제품 수. 식약처 사진만 있는 약을 찍으면 촬영 사진이 있는 같은 성분의 다른 회사 제품이
+        # 1위로 확신되는 일이 있었다(평가 6건 중 5건). 약 정보는 같지만 제품은 다를 수 있다고 알려 준다
+        keys = {s: look_alike_key(it) for s, it in state["by_seq"].items()}
+        groups = Counter(k for k in keys.values() if k)
+        state["same_ingredient"] = {s: groups[k] - 1 for s, k in keys.items() if k}
         state["key"] = internal_key if internal_key is not None else env.get("PILL_INTERNAL_KEY")
         # 식약처 참조 이미지 폴더 (build_db.py --download-images가 {품목기준코드}.jpg로 저장)
         state["images"] = Path(images_dir or env.get("PILL_IMAGES") or ROOT / "data" / "images")
@@ -342,17 +363,19 @@ def create_app(db_path=None, model_path=None, index_path=None, detector=None,
                 res = ident.identify(obs, topk, ai)
 
             by_seq = state["by_seq"]
-            candidates = []
-            for c in res.candidates:
+
+            def as_dict(c) -> dict:
                 summary = item_summary(by_seq[c.item_seq])
-                candidates.append({
+                return {
                     "itemSeq": c.item_seq, "itemName": summary["itemName"], "entpName": summary["entpName"],
                     "className": summary["className"], "etcOtcName": summary["etcOtcName"],
                     "itemImageUrl": summary["itemImageUrl"], "score": round(c.score, 4),
                     "scoreBreakdown": {k: round(v, 4) for k, v in c.parts.items()},
                     "description": describe_item(by_seq[c.item_seq]),
                     "hasImage": (state["images"] / f"{c.item_seq}.jpg").is_file(),
-                })
+                }
+
+            candidates = [as_dict(c) for c in res.candidates]
             features = features_payload(obs, set(h))
             # OCR이 읽지 못한 각인은 비전 모델이 읽은 값으로 보여 준다
             features["printFront"] = features["printFront"] or ai_imprints[0]
@@ -361,18 +384,28 @@ def create_app(db_path=None, model_path=None, index_path=None, detector=None,
             # 3) 확신이 없을 때만 Claude에게 상위 후보를 다시 비교시킨다 (비용이 드는 호출)
             low_confidence, reranked = res.low_confidence, False
             if use_ai and pill_vision and needs_rerank(candidates, low_confidence):
+                # 상위 후보에 더해, 읽은 각인이 정확히 맞는데 순위가 밀린 약도 같이 비교시킨다
+                compared = candidates[:RERANK_TOP_N]
+                extra = [as_dict(c) for c in ident.imprint_candidates(res, skip=[c["itemSeq"] for c in compared])]
                 top = [{"itemSeq": c["itemSeq"], "itemName": c["itemName"], "description": c["description"],
                         "image": load_reference_image(state["images"] / f"{c['itemSeq']}.jpg")}
-                       for c in candidates[:RERANK_TOP_N]]
+                       for c in compared + extra]
                 matches = pill_vision.rerank(front_img, back_img, top)
                 if matches is not None:
-                    candidates, low_confidence = apply_rerank(candidates, matches)
+                    listed = {c["itemSeq"] for c in candidates}
+                    pool = candidates + [c for c in extra if c["itemSeq"] not in listed]
+                    candidates, low_confidence = apply_rerank(pool, matches)
+                    candidates = candidates[:topk]
                     reranked = True
-            if candidates and not ident.is_trusted(candidates[0]["itemSeq"]):
+            if candidates and (not ident.is_trusted(candidates[0]["itemSeq"])
+                               or ident.imprint_rival(res, candidates[0]["itemSeq"])):
                 low_confidence = True
+            same = state["same_ingredient"].get(candidates[0]["itemSeq"], 0) if candidates else 0
             return {**base, "status": "COMPLETED", "reason": None, "sidesUsed": len(obs),
                     "features": features, "candidates": candidates,
-                    "lowConfidence": low_confidence, "reranked": reranked}
+                    "lowConfidence": low_confidence, "reranked": reranked,
+                    # 1위와 성분·함량·모양·색이 같은 다른 제품 수. 0보다 크면 "같은 성분의 다른 회사 제품일 수 있어요"
+                    "sameIngredientCount": same}
 
         # 1) 사진 분석(CV+임베딩)만으로 먼저 본다. 학습한 약을 확신하면 Claude를 부르지 않는다.
         #    AI Hub 사진 90종: 정확도는 그대로(1위 89/90, 확신 오답 0)이고 Claude 호출은 90건 → 15건으로 준다.

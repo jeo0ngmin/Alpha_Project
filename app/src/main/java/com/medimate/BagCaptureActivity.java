@@ -101,6 +101,7 @@ public class BagCaptureActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
         buttonCamera.setOnClickListener(v -> {
+            tts.speak(getString(R.string.medicine_bag_voice_guide));
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                     == PackageManager.PERMISSION_GRANTED) {
                 takePicture.launch(photoUri());
