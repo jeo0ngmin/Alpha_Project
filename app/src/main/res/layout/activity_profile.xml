@@ -3,6 +3,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/profile_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/medimate_bg">
@@ -21,9 +22,10 @@
         android:layout_marginEnd="22dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
 
         <!-- 뒤로가기 -->
         <ImageButton
@@ -35,6 +37,7 @@
             android:padding="12dp"
             android:src="@drawable/ic_back"
             app:tint="@color/medimate_icon_green" />
+
 
         <!-- 제목 -->
         <TextView
@@ -62,9 +65,9 @@
         android:layout_marginTop="28dp"
         android:layout_marginEnd="22dp"
         android:orientation="vertical"
-        app:layout_constraintTop_toBottomOf="@id/header_profile"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/header_profile">
 
 
         <!-- ========================= -->
@@ -81,7 +84,7 @@
             android:textStyle="bold" />
 
 
-        <!-- 아이디 -->
+        <!-- 아이디 / 로그인 방식 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_id"
             android:layout_width="match_parent"
@@ -164,12 +167,28 @@
             android:textStyle="bold" />
 
 
+        <!-- 로그아웃 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_logout"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:layout_marginTop="14dp"
+            android:text="@string/profile_sign_out"
+            android:textAllCaps="false"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="14sp"
+            app:backgroundTint="@color/medimate_card"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/medimate_border"
+            app:strokeWidth="1dp" />
+
+
         <!-- 회원 탈퇴 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_withdraw"
             android:layout_width="match_parent"
             android:layout_height="58dp"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="10dp"
             android:text="Medimate 탈퇴하기"
             android:textAllCaps="false"
             android:textColor="@color/medimate_text_main"

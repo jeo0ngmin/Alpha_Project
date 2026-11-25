@@ -2,18 +2,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- ========================= -->
+    <!-- 권한 -->
+    <!-- ========================= -->
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- 복약 알림 (README 9-6) -->
+
+    <!-- 복약 알림 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
-    <!-- 카카오톡 설치 여부 확인용 (Android 11+) -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+
+    <!-- 카카오톡 설치 여부 확인용 -->
     <queries>
         <package android:name="com.kakao.talk" />
     </queries>
+
 
     <application
         android:name=".MedimateApplication"
@@ -22,155 +32,189 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Medimate">
+
+
+        <!-- ========================= -->
+        <!-- 앱 시작 -->
+        <!-- ========================= -->
+
         <activity
             android:name=".ui.SplashActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
-<<<<<<< HEAD
 
 
-        <!-- 회원가입 -->
-=======
->>>>>>> origin/develop
+        <!-- ========================= -->
+        <!-- 로그인 / 회원가입 -->
+        <!-- ========================= -->
+
         <activity
             android:name=".ui.LoginActivity"
             android:exported="false" />
-<<<<<<< HEAD
 
-
-        <!-- 로그인 -->
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
-
-
-        <!-- 개인 정보 -->
-=======
         <activity
             android:name=".ui.PhoneLoginActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
->>>>>>> origin/develop
+
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SignupActivity"
+            android:exported="false" />
+
+
+        <!-- ========================= -->
+        <!-- 개인 정보 -->
+        <!-- ========================= -->
+
         <activity
             android:name=".ui.ProfileActivity"
             android:exported="false" />
-<<<<<<< HEAD
 
-
-        <!-- 회원 탈퇴 -->
         <activity
             android:name=".WithdrawActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ChangePhoneActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
-        <!-- 기존 메인 화면 -->
-=======
->>>>>>> origin/develop
+        <activity
+            android:name=".ChangePasswordActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+
+        <!-- ========================= -->
+        <!-- 메인 -->
+        <!-- ========================= -->
+
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name=".ui.recommend.RecommendChatActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
 
-<<<<<<< HEAD
-
-        <!-- OCR 결과 화면 -->
         <activity
-            android:name=".OcrResultActivity"
+            android:name=".HomeActivity"
             android:exported="false" />
 
 
-        <!-- OCR 결과 상세 분석 화면 -->
+        <!-- ========================= -->
+        <!-- 내 약 -->
+        <!-- ========================= -->
+
         <activity
-            android:name=".MedicineDetailActivity"
+            android:name=".ui.drug.MyDrugsActivity"
             android:exported="false" />
 
-
-        <!-- 내 약 목록 화면 -->
         <activity
             android:name=".MyMedicineActivity"
             android:exported="false" />
 
 
-        <!-- 알약 사진 촬영 및 선택 화면 -->
-=======
+        <!-- ========================= -->
+        <!-- 약봉투 촬영 / OCR -->
+        <!-- ========================= -->
+
+        <activity
+            android:name=".BagCaptureActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".OcrResultActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".MedicineDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".MedicineConfirmActivity"
+            android:exported="false" />
+
+
+        <!-- ========================= -->
+        <!-- 알약 분석 -->
+        <!-- ========================= -->
+
+        <activity
+            android:name=".PillCaptureActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".PillAnalyzingActivity"
+            android:exported="false" />
+
+
+        <!-- ========================= -->
+        <!-- 복약 알림 / 스케줄 -->
+        <!-- ========================= -->
+
+        <activity
+            android:name=".MedicationReminderActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".AddMedicationReminderActivity"
+            android:exported="false" />
+
         <activity
             android:name=".ui.schedule.MedicationScheduleActivity"
             android:exported="false"
             android:launchMode="singleTop" />
+
         <activity
             android:name=".ui.schedule.ScheduleEditActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- ===== JE 화면 (MM-JE) ===== -->
-        <!-- 로그인 전 시작 화면. 앱 실행은 JM의 SplashActivity가 맡고, 로그인 전이면 여기로 보낸다 -->
-        <activity
-            android:name=".WelcomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".SignupActivity"
-            android:exported="false" />
-        <activity
-            android:name=".WithdrawActivity"
-            android:exported="false" />
-        <!-- JE의 약봉투 촬영 화면 (원래 이름 MainActivity) -->
-        <activity
-            android:name=".BagCaptureActivity"
-            android:exported="false" />
-        <activity
-            android:name=".OcrResultActivity"
-            android:exported="false" />
-        <activity
-            android:name=".MedicineDetailActivity"
-            android:exported="false" />
->>>>>>> origin/develop
-        <activity
-            android:name=".PillCaptureActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-<<<<<<< HEAD
 
+        <!-- ========================= -->
+        <!-- 챗봇 / 영양제 추천 -->
+        <!-- ========================= -->
 
-        <!-- 알약 분석 중 화면 -->
-=======
->>>>>>> origin/develop
-        <activity
-            android:name=".PillAnalyzingActivity"
-            android:exported="false" />
-
-<<<<<<< HEAD
-
-        <!-- 챗봇 화면 -->
         <activity
             android:name=".ChatbotActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.recommend.RecommendChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
-        <!-- 카메라 촬영 이미지 저장용 FileProvider -->
-=======
+
+        <!-- ========================= -->
+        <!-- 복약 알림 Receiver -->
+        <!-- ========================= -->
+
         <receiver
             android:name=".reminder.ReminderReceiver"
             android:exported="false" />
+
         <receiver
             android:name=".reminder.ReminderActionReceiver"
             android:exported="false" />
-        <!-- 시스템 방송은 exported=false여도 받는다 -->
+
         <receiver
             android:name=".reminder.SystemEventReceiver"
             android:exported="false">
+
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
@@ -178,13 +222,20 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
+
         </receiver>
 
-        <!-- 카카오 로그인 리다이렉트. scheme은 secrets.properties의 키로 채운다 (README 7-5) -->
+
+        <!-- ========================= -->
+        <!-- 카카오 로그인 리다이렉트 -->
+        <!-- ========================= -->
+
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
             android:exported="true">
+
             <intent-filter>
+
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -193,45 +244,29 @@
                 <data
                     android:host="oauth"
                     android:scheme="kakao${KAKAO_NATIVE_APP_KEY}" />
+
             </intent-filter>
+
         </activity>
 
-        <!-- 촬영한 사진을 카메라 앱이 앱 캐시에 쓰게 한다 (BagCaptureActivity) -->
->>>>>>> origin/develop
+
+        <!-- ========================= -->
+        <!-- 카메라 이미지 FileProvider -->
+        <!-- ========================= -->
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
+
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
+
         </provider>
-<<<<<<< HEAD
 
-        <!-- 복용 알림 추가 화면 -->
-        <activity
-            android:name=".AddMedicationReminderActivity"
-            android:exported="false" />
 
-        <!-- 약봉투 인식 결과 확인 -->
-        <activity
-            android:name=".MedicineConfirmActivity"
-            android:exported="false" />
-
-        <!-- 전화번호 변경 -->
-        <activity
-            android:name=".ChangePhoneActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-
-        <!-- 비밀번호 변경 -->
-        <activity
-            android:name=".ChangePasswordActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-=======
->>>>>>> origin/develop
     </application>
 
 </manifest>

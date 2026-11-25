@@ -3,6 +3,7 @@ package com.medimate.auth;
 import android.app.Activity;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
 import androidx.credentials.Credential;
 import androidx.credentials.CredentialManager;
 import androidx.credentials.CredentialManagerCallback;
@@ -48,7 +49,8 @@ public class GoogleSignInHelper {
                 .addCredentialOption(option)
                 .build();
 
-        Executor mainExecutor = activity.getMainExecutor();
+        // Activity.getMainExecutor()는 API 28+라 minSdk 26에서 쓸 수 없다
+        Executor mainExecutor = ContextCompat.getMainExecutor(activity);
         CredentialManager.create(activity).getCredentialAsync(activity, request, null, mainExecutor,
                 new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
                     @Override

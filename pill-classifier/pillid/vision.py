@@ -1,11 +1,11 @@
-"""Claude Fable 5.1 비전 보조: 알약 관찰과 후보 재순위 (docs/03_AI_OCR_연동설계서.md §3, §6).
+"""Claude Opus 5.5 비전 보조: 알약 관찰과 후보 재순위 (docs/03_AI_OCR_연동설계서.md §3, §6).
 
 Claude 호출이 꺼져 있거나 실패해도 식별은 CV만으로 계속되어야 하므로, PillVision의 메서드는
 예외를 던지지 않고 None을 돌려준다.
 
 환경변수
     PILL_AI_PROVIDER        none(기본) | bedrock | anthropic
-    PILL_AI_MODEL           비우면 anthropic.claude-fable-5-1(Bedrock) 또는 claude-fable-5-1
+    PILL_AI_MODEL           비우면 anthropic.claude-opus-5-5(Bedrock) 또는 claude-opus-5-5
     PILL_AI_FALLBACK_MODEL  안전 분류기 거절 시 1회 재시도할 모델 (비우면 재시도 없음)
     PILL_AI_TIMEOUT         요청 제한 시간(초), 기본 40
     AWS_REGION              bedrock일 때 필수. 자격 증명은 AWS 기본 체인(IAM Role, AWS_PROFILE 등)
@@ -87,10 +87,15 @@ class AiError(Exception):
         self.kind = kind
 
 
+# 이 프로세스에서 Claude를 부른 횟수와 토큰 합계 (평가 스크립트가 요금을 계산할 때 쓴다)
+USAGE = {"calls": 0, "input_tokens": 0, "output_tokens": 0}
+
+
 class ClaudeJson:
     """Claude에 한 번 물어 JSON Schema에 맞는 JSON을 받는다 (구조화 출력, 1턴).
 
-    Fable 5.1 규칙: thinking·temperature를 보내지 않는다(400). 깊이는 effort로만 조절한다.
+    Opus 5.5 규칙(Fable 5.1과 같다): thinking·temperature를 보내지 않는다(thinking은 끌 수 없고 sampling은 400).
+    깊이는 effort로만 조절한다. Opus 5.5의 effort 기본값은 medium이라 호출마다 명시한다.
     거절은 대체 모델로 1회, 잘림은 max_tokens 1.5배로 1회 재시도한다. Bedrock에서는 서버 측
     fallbacks를 쓸 수 없어서 여기서 직접 재시도한다.
     """
@@ -149,6 +154,9 @@ class ClaudeJson:
             raise AiError("UNAVAILABLE", f"HTTP {e.status_code}") from e
         except anthropic.APIConnectionError as e:
             raise AiError("UNAVAILABLE", "연결 실패 또는 타임아웃") from e
+        USAGE["calls"] += 1
+        USAGE["input_tokens"] += message.usage.input_tokens
+        USAGE["output_tokens"] += message.usage.output_tokens
         log.info("Claude 호출 task=%s model=%s stop=%s input_tokens=%s output_tokens=%s ms=%d",
                  task, model, message.stop_reason, message.usage.input_tokens, message.usage.output_tokens,
                  (time.monotonic() - started) * 1000)
@@ -165,10 +173,10 @@ def claude_from_env() -> ClaudeJson | None:
     timeout = float(os.environ.get("PILL_AI_TIMEOUT", "40"))
     if provider == "bedrock":
         client = anthropic.AnthropicBedrockMantle(aws_region=os.environ.get("AWS_REGION"), timeout=timeout)
-        default_model = "anthropic.claude-fable-5-1"  # Bedrock은 anthropic. 접두사가 붙는다
+        default_model = "anthropic.claude-opus-5-5"  # Bedrock은 anthropic. 접두사가 붙는다
     elif provider == "anthropic":
         client = anthropic.Anthropic(timeout=timeout)
-        default_model = "claude-fable-5-1"
+        default_model = "claude-opus-5-5"
     else:
         raise ValueError(f"PILL_AI_PROVIDER는 none, bedrock, anthropic 중 하나여야 합니다: {provider}")
     return ClaudeJson(client, os.environ.get("PILL_AI_MODEL") or default_model,
@@ -263,7 +271,11 @@ def apply_rerank(candidates: list[dict], matches: dict[str, str]) -> tuple[list[
 
     최종 점수 = 0.5 × CV 점수 + 0.5 × 판정값. 판정받지 않은 후보(6위 이하)는 판정값 0으로 계산하고,
     '다른 약'(DIFFERENT) 판정은 점수와 상관없이 목록 뒤로 보낸다.
+    판정받은 후보가 모두 '다른 약'이면 순서를 바꾸지 않고 저신뢰로 낸다. 판정받지 않은 6위가 1위로 올라오는 일을 막는다
+    (평가에서 Claude가 정답까지 '다른 약'이라고 본 7건이 모두 이렇게 6위 이하 후보로 바뀌었다).
     """
+    if not any(matches.get(c["itemSeq"]) in ("SAME_LIKELY", "POSSIBLE") for c in candidates):
+        return candidates, True
     rescored = []
     for c in candidates:
         value = MATCH_VALUES.get(matches.get(c["itemSeq"]), 0.0)

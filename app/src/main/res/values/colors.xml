@@ -1,26 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<<<<<<< HEAD
 
     <!-- 기본 공통 색상 -->
-    <color name="white">#FFFFFF</color>
-
-=======
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <!-- 복약 상태별 알약 색. 글자와 배경의 대비는 4.5:1 이상 -->
+
+
+    <!-- 복약 상태별 알약 색 -->
     <color name="dose_scheduled_bg">#FFE8EEF7</color>
     <color name="dose_scheduled_on">#FF1B1F27</color>
+
     <color name="dose_check_bg">#FFFFF0CC</color>
     <color name="dose_check_on">#FF3D2B00</color>
+
     <color name="dose_taken_bg">#FFCFEBD6</color>
     <color name="dose_taken_on">#FF0B3B1C</color>
+
+
+    <!-- 캘린더 -->
     <color name="calendar_selected">#FF1F5FBF</color>
     <color name="calendar_on_selected">#FFFFFFFF</color>
     <color name="calendar_today_ring">#FFB35900</color>
     <color name="calendar_dot">#FF1F5FBF</color>
+
+
     <!-- JE 화면 색 -->
->>>>>>> origin/develop
     <color name="medimate_green">#727D73</color>
     <color name="medimate_icon_green">#60796D</color>
     <color name="medimate_icon_background">#EFF5F0</color>
@@ -43,21 +47,20 @@
     <color name="pill_analysis_green">#3F5D63</color>
     <color name="pill_analysis_background">#D3E0E3</color>
     <color name="pill_analysis_border">#AFC2C7</color>
-<<<<<<< HEAD
 
 
     <!-- 홈 / 복약알림 새 UI -->
 
-    <!-- 전체 배경 : 완전 흰색보다 살짝 따뜻한 아이보리 -->
+    <!-- 전체 배경 -->
     <color name="medimate_bg">#FDFCF9</color>
 
     <!-- 주요 포인트 세이지 -->
     <color name="medimate_sage">#6E8979</color>
 
-    <!-- 조금 더 진한 세이지 -->
+    <!-- 진한 세이지 -->
     <color name="medimate_sage_dark">#5D7567</color>
 
-    <!-- 연한 카드/기능 배경 -->
+    <!-- 연한 카드 / 기능 배경 -->
     <color name="medimate_sage_soft">#EEF2EC</color>
 
     <!-- 아주 연한 보조 배경 -->
@@ -82,6 +85,3 @@
     <color name="medimate_progress_track">#E0E6DF</color>
 
 </resources>
-=======
-</resources>
->>>>>>> origin/develop

@@ -61,6 +61,21 @@ public class PhoneAuthHelper {
         return "+82" + digits.substring(1);
     }
 
+    /** 국제 형식을 화면용으로 바꾼다. "+821012345678" → "010-1234-5678". 국내 휴대폰 번호가 아니면 그대로 */
+    public static String toDisplay(String e164) {
+        if (e164 == null) {
+            return null;
+        }
+        String local = toE164(e164);
+        if (local == null) {
+            return e164;
+        }
+        String d = "0" + local.substring(3);
+        return d.length() == 11
+                ? d.substring(0, 3) + "-" + d.substring(3, 7) + "-" + d.substring(7)
+                : d.substring(0, 3) + "-" + d.substring(3, 6) + "-" + d.substring(6);
+    }
+
     /** 인증번호 발송. 테스트용 번호면 문자 없이 바로 onCodeSent가 온다. */
     public void startVerification(Activity activity, String phone, VerificationCallback callback) {
         String e164 = toE164(phone);

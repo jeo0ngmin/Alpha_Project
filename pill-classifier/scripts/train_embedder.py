@@ -4,11 +4,16 @@
   data/reference/manifest.csv  (식약처 참조 크롭, prepare_reference.py)
   data/aihub/manifest.csv      (AI Hub 촬영 크롭, convert_aihub.py)
 검증: 클래스별로 일부 이미지를 떼어 두고, 나머지를 갤러리로 한 검색 Top-1/Top-5 정확도를 잰다.
+
+--holdout <파일>: 파일에 적은 품목은 실제 촬영 사진(식약처 참조 크롭이 아닌 것)을 학습에서 뺀다. 식약처 사진은 남긴다.
+  AI Hub에 사진이 없는 약(DB 대부분)과 같은 처지를 만들어, 그 약들의 촬영 사진을 질의로 '처음 보는 약' 정확도를 잰다.
+--photo-aug <확률>: 식약처 참조 크롭을 폰 사진처럼 바꾸는 증강(pillid.data.PhotoLike). 위 정확도를 올리려는 것.
 """
 from __future__ import annotations
 
 import argparse
 import math
+import os
 import random
 import sys
 import time
@@ -20,7 +25,8 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from pillid.data import ManifestDataset, PathDataset, eval_transform, read_manifest, train_transform  # noqa: E402
+from pillid.data import (ManifestDataset, PackedImages, PathDataset, PhotoLike, eval_transform, is_reference,  # noqa: E402
+                         read_manifest, train_transform)
 from pillid.embedding import ArcFaceHead, PillEmbedder, save_checkpoint  # noqa: E402
 
 
@@ -40,8 +46,8 @@ def split_rows(rows, val_frac: float, seed: int):
 
 
 @torch.no_grad()
-def embed(model, rows, size, device, batch_size, workers):
-    dl = DataLoader(PathDataset([r["path"] for r in rows], eval_transform(size)),
+def embed(model, rows, size, device, batch_size, workers, loader=None):
+    dl = DataLoader(PathDataset([r["path"] for r in rows], eval_transform(size), loader),
                     batch_size=batch_size, num_workers=workers)
     model.eval()
     return torch.cat([model(x.to(device)).float() for x in dl])
@@ -76,9 +82,15 @@ def main():
     ap.add_argument("--scale", type=float, default=30.0)
     ap.add_argument("--val-frac", type=float, default=0.1)
     ap.add_argument("--eval-every", type=int, default=2)
+    ap.add_argument("--pack", help="pack_images.py로 묶은 파일. 주면 이미지를 여기서 읽는다 (NAS에서 빠르다)")
+    ap.add_argument("--holdout", help="촬영 사진을 학습에서 뺄 품목 목록 (줄마다 품목기준코드, #은 주석)")
+    ap.add_argument("--holdout-queries", type=int, default=10, help="처음 보는 약 평가에 쓸 품목당 촬영 사진 수")
+    ap.add_argument("--photo-aug", type=float, default=0.0, help="식약처 참조 크롭에 PhotoLike를 적용할 확률 (0이면 끔)")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--no-resume", action="store_true",
+                    help="이어서 학습하지 않음. 기본은 <out>.last 가 있으면 끊긴 에폭부터 이어서 학습한다")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -88,14 +100,36 @@ def main():
     rows = read_manifest(args.manifest)
     labels = sorted({r["label"] for r in rows})
     label_to_idx = {l: i for i, l in enumerate(labels)}
+    unseen_rows = []
+    if args.holdout:
+        held = {l.split("#")[0].strip() for l in Path(args.holdout).read_text(encoding="utf-8").splitlines()}
+        held.discard("")
+        unseen_all = [r for r in rows if r["label"] in held and not is_reference(r["path"])]
+        rows = [r for r in rows if not (r["label"] in held and not is_reference(r["path"]))]
+        by = defaultdict(list)
+        for r in unseen_all:
+            by[r["label"]].append(r)
+        rng = random.Random(args.seed)
+        for items in by.values():
+            rng.shuffle(items)
+            unseen_rows.extend(items[:args.holdout_queries])
+        print(f"처음 보는 약 {len(by):,}종: 촬영 사진 {len(unseen_all):,}장을 학습에서 빼고 {len(unseen_rows):,}장을 평가에 쓴다")
     train_rows, val_rows = split_rows(rows, args.val_frac, args.seed)
+    loader = None
+    if args.pack:
+        loader = PackedImages(args.pack)
+        missing = sum(r["path"] not in loader for r in rows + unseen_rows)
+        if missing:
+            raise SystemExit(f"묶음 파일에 없는 이미지가 {missing:,}장입니다. "
+                             "pack_images.py를 같은 매니페스트로 다시 실행하세요.")
     print(f"클래스 {len(labels):,}개, 학습 {len(train_rows):,}장, 검증 {len(val_rows):,}장, 장치 {device}")
 
     # 클래스별 이미지 수 편차(참조 2장 vs AI Hub 수십 장)를 완화하는 샘플링
     counts = Counter(r["label"] for r in train_rows)
     weights = [1.0 / math.sqrt(counts[r["label"]]) for r in train_rows]
     sampler = WeightedRandomSampler(weights, num_samples=len(train_rows), replacement=True)
-    train_dl = DataLoader(ManifestDataset(train_rows, label_to_idx, train_transform(args.img_size)),
+    reference_aug = PhotoLike(args.photo_aug, seed=args.seed) if args.photo_aug > 0 else None
+    train_dl = DataLoader(ManifestDataset(train_rows, label_to_idx, train_transform(args.img_size), loader, reference_aug),
                           batch_size=args.batch_size, sampler=sampler, num_workers=args.workers,
                           drop_last=True, pin_memory=use_amp, persistent_workers=args.workers > 0)
     if len(train_dl) == 0:
@@ -120,8 +154,23 @@ def main():
     config = {"backbone": args.backbone, "dim": args.dim, "img_size": args.img_size}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
 
-    best = -1.0
-    for epoch in range(1, args.epochs + 1):
+    # 서버가 중간에 재시작돼도 이어서 학습하도록 에폭마다 전체 상태를 저장한다
+    last_path = Path(str(args.out) + ".last")
+    best, start = -1.0, 1
+    if last_path.exists() and not args.no_resume:
+        st = torch.load(last_path, map_location="cpu", weights_only=False)
+        if st["labels"] == labels and st["args"] == vars(args):
+            model.load_state_dict(st["model"])
+            head.load_state_dict(st["head"])
+            opt.load_state_dict(st["opt"])
+            sched.load_state_dict(st["sched"])
+            scaler.load_state_dict(st["scaler"])
+            best, start = st["best"], st["epoch"] + 1
+            print(f"{st['epoch']}에폭까지 학습한 상태에서 이어서 학습합니다 (최고 val top1 {best:.3f})")
+        else:
+            print("저장된 학습 상태가 지금 설정·데이터와 달라 처음부터 학습합니다")
+
+    for epoch in range(start, args.epochs + 1):
         model.train()
         head.train()
         t0, running = time.time(), 0.0
@@ -139,12 +188,17 @@ def main():
         msg = f"[{epoch}/{args.epochs}] loss {running / len(train_dl):.4f} ({time.time() - t0:.0f}s)"
 
         if val_rows and (epoch % args.eval_every == 0 or epoch == args.epochs):
-            g = embed(model, train_rows, args.img_size, device, args.batch_size * 2, args.workers)
-            q = embed(model, val_rows, args.img_size, device, args.batch_size * 2, args.workers)
+            g = embed(model, train_rows, args.img_size, device, args.batch_size * 2, args.workers, loader)
+            q = embed(model, val_rows, args.img_size, device, args.batch_size * 2, args.workers, loader)
             gl = torch.tensor([label_to_idx[r["label"]] for r in train_rows], device=device)
             ql = torch.tensor([label_to_idx[r["label"]] for r in val_rows], device=device)
             acc = retrieval_accuracy(g, gl, q, ql, len(labels))
             msg += f" | val top1 {acc[1]:.3f} top5 {acc[5]:.3f}"
+            if unseen_rows:  # 처음 보는 약: 갤러리에는 그 약의 식약처 사진만 있다
+                u = embed(model, unseen_rows, args.img_size, device, args.batch_size * 2, args.workers, loader)
+                ul = torch.tensor([label_to_idx[r["label"]] for r in unseen_rows], device=device)
+                ua = retrieval_accuracy(g, gl, u, ul, len(labels))
+                msg += f" | 처음 보는 약 top1 {ua[1]:.3f} top5 {ua[5]:.3f}"
             if acc[1] > best:
                 best = acc[1]
                 save_checkpoint(args.out, model, config)
@@ -152,7 +206,13 @@ def main():
         elif not val_rows:
             save_checkpoint(args.out, model, config)
         print(msg, flush=True)
+        tmp = last_path.with_name(last_path.name + ".tmp")
+        torch.save({"epoch": epoch, "best": best, "labels": labels, "args": vars(args),
+                    "model": model.state_dict(), "head": head.state_dict(), "opt": opt.state_dict(),
+                    "sched": sched.state_dict(), "scaler": scaler.state_dict()}, tmp)
+        os.replace(tmp, last_path)
 
+    last_path.unlink(missing_ok=True)
     print(f"완료 → {args.out}" + (f" (최고 val top1 {best:.3f})" if best >= 0 else ""))
 
 

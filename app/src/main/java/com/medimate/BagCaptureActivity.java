@@ -20,8 +20,10 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.medimate.net.LocalNetworkPermission;
 import com.medimate.pill.ImageCompressor;
 import com.medimate.tts.TtsManager;
+import com.medimate.ui.EdgeToEdgeHelper;
 import com.medimate.ui.scan.ScanViewModel;
 
 import java.io.File;
@@ -64,6 +66,10 @@ public class BagCaptureActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bag_capture);
+        // 하단 "약 정보 분석 시작" 버튼이 내비게이션 바에 가리지 않게 한다
+        EdgeToEdgeHelper.padForSystemBars(findViewById(R.id.bag_capture_root));
+        // Android 17부터 10.0.2.2 같은 사설 주소 서버에 연결하려면 로컬 네트워크 권한이 필요하다
+        LocalNetworkPermission.requestIfNeeded(this);
 
         preview = findViewById(R.id.img_medicine_bag_preview);
         emptyPreview = findViewById(R.id.layout_empty_preview);
@@ -95,6 +101,7 @@ public class BagCaptureActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
         buttonCamera.setOnClickListener(v -> {
+            tts.speak(getString(R.string.medicine_bag_voice_guide));
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                     == PackageManager.PERMISSION_GRANTED) {
                 takePicture.launch(photoUri());

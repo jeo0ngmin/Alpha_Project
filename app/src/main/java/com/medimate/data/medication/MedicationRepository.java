@@ -122,6 +122,11 @@ public final class MedicationRepository {
         }
     }
 
+    /** 탈퇴 직전에 부른다. 지우는 도중 기기의 대기 중인 변경이 서버에 다시 올라가지 않게 한다 */
+    public void stopSync() {
+        MedicationSyncWorker.cancel(context);
+    }
+
     public void retryFailedSync() {
         String owner = currentOwner();
         if (owner == null) {

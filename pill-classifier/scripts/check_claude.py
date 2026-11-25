@@ -1,4 +1,4 @@
-"""Claude Fable 5.1 접근 권한을 받은 뒤 실제 호출이 되는지 확인한다 (요금이 발생한다).
+"""Claude(기본 Opus 5.5) 접근 권한을 받은 뒤 실제 호출이 되는지 확인한다 (요금이 발생한다).
 
     # AWS Bedrock
     $env:PILL_AI_PROVIDER = "bedrock"; $env:AWS_REGION = "us-east-1"

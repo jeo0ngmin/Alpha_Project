@@ -75,7 +75,8 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI().substring(request.getContextPath().length());
         boolean signedImage = "GET".equals(request.getMethod()) && path.matches("/files/images/[^/]+/content");
         boolean protectedApi = path.startsWith("/files/") || path.startsWith("/pill-identification")
-                || path.startsWith("/recognition") || path.startsWith("/medications/");
+                || path.startsWith("/recognition") || path.startsWith("/medications/")
+                || path.startsWith("/claude/");
         return signedImage || !protectedApi;
     }
 

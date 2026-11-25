@@ -1,5 +1,6 @@
 package com.medimate.ui;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,6 +24,7 @@ import com.medimate.tts.TtsManager;
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
+    private static final String EXTRA_MESSAGE = "message";
 
     private TtsManager tts;
 
@@ -43,6 +45,11 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(new Intent(this, com.medimate.SignupActivity.class)));
 
         tts = new TtsManager(this);
+        // 탈퇴·재로그인 요청처럼 이전 화면이 남긴 안내를 읽어 준다
+        String message = getIntent().getStringExtra(EXTRA_MESSAGE);
+        if (message != null && savedInstanceState == null) {
+            tts.speak(message);
+        }
         AuthRepository repository = new AuthRepository();
 
         findViewById(R.id.btn_phone).setOnClickListener(v ->
@@ -74,6 +81,12 @@ public class LoginActivity extends AppCompatActivity {
                         tts.speak(message);
                     }
                 }));
+    }
+
+    /** @param message 화면이 열리면 읽어 줄 안내. 없으면 null */
+    public static Intent newIntent(Context context, String message) {
+        Intent intent = new Intent(context, LoginActivity.class);
+        return message == null ? intent : intent.putExtra(EXTRA_MESSAGE, message);
     }
 
     private void goToMain() {

@@ -15,7 +15,7 @@ from pillid.db import PillDB  # noqa: E402
 from pillid.imaging import BG_FILL, canonical_crop, segment_pills, segment_reference  # noqa: E402
 from pillid.ocr import (ImprintReader, canonical_imprint, imprint_pair_score,  # noqa: E402
                         imprint_similarity, imprint_tokens)
-from pillid.pipeline import PillIdentifier  # noqa: E402
+from pillid.pipeline import PillIdentifier, PillObservation  # noqa: E402
 
 BG = (40, 40, 40)
 WHITE, YELLOW, RED, BLUE = (240, 240, 240), (60, 220, 240), (40, 40, 200), (200, 90, 30)
@@ -159,6 +159,8 @@ def test_imprint_matching():
     assert canonical_imprint("1O5") == canonical_imprint("IOS")  # 혼동 문자 통일
     assert canonical_imprint("V분할선T") == "VT" and canonical_imprint("KDC NTC     8") == "KDCNTCB"
     assert imprint_tokens("TONEX-F 마크") == ("TONEXF",)
+    # 식약처 DB의 Λ·∧는 가로획 없는 A다 (아세클낙정 "CTΛ"를 OCR은 "CTA"로 읽는다)
+    assert canonical_imprint("CTΛ") == "CTA" != canonical_imprint("CT") and canonical_imprint("∧V") == "AV"
     assert imprint_similarity("TYLENOL", "TYLENOL") == 1.0
     # 일부만 읽힘: 정확히 읽은 것보다는 낮고, 무관한 글자보다는 높다
     assert imprint_similarity("XYZ", "TYLENOL") < imprint_similarity("TYLEN", "TYLENOL") < 1.0
@@ -188,14 +190,14 @@ def test_reader_drops_pill_outline_read_as_letter():
 
     crop = np.full((480, 480, 3), BG_FILL, np.uint8)
     crop[175:305, 45:435] = (230, 230, 230)  # 390x130 캡슐
-    reader = ImprintReader(engine="rapidocr")
+    reader = ImprintReader(engine="rapidocr", rec="en")
     reader.engine = "rapidocr"
 
-    reader._reader = FakeOcr([(box(240, 175, 190, 130), "D", 0.9)])
+    reader._readers = [FakeOcr([(box(240, 175, 190, 130), "D", 0.9)])]
     assert reader.read(crop) == ("", 0.0)
-    reader._reader = FakeOcr([(box(100, 210, 50, 60), "D", 0.9)])
+    reader._readers = [FakeOcr([(box(100, 210, 50, 60), "D", 0.9)])]
     assert reader.read(crop)[0] == "D"
-    reader._reader = FakeOcr([(box(60, 190, 360, 110), "TYLENOL", 0.9)])
+    reader._readers = [FakeOcr([(box(60, 190, 360, 110), "TYLENOL", 0.9)])]
     assert reader.read(crop)[0] == "TYLENOL"
 
 
@@ -259,3 +261,84 @@ def test_phone_segmentation_ignores_lighting_gradient_and_shadow():
     assert 440 <= x <= 465 and 400 <= y <= 420 and w <= 100 and h <= 100
     assert estimate_shape(r.contour) == "원형"
     assert estimate_colors(img, r.mask) == ["하양"]
+
+
+def test_hybrid_reader_uses_korean_only_for_confident_hangul():
+    """hybrid: 영문 모델 판독을 쓰되, 한국어 모델이 한글을 확실하게 읽었으면 그쪽을 쓴다."""
+    class FakeOcr:
+        def __init__(self, text, conf):
+            self.text, self.conf = text, conf
+
+        def __call__(self, image, use_cls=None):
+            return [([[100, 210], [150, 210], [150, 270], [100, 270]], self.text, self.conf)], None
+
+    crop = np.full((480, 480, 3), BG_FILL, np.uint8)
+    crop[175:305, 45:435] = (230, 230, 230)
+    reader = ImprintReader(engine="rapidocr", rec="en")
+    reader._readers = [FakeOcr("8", 0.95), FakeOcr("덴티골드", 0.99)]
+    assert reader.read(crop)[0] == "덴티골드"
+    reader._readers = [FakeOcr("8", 0.95), FakeOcr("덴티골드", 0.6)]  # 한글이지만 확실하지 않다
+    assert reader.read(crop)[0] == "8"
+    reader._readers = [FakeOcr("L15", 0.99), FakeOcr("L157", 0.99)]  # 한글이 없으면 영문 모델
+    assert reader.read(crop)[0] == "L15"
+
+
+def test_exact_imprint_on_untrained_rival_blocks_confidence(tmp_path):
+    # 각인 GGZ를 정확히 읽었는데 1위가 학습한 ggr 약이면, GGZ인 학습하지 않은 같은 모양 약이 있으니 확신하지 않는다
+    db = PillDB(tmp_path / "pills.db")
+    db.upsert_many([
+        {"ITEM_SEQ": "1", "ITEM_NAME": "기가렉스", "DRUG_SHAPE": "타원형", "COLOR_CLASS1": "빨강", "PRINT_FRONT": "ggr"},
+        {"ITEM_SEQ": "2", "ITEM_NAME": "기가제로", "DRUG_SHAPE": "타원형", "COLOR_CLASS1": "주황", "PRINT_FRONT": "GGZ"},
+        {"ITEM_SEQ": "3", "ITEM_NAME": "모양다름", "DRUG_SHAPE": "원형", "COLOR_CLASS1": "주황", "PRINT_FRONT": "GGZ"},
+    ])
+    db.close()
+    ident = PillIdentifier(tmp_path / "pills.db", use_ocr=False, trusted_items={"1"})
+
+    def observe(text):
+        o = PillObservation(crop=np.zeros((8, 8, 3), np.uint8), shape="타원형", colors=["빨강"], imprint=text,
+                            imprint_conf=0.9, bbox=(0, 0, 8, 8), area=64.0)
+        return ident.identify([o], topk=3)
+
+    res = observe("GGZ")
+    assert ident.imprint_rival(res, "1") == "2"   # 원형(3)은 모양이 달라 상관없다
+    assert ident.imprint_rival(res, "2") is None  # 1위 각인이 맞으면 문제없다
+    ident.trusted_items = {"1", "2"}
+    assert ident.imprint_rival(res, "1") is None  # 맞는 약도 학습했으면 임베딩이 가를 수 있다
+    ident.trusted_items = {"1"}
+    assert ident.imprint_rival(observe("GG"), "1") is None  # 두 글자는 우연히 맞는 약이 많다
+    # 각인이 정확히 맞는 약은 순위와 상관없이 재비교 후보로 더한다 (이미 비교하는 후보는 빼고)
+    assert [c.item_seq for c in ident.imprint_candidates(res)] == ["2", "3"]
+    assert [c.item_seq for c in ident.imprint_candidates(res, skip=["2"])] == ["3"]
+    assert ident.imprint_candidates(observe("GG")) == []
+    # 1위가 학습한 약이고 임베딩이 높으며 2위와 충분히 벌어져 있으면 더하지 않는다 (잘못 읽은 각인이 끌어온 약 방지)
+    import dataclasses
+    top = dataclasses.replace(res.candidates[0], item_seq="1", score=0.75, parts={"embedding": 0.75})
+    low = dataclasses.replace(res.candidates[0], item_seq="9", score=0.65, parts={"embedding": 0.5})
+    sure = dataclasses.replace(res, candidates=[top, low])
+    assert ident.imprint_candidates(sure) == []
+    close = dataclasses.replace(res, candidates=[top, dataclasses.replace(low, score=0.73)])
+    assert [c.item_seq for c in ident.imprint_candidates(close)] == ["2", "3"]  # 2위와 가까우면 더한다
+    ident.trusted_items = {"2"}
+    assert [c.item_seq for c in ident.imprint_candidates(sure)] == ["2", "3"]  # 학습하지 않은 1위면 더한다
+
+
+def test_glare_and_partial_regions_are_dropped():
+    import cv2
+
+    from pillid.imaging import _region_from_contour, drop_glare_and_partial
+
+    img = np.full((200, 200, 3), 60, np.uint8)
+
+    def disc(cx, cy, r, color):
+        cv2.circle(img, (cx, cy), r, color, -1)
+        mask = np.zeros(img.shape[:2], np.uint8)
+        cv2.circle(mask, (cx, cy), r, 255, -1)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        return _region_from_contour(contours[0], img.shape[:2])
+
+    glare = disc(50, 50, 25, (255, 255, 255))     # 하얗게 날아간 조명 반사
+    pill = disc(120, 120, 20, (235, 230, 225))    # 흰 알약 (날아가지 않음)
+    edge = disc(195, 60, 20, (40, 120, 200))      # 가장자리에 잘린 다른 알약
+    assert drop_glare_and_partial(img, [glare, pill, edge]) == [pill]
+    assert drop_glare_and_partial(img, [glare, edge]) == [edge]  # 온전한 것이 없으면 잘린 것도 쓴다
+    assert drop_glare_and_partial(img, [glare]) == [glare]  # 남는 것이 없으면 (강한 조명의 흰 알약일 수 있다) 쓴다
