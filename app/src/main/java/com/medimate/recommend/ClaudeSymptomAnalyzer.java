@@ -17,6 +17,8 @@ import com.anthropic.models.messages.StopReason;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.medimate.BuildConfig;
+import com.medimate.auth.AuthRepository;
+import com.medimate.server.ServerConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +32,7 @@ import java.util.concurrent.Executors;
  * SymptomAnalyzer의 Claude 구현 (README 8-6).
  * 고를 수 있는 이름은 모두 JSON 스키마의 enum으로 묶어 표에 없는 이름이 나오지 않게 한다.
  * 대화 본문은 환자 정보라서 로그에 남기지 않는다.
+ * 서버 주소(ServerConfig)가 있으면 backend가 키를 들고 대신 보내고(backend/README.md), 없으면 앱의 키로 직접 보낸다.
  */
 public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
 
@@ -39,6 +42,8 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
     static final String MSG_NO_KEY = "설정 오류예요. Claude 키가 없어요.";
     static final String MSG_FAILED = "말씀을 이해하지 못했어요. 다시 말씀해 주세요.";
     static final String MSG_NETWORK = "인터넷 연결을 확인해 주세요.";
+    static final String MSG_SIGN_IN = "상담을 하려면 먼저 로그인해 주세요.";
+    static final String MSG_BUSY = "요청이 많아요. 잠시 후 다시 말씀해 주세요.";
     static final int MAX_AI_SUGGESTIONS = 3;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -47,15 +52,29 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
 
     @Override
     public void analyze(List<Turn> conversation, Vocabulary vocabulary, Callback callback) {
-        if (BuildConfig.CLAUDE_API_KEY.isEmpty()) {
+        if (!ServerConfig.isConfigured() && BuildConfig.CLAUDE_API_KEY.isEmpty()) {
             Log.e(TAG, "secrets.properties에 CLAUDE_API_KEY가 없다");
             callback.onError(MSG_NO_KEY);
             return;
         }
         List<Turn> turns = new ArrayList<>(conversation);
         executor.execute(() -> {
+            String idToken = null;
+            if (ServerConfig.isConfigured()) {
+                try {
+                    idToken = new AuthRepository().idTokenBlocking();
+                } catch (Exception e) {
+                    Log.e(TAG, "로그인 토큰 받기 실패: " + e.getClass().getSimpleName());
+                    main.post(() -> callback.onError(MSG_NETWORK));
+                    return;
+                }
+                if (idToken == null) {
+                    main.post(() -> callback.onError(MSG_SIGN_IN));
+                    return;
+                }
+            }
             try {
-                SymptomAnalysis result = request(turns, vocabulary);
+                SymptomAnalysis result = request(turns, vocabulary, idToken);
                 main.post(() -> {
                     if (result == null) {
                         callback.onError(MSG_FAILED);
@@ -65,7 +84,9 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
                 });
             } catch (AnthropicServiceException e) {
                 Log.e(TAG, "Claude HTTP " + e.statusCode());
-                main.post(() -> callback.onError(MSG_FAILED));
+                String message = e.statusCode() == 429 ? MSG_BUSY
+                        : e.statusCode() == 401 ? MSG_SIGN_IN : MSG_FAILED;
+                main.post(() -> callback.onError(message));
             } catch (AnthropicIoException e) {
                 Log.e(TAG, "Claude 연결 실패", e);
                 main.post(() -> callback.onError(MSG_NETWORK));
@@ -76,7 +97,8 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
         });
     }
 
-    private SymptomAnalysis request(List<Turn> turns, Vocabulary vocabulary) {
+    /** @param idToken 서버를 거칠 때 붙이는 Firebase ID 토큰. 직접 호출이면 null */
+    private SymptomAnalysis request(List<Turn> turns, Vocabulary vocabulary, String idToken) {
         MessageCreateParams.Builder params = MessageCreateParams.builder()
                 .model(MODEL)
                 .maxTokens(4096L)
@@ -88,6 +110,9 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
                 // 안전 분류기가 거절하면 서버가 다른 모델로 다시 시도한다
                 .putAdditionalHeader("anthropic-beta", "server-side-fallback-2026-07-01")
                 .putAdditionalBodyProperty("fallbacks", JsonValue.from("default"));
+        if (idToken != null) {
+            params.putAdditionalHeader("Authorization", "Bearer " + idToken);
+        }
         for (Turn turn : turns) {
             if (turn.fromUser) {
                 params.addUserMessage(turn.text);
@@ -112,7 +137,14 @@ public class ClaudeSymptomAnalyzer implements SymptomAnalyzer {
 
     private synchronized AnthropicClient client() {
         if (client == null) {
-            client = AnthropicOkHttpClient.builder().apiKey(BuildConfig.CLAUDE_API_KEY).build();
+            AnthropicOkHttpClient.Builder builder = AnthropicOkHttpClient.builder();
+            if (ServerConfig.isConfigured()) {
+                // 키는 서버에 있다. SDK가 요구하는 자리만 채우고, 서버는 이 값을 버린다
+                builder.baseUrl(ServerConfig.baseUrl() + "/claude").apiKey("via-medimate-server");
+            } else {
+                builder.apiKey(BuildConfig.CLAUDE_API_KEY);
+            }
+            client = builder.build();
         }
         return client;
     }

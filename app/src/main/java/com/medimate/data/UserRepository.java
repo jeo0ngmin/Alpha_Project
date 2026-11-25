@@ -11,6 +11,7 @@ public interface UserRepository {
     String PROVIDER_GOOGLE = "google";
     String PROVIDER_PHONE = "phone";
     String PROVIDER_KAKAO = "kakao";
+    String PROVIDER_EMAIL = "email";
 
     interface Callback {
         /** @param created 이번에 새로 만들었으면 true, 이미 있었으면 false. 메인 스레드에서 불린다 */
@@ -24,7 +25,18 @@ public interface UserRepository {
      * 프로필 문서가 없으면 만든다 (첫 로그인). 이미 있으면 건드리지 않는다.
      *
      * @param name     로그인 계정의 이름. 모르면 null (생년·성별은 프로필 입력 화면에서 받는다, 2차)
-     * @param provider PROVIDER_GOOGLE / PROVIDER_PHONE / PROVIDER_KAKAO
+     * @param provider PROVIDER_GOOGLE / PROVIDER_PHONE / PROVIDER_KAKAO / PROVIDER_EMAIL
      */
     void ensureProfile(String uid, @Nullable String name, String provider, Callback callback);
+
+    interface DeleteCallback {
+        /** 메인 스레드에서 불린다 */
+        void onDeleted();
+
+        /** 메인 스레드에서 불린다. message는 사용자에게 읽어 줄 문장 */
+        void onError(String message);
+    }
+
+    /** 탈퇴: users/{uid} 아래 데이터를 모두 지운다 (README 9-5). 서버에서 직접 지우므로 인터넷이 필요하다 */
+    void deleteAllData(String uid, DeleteCallback callback);
 }

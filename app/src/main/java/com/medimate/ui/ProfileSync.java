@@ -12,14 +12,14 @@ import com.medimate.data.firestore.FirestoreUserRepository;
  * 로그인 직후와 앱 시작 때 부른다. 실패해도 로그인 흐름은 막지 않는다.
  * 카카오 로그인은 아직 Firebase 사용자가 아니라서 저장하지 않는다 (README 7-5, 2차).
  */
-final class ProfileSync {
+public final class ProfileSync {
 
     private static final String TAG = "ProfileSync";
 
     private ProfileSync() {
     }
 
-    static void ensure(FirebaseUser user, Runnable done) {
+    public static void ensure(FirebaseUser user, Runnable done) {
         UserRepository repository = new FirestoreUserRepository();
         repository.ensureProfile(user.getUid(), user.getDisplayName(), AuthRepository.providerOf(user),
                 new UserRepository.Callback() {

@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.medimate.BuildConfig;
+import com.medimate.data.RecommendationRepository;
+import com.medimate.data.firestore.FirestoreRecommendationRepository;
 import com.medimate.recommend.ClaudeSymptomAnalyzer;
 import com.medimate.recommend.KnowledgeBase;
 import com.medimate.recommend.KnowledgeRule;
@@ -53,6 +55,7 @@ public class RecommendChatViewModel extends AndroidViewModel {
     private final KnowledgeBase knowledge;
     private final RecommendReply reply;
     private final SymptomAnalyzer analyzer = new ClaudeSymptomAnalyzer();
+    private final RecommendationRepository history = new FirestoreRecommendationRepository();
 
     /** 이번 상담의 대화. 추천을 내면 비운다 */
     private final List<SymptomAnalyzer.Turn> conversation = new ArrayList<>();
@@ -152,7 +155,10 @@ public class RecommendChatViewModel extends AndroidViewModel {
             return;
         }
         String answer = reply.build(analysis);
-        List<ProductLinks.Link> links = ProductLinks.forIngredients(reply.recommendedIngredients(analysis));
+        List<String> ingredients = reply.recommendedIngredients(analysis);
+        // 추천 기록 (README 10-2 D3). 대화 본문·지병·복용 약은 남기지 않는다
+        history.save(recordedConcerns(analysis), ingredients);
+        List<ProductLinks.Link> links = ProductLinks.forIngredients(ingredients);
         if (links.isEmpty()) {
             finish(answer);
             return;
@@ -163,6 +169,17 @@ public class RecommendChatViewModel extends AndroidViewModel {
         messages.add(new ChatMessage(ChatMessage.Role.BOT, MSG_PRODUCTS, links));
         messagesLive.setValue(messages);
         speak.setValue(answer + "\n" + MSG_PRODUCTS);
+    }
+
+    /** 규칙 표의 고민 + 규칙 표에 없어 AI가 성분을 고른 증상 */
+    static List<String> recordedConcerns(SymptomAnalysis analysis) {
+        java.util.Set<String> names = new java.util.LinkedHashSet<>(analysis.getConcerns());
+        for (SymptomAnalysis.AiSuggestion s : analysis.getAiSuggestions()) {
+            if (!s.getSymptom().isEmpty()) {
+                names.add(s.getSymptom());
+            }
+        }
+        return new ArrayList<>(names);
     }
 
     private void ask(String question) {

@@ -2,7 +2,6 @@ package com.medimate.ui.schedule;
 
 import android.Manifest;
 import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -344,10 +343,9 @@ public class ScheduleEditActivity extends AppCompatActivity {
                 initial.getYear(), initial.getMonthValue() - 1, initial.getDayOfMonth()).show();
     }
 
+    /** 시계 대신 큰 버튼으로 고른다 (TimeChoiceDialog) */
     private void pickTime(LocalTime initial, TimePicked picked) {
-        new TimePickerDialog(this, (view, hour, minute) -> picked.onPicked(LocalTime.of(hour, minute)),
-                initial.getHour(), initial.getMinute(),
-                android.text.format.DateFormat.is24HourFormat(this)).show();
+        TimeChoiceDialog.show(this, initial, tts::speak, picked::onPicked);
     }
 
     private void readForm() {

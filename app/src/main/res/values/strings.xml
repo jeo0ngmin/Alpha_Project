@@ -20,6 +20,12 @@
     <string name="profile_method_kakao">카카오</string>
     <string name="profile_method_unknown">알 수 없음</string>
     <string name="profile_sign_out">로그아웃</string>
+    <string name="profile_method_email">이메일</string>
+    <string name="profile_email">이메일: %1$s</string>
+    <string name="profile_phone">전화번호: %1$s</string>
+    <string name="profile_none">없음</string>
+    <string name="my_drugs_empty">저장한 약이 없어요.</string>
+    <string name="my_drugs_remove">%1$s 지우기</string>
     <string name="recommend_title">영양제 추천</string>
     <string name="recommend_hint">건강 고민을 적어 주세요</string>
     <string name="recommend_send">보내기</string>
@@ -57,6 +63,11 @@
     <string name="schedule_sync_pending">동기화 대기 %1$d건: 기기에 저장했어요. 인터넷이 연결되면 서버에 저장해요.</string>
     <string name="schedule_sync_failed">저장 실패 %1$d건: 서버에 저장하지 못했어요. 기기에는 남아 있어요.</string>
     <string name="schedule_sync_retry">다시 시도</string>
+    <string name="time_dialog_title">알림 시간</string>
+    <string name="time_dialog_spoken">알림 시간을 골라 주세요. 오전 오후, 시, 분을 위아래로 돌려 맞춘 뒤 확인을 누르세요. 지금은 %1$s예요.</string>
+    <string name="time_picked_spoken">알림 시간을 정했어요. %1$s.</string>
+    <string name="time_confirm">확인</string>
+    <string name="time_cancel">취소</string>
     <string name="schedule_add_title">복약 일정 등록</string>
     <string name="schedule_edit_title">복약 일정 수정</string>
     <string name="schedule_drug_name">약 이름</string>

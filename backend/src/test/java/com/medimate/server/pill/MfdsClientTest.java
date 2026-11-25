@@ -30,7 +30,7 @@ class MfdsClientTest {
             x.close();
         });
         server.start();
-        MedimateProperties props = new MedimateProperties(null, null, null, new MedimateProperties.Mfds("test-key", null, null), null);
+        MedimateProperties props = new MedimateProperties(null, null, null, new MedimateProperties.Mfds("test-key", null, null), null, null);
         return new MfdsClient(props, new ObjectMapper(), "http://127.0.0.1:" + server.getAddress().getPort() + "/");
     }
 
