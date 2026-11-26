@@ -1,7 +1,36 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+
     <style name="Base.Theme.Medimate" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+
+        <!-- JE 메인 세이지 -->
+        <item name="colorPrimary">@color/medimate_sage</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- 선택된 컨트롤 배경 -->
+        <item name="colorPrimaryContainer">@color/medimate_sage_soft</item>
+        <item name="colorOnPrimaryContainer">@color/medimate_sage_dark</item>
+
+        <!-- 보조 색상 -->
+        <item name="colorSecondary">@color/medimate_sage_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="colorSecondaryContainer">@color/medimate_sage_soft2</item>
+        <item name="colorOnSecondaryContainer">@color/medimate_text_main</item>
+
+        <!-- Material3 포인트 -->
+        <item name="colorTertiary">@color/medimate_sage</item>
+        <item name="colorOnTertiary">@color/white</item>
+
+        <!-- 화면 / 다이얼로그 -->
+        <item name="colorSurface">@color/medimate_bg</item>
+        <item name="colorOnSurface">@color/medimate_text_main</item>
+
+        <!-- 테두리 -->
+        <item name="colorOutline">@color/medimate_border</item>
+
+        <!-- 기본 Android 컨트롤 -->
+        <item name="android:colorAccent">@color/medimate_sage</item>
+
     </style>
+
 </resources>

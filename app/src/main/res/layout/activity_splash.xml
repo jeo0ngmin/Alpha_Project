@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/splash_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/medimate_bg">
+
+
+    <!-- ========================= -->
+    <!-- 중앙 콘텐츠 -->
+    <!-- ========================= -->
+
+    <LinearLayout
+        android:id="@+id/layout_splash_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.46">
+
+
+        <!-- Medimate 로고 -->
+        <ImageView
+            android:id="@+id/img_splash_logo"
+            android:layout_width="145dp"
+            android:layout_height="145dp"
+            android:contentDescription="@string/medimate_logo"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_welcome_logo" />
+
+
+        <!-- 앱 이름 -->
+        <TextView
+            android:id="@+id/tv_splash_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Medimate"
+            android:textColor="@color/medimate_sage_dark"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+
+        <!-- 설명 -->
+        <TextView
+            android:id="@+id/tv_splash_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="똑똑한 복약 관리"
+            android:textColor="@color/medimate_text_sub"
+            android:textSize="14sp" />
+
+
+        <!-- 로딩 -->
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress_splash"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="34dp"
+            android:indeterminate="true"
+            app:indicatorColor="@color/medimate_sage"
+            app:indicatorSize="30dp"
+            app:trackColor="@color/medimate_sage_soft"
+            app:trackThickness="3dp" />
+
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

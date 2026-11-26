@@ -1,75 +1,209 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/phone_login_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/medimate_bg"
     android:fillViewport="true"
+    android:overScrollMode="never"
     tools:context=".ui.PhoneLoginActivity">
+
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="22dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="22dp"
+        android:paddingBottom="36dp">
+
+
+        <!-- ========================= -->
+        <!-- 상단 헤더 -->
+        <!-- ========================= -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+
+            <!-- 뒤로가기 -->
+            <ImageButton
+                android:id="@+id/btn_back"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="-17dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/back"
+                android:padding="12dp"
+                android:src="@drawable/ic_back"
+                app:tint="@color/medimate_icon_green" />
+
+
+            <!-- 화면 제목 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/login_phone"
+                android:textColor="@color/medimate_text_main"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+
+        <!-- ========================= -->
+        <!-- 안내 -->
+        <!-- ========================= -->
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:gravity="center"
-            android:text="@string/login_phone"
-            android:textSize="28sp"
+            android:layout_marginTop="34dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="휴대폰 번호로 로그인해 주세요"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="20sp"
             android:textStyle="bold" />
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="7dp"
+            android:lineSpacingExtra="2dp"
+            android:text="전화번호를 입력하면 인증번호를 보내드려요."
+            android:textColor="@color/medimate_text_sub"
+            android:textSize="14sp" />
+
+
+        <!-- ========================= -->
+        <!-- 전화번호 -->
+        <!-- ========================= -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="34dp"
+            android:fontFamily="sans-serif-medium"
+            android:labelFor="@id/input_phone"
+            android:text="전화번호"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
 
         <EditText
             android:id="@+id/input_phone"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="64dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="10dp"
             android:autofillHints="phone"
+            android:background="@drawable/bg_card_soft"
             android:hint="@string/phone_input_hint"
             android:inputType="phone"
-            android:textSize="24sp" />
+            android:maxLines="1"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/medimate_text_main"
+            android:textColorHint="@color/medimate_text_sub"
+            android:textSize="15sp" />
 
-        <Button
+
+        <!-- 인증번호 받기 -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button_send_code"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="14dp"
             android:text="@string/phone_send_code"
-            android:textSize="22sp" />
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/medimate_sage"
+            app:cornerRadius="16dp" />
+
+
+        <!-- ========================= -->
+        <!-- 인증번호 -->
+        <!-- ========================= -->
 
         <EditText
             android:id="@+id/input_code"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:minHeight="64dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="26dp"
             android:autofillHints="smsOTPCode"
+            android:background="@drawable/bg_card_soft"
             android:hint="@string/phone_code_hint"
             android:inputType="number"
             android:maxLength="6"
-            android:textSize="24sp"
+            android:maxLines="1"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/medimate_text_main"
+            android:textColorHint="@color/medimate_text_sub"
+            android:textSize="15sp"
             android:visibility="gone" />
 
-        <Button
+
+        <!-- 인증 확인 -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/button_verify_code"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="14dp"
             android:text="@string/phone_verify_code"
-            android:textSize="22sp"
-            android:visibility="gone" />
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:backgroundTint="@color/medimate_sage"
+            app:cornerRadius="16dp" />
+
+
+        <!-- ========================= -->
+        <!-- 인증 상태 -->
+        <!-- ========================= -->
 
         <TextView
             android:id="@+id/text_phone_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="14dp"
             android:accessibilityLiveRegion="polite"
-            android:textSize="20sp" />
+            android:gravity="center"
+            android:lineSpacingExtra="2dp"
+            android:textColor="@color/medimate_sage_dark"
+            android:textSize="13sp" />
+
+
+        <!-- ========================= -->
+        <!-- 하단 안내 -->
+        <!-- ========================= -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:gravity="center"
+            android:lineSpacingExtra="2dp"
+            android:text="입력한 전화번호는 본인 인증을 위해 사용됩니다."
+            android:textColor="@color/medimate_text_sub"
+            android:textSize="12sp" />
+
 
     </LinearLayout>
+
 </ScrollView>
