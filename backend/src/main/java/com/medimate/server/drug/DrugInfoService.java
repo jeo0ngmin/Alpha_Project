@@ -18,12 +18,15 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.medimate.server.common.ApiException;
 import com.medimate.server.common.Times;
 import com.medimate.server.pill.MfdsClient;
+import com.medimate.server.pill.MfdsPermitClient;
 import com.medimate.server.pill.PillClient;
 import com.medimate.server.recognition.BagSpeech;
 import com.medimate.server.speech.SpeechFormatter;
 
 /**
- * 약 상세 정보: 식약처 낱알식별(추론 서버) + e약은요 설명. e약은요 결과는 DB에 30일간 보관해 호출 횟수를 아낀다.
+ * 약 상세 정보: 식약처 낱알식별(추론 서버) + e약은요 설명. e약은요에 없는 약(주로 전문의약품)은
+ * 의약품 제품 허가정보의 효능효과·용법용량·사용상의 주의사항·저장방법 원문으로 채운다.
+ * 결과는 DB에 30일간 보관해 호출 횟수를 아낀다.
  * 앱의 "약 상세 정보" 화면은 sections(약 설명, 주의사항, 복용방법, 보관방법 …)를 그대로 버튼으로 쓰면 된다.
  */
 @Service
@@ -48,12 +51,27 @@ public class DrugInfoService {
         return text == null ? null : text.replace("쇽", "쇼크").replace("뚦", "뚫");
     }
 
-    /** status: FOUND(설명 있음) | NOT_IN_MFDS(e약은요에 없는 약) | UNAVAILABLE(일시 장애) | NOT_CONFIGURED(키 없음) */
-    public record Lookup(String status, Info info, OffsetDateTime fetchedAt) {
+    /**
+     * status: FOUND(설명 있음) | NOT_IN_MFDS(e약은요·허가정보 모두 없음) | UNAVAILABLE(일시 장애) | NOT_CONFIGURED(키 없음)
+     * source: 설명을 가져온 공공데이터 (SOURCE_EASY 또는 SOURCE_PERMIT). 설명이 없으면 null
+     */
+    public record Lookup(String status, Info info, OffsetDateTime fetchedAt, String source) {
+        public Lookup(String status, Info info, OffsetDateTime fetchedAt) {
+            this(status, info, fetchedAt, info == null ? null : SOURCE_EASY);
+        }
     }
 
-    /** 화면 버튼 하나. text는 화면에, ttsText는 음성에 쓴다. */
-    public record Section(String key, String title, String text, String ttsText) {
+    public static final String SOURCE_EASY = "DrbEasyDrugInfoService";
+    public static final String SOURCE_PERMIT = "DrugPrdtPrmsnInfoService";
+
+    /**
+     * 화면 버튼 하나. text는 화면에, ttsText는 음성에 쓴다.
+     * fullText: text가 긴 원문에서 중요한 항목만 고른 것일 때의 원문 전체 ("전체 보기"). 아니면 null
+     */
+    public record Section(String key, String title, String text, String ttsText, String fullText) {
+        public Section(String key, String title, String text, String ttsText) {
+            this(key, title, text, ttsText, null);
+        }
     }
 
     public record Segment(String section, int order, String text, boolean emphasis, int pauseAfterMs) {
@@ -71,27 +89,32 @@ public class DrugInfoService {
 
     private final JdbcClient jdbc;
     private final MfdsClient mfds;
+    private final MfdsPermitClient permit;
     private final PillClient pill;
     private final ObjectMapper mapper;
 
-    public DrugInfoService(JdbcClient jdbc, MfdsClient mfds, PillClient pill, ObjectMapper mapper) {
+    public DrugInfoService(JdbcClient jdbc, MfdsClient mfds, MfdsPermitClient permit, PillClient pill,
+                           ObjectMapper mapper) {
         this.jdbc = jdbc;
         this.mfds = mfds;
+        this.permit = permit;
         this.pill = pill;
         this.mapper = mapper;
     }
 
     // ── e약은요 (캐시) ─────────────────────────────────────────────
 
-    private record Cached(boolean found, Info info, OffsetDateTime fetchedAt) {
+    private record Cached(boolean found, Info info, OffsetDateTime fetchedAt, String source) {
     }
 
     public Lookup easyInfo(String itemSeq) {
         Optional<Cached> cached = jdbc.sql("""
-                SELECT found, efficacy, use_method, warning, precaution, interaction, side_effect, deposit_method, fetched_at
+                SELECT found, efficacy, use_method, warning, precaution, interaction, side_effect, deposit_method, fetched_at,
+                  source
                 FROM drug_info WHERE item_seq=?""").param(itemSeq).query((rs, i) -> new Cached(rs.getBoolean(1),
                 new Info(rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6),
-                        rs.getString(7), rs.getString(8)), rs.getObject(9, OffsetDateTime.class))).optional();
+                        rs.getString(7), rs.getString(8)), rs.getObject(9, OffsetDateTime.class),
+                rs.getString(10))).optional();
         boolean fresh = cached.isPresent() && cached.get().fetchedAt().toInstant().isAfter(Times.now().minus(CACHE_LIFE));
         if (fresh) {
             return toLookup(cached.get());
@@ -103,8 +126,15 @@ public class DrugInfoService {
             Optional<MfdsClient.EasyInfo> fetched = mfds.fetch(itemSeq);
             Info info = fetched.map(e -> new Info(e.efficacy(), e.useMethod(), e.warning(), e.precaution(),
                     e.interaction(), e.sideEffect(), e.depositMethod())).orElse(null);
-            store(itemSeq, info);
-            return new Lookup(info == null ? "NOT_IN_MFDS" : "FOUND", info, Times.nowOffset());
+            String source = info == null ? null : SOURCE_EASY;
+            if (info == null && permit.isConfigured()) {
+                // e약은요에 없는 약(대부분 전문의약품)은 허가정보 원문으로 채운다
+                info = permit.fetch(itemSeq).map(p -> new Info(p.efficacy(), p.usage(), null, p.precaution(),
+                        null, null, p.storage())).orElse(null);
+                source = info == null ? null : SOURCE_PERMIT;
+            }
+            store(itemSeq, info, source);
+            return new Lookup(info == null ? "NOT_IN_MFDS" : "FOUND", info, Times.nowOffset(), source);
         } catch (MfdsClient.UnavailableException e) {
             log.warn("e약은요 조회 실패: {}", e.getMessage());
             // 다시 묻다가 실패해도 예전 값이 있으면 그것을 쓴다
@@ -113,21 +143,22 @@ public class DrugInfoService {
     }
 
     private static Lookup toLookup(Cached c) {
-        return new Lookup(c.found() ? "FOUND" : "NOT_IN_MFDS", c.found() ? c.info() : null, c.fetchedAt());
+        return new Lookup(c.found() ? "FOUND" : "NOT_IN_MFDS", c.found() ? c.info() : null, c.fetchedAt(),
+                c.found() ? (c.source() == null ? SOURCE_EASY : c.source()) : null);
     }
 
-    private void store(String itemSeq, Info i) {
+    private void store(String itemSeq, Info i, String source) {
         Object[] v = i == null
-                ? new Object[]{false, null, null, null, null, null, null, null, Times.nowOffset(), itemSeq}
+                ? new Object[]{false, null, null, null, null, null, null, null, Times.nowOffset(), null, itemSeq}
                 : new Object[]{true, i.efficacy(), i.useMethod(), i.warning(), i.precaution(), i.interaction(),
-                i.sideEffect(), i.depositMethod(), Times.nowOffset(), itemSeq};
+                i.sideEffect(), i.depositMethod(), Times.nowOffset(), source, itemSeq};
         int updated = jdbc.sql("""
                 UPDATE drug_info SET found=?, efficacy=?, use_method=?, warning=?, precaution=?, interaction=?,
-                  side_effect=?, deposit_method=?, fetched_at=? WHERE item_seq=?""").params(v).update();
+                  side_effect=?, deposit_method=?, fetched_at=?, source=? WHERE item_seq=?""").params(v).update();
         if (updated == 0) {
             jdbc.sql("""
                     INSERT INTO drug_info (found, efficacy, use_method, warning, precaution, interaction, side_effect,
-                      deposit_method, fetched_at, item_seq) VALUES (?,?,?,?,?,?,?,?,?,?)""").params(v).update();
+                      deposit_method, fetched_at, source, item_seq) VALUES (?,?,?,?,?,?,?,?,?,?,?)""").params(v).update();
         }
     }
 
@@ -146,7 +177,7 @@ public class DrugInfoService {
             item.set("info", mapper.valueToTree(lookup.info()));
             ObjectNode source = item.putObject("source");
             source.put("provider", "MFDS");
-            source.put("dataset", "DrbEasyDrugInfoService");
+            source.put("dataset", lookup.source());
             source.put("fetchedAt", lookup.fetchedAt().toString());
         }
         item.put("infoStatus", lookup.status());
@@ -161,7 +192,7 @@ public class DrugInfoService {
             medication.set("info", mapper.valueToTree(lookup.info()));
             ObjectNode source = medication.putObject("source");
             source.put("provider", "MFDS");
-            source.put("dataset", "DrbEasyDrugInfoService");
+            source.put("dataset", lookup.source());
             source.put("fetchedAt", lookup.fetchedAt().toString());
         }
     }
@@ -193,7 +224,7 @@ public class DrugInfoService {
         };
         List<Section> out = new ArrayList<>();
         out.add(section("DESCRIPTION", "약 설명", i == null ? null : i.efficacy(), missing));
-        out.add(section("CAUTION", "주의사항", i == null ? null : join(i.warning(), i.precaution()), missing));
+        out.add(caution(lookup, missing));
         out.add(section("USE_METHOD", "복용방법", i == null ? null : i.useMethod(), missing));
         out.add(section("STORAGE", "보관방법", i == null ? null : i.depositMethod(), missing));
         if (i != null && i.interaction() != null) {
@@ -203,6 +234,23 @@ public class DrugInfoService {
             out.add(section("SIDE_EFFECT", "부작용", i.sideEffect(), missing));
         }
         return out;
+    }
+
+    /**
+     * 주의사항. 허가정보 원문은 아주 길어서(수천~수만 자) 경고·금기·고령자 항목만 골라 보여 주고,
+     * 원문 전체는 fullText로 함께 준다 (PrecautionDigest).
+     */
+    private static Section caution(Lookup lookup, String missing) {
+        Info i = lookup.info();
+        String all = i == null ? null : join(i.warning(), i.precaution());
+        if (i != null && SOURCE_PERMIT.equals(lookup.source())) {
+            String digest = PrecautionDigest.keyPoints(i.precaution());
+            if (digest != null) {
+                String text = join(i.warning(), digest);
+                return new Section("CAUTION", "주의사항", text, "주의사항입니다. " + SpeechFormatter.normalize(text), all);
+            }
+        }
+        return section("CAUTION", "주의사항", all, missing);
     }
 
     private static Section section(String key, String title, String text, String missing) {

@@ -27,14 +27,14 @@ import java.util.Set;
 /** 복약 스케줄 화면 상태. 달력 상태는 화면 회전에도 유지된다. */
 public class MedicationScheduleViewModel extends AndroidViewModel {
 
-    static final class ScreenState {
-        final String title;
-        final boolean expanded;
-        final List<CalendarDayAdapter.Day> days;
-        final LocalDate selected;
-        final List<DoseItem> doses;
-        final int takenCount;
-        final boolean hasReminders;
+    public static final class ScreenState {
+        public final String title;
+        public final boolean expanded;
+        public final List<CalendarDayAdapter.Day> days;
+        public final LocalDate selected;
+        public final List<DoseItem> doses;
+        public final int takenCount;
+        public final boolean hasReminders;
 
         ScreenState(String title, boolean expanded, List<CalendarDayAdapter.Day> days, LocalDate selected,
                     List<DoseItem> doses, int takenCount, boolean hasReminders) {
@@ -95,41 +95,41 @@ public class MedicationScheduleViewModel extends AndroidViewModel {
         repository.requestSync();
     }
 
-    LiveData<ScreenState> state() {
+    public LiveData<ScreenState> state() {
         return state;
     }
 
-    LiveData<Integer> pendingCount() {
+    public LiveData<Integer> pendingCount() {
         return repository.observeSyncCount(owner, SyncState.PENDING);
     }
 
-    LiveData<Integer> failedCount() {
+    public LiveData<Integer> failedCount() {
         return repository.observeSyncCount(owner, SyncState.FAILED);
     }
 
     /** 날짜를 고른다. 월간 달력이면 그 날짜가 든 주간 달력으로 접힌다 */
-    void selectDate(LocalDate date) {
+    public void selectDate(LocalDate date) {
         selected = date;
         visibleMonth = YearMonth.from(date);
         expanded = false;
         updateRange();
     }
 
-    void goToToday() {
+    public void goToToday() {
         selectDate(LocalDate.now());
     }
 
-    void toggleExpanded() {
+    public void toggleExpanded() {
         expanded = !expanded;
         visibleMonth = YearMonth.from(selected);
         updateRange();
     }
 
-    void goPrevious() {
+    public void goPrevious() {
         move(-1);
     }
 
-    void goNext() {
+    public void goNext() {
         move(1);
     }
 
@@ -145,7 +145,7 @@ public class MedicationScheduleViewModel extends AndroidViewModel {
     }
 
     /** 시간이 지나 복용 예정이 복용 확인 필요로 바뀌도록 다시 계산한다 */
-    void refreshNow() {
+    public void refreshNow() {
         publish();
     }
 

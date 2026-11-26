@@ -35,7 +35,8 @@ final class BagDrugMapper {
                 item.displayText != null ? item.displayText : orEmpty(item.instructions),
                 sectionText(item, DrugSection.STORAGE),
                 description.isEmpty() ? Drug.NO_OFFICIAL_INFO : description,
-                warning(item));
+                warning(item),
+                cautionFull(item));
     }
 
     /** 봉투에 적힌 이 약의 주의사항을 먼저, 그 뒤에 e약은요 주의사항 */
@@ -50,6 +51,17 @@ final class BagDrugMapper {
         }
         sb.append(sectionText(item, DrugSection.CAUTION));
         return sb.toString().trim();
+    }
+
+    /** 허가정보 주의사항 원문 전체(서버가 중요한 항목만 골랐을 때). 봉투의 주의사항을 앞에 붙인다 */
+    private static String cautionFull(BagItem item) {
+        for (DrugSection s : item.sectionsOrEmpty()) {
+            if (DrugSection.CAUTION.equals(s.key) && s.fullText != null && !s.fullText.trim().isEmpty()) {
+                String fromBag = warning(item).replace(sectionText(item, DrugSection.CAUTION), "").trim();
+                return (fromBag.isEmpty() ? "" : fromBag + "\n") + s.fullText.trim();
+            }
+        }
+        return "";
     }
 
     private static String sectionText(BagItem item, String key) {

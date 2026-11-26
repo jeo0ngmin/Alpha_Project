@@ -20,6 +20,13 @@ public class MedicineAdapter
         void onItemClick(Medicine medicine);
     }
 
+    /** 길게 누르기 (내 약 지우기 등). 없으면 null */
+    private OnItemClickListener longClickListener;
+
+    public void setOnItemLongClickListener(OnItemClickListener listener) {
+        this.longClickListener = listener;
+    }
+
     public MedicineAdapter(
             List<Medicine> medicineList,
             OnItemClickListener listener
@@ -52,10 +59,19 @@ public class MedicineAdapter
 
         holder.tvName.setText(medicine.getName());
         holder.tvInfo.setText(medicine.getInfo());
+        // 복용법이 없으면 빈 줄을 남기지 않는다 (이름이 위로 치우치지 않게)
+        boolean noInfo = medicine.getInfo() == null || medicine.getInfo().trim().isEmpty();
+        holder.tvInfo.setVisibility(noInfo ? View.GONE : View.VISIBLE);
 
         holder.itemView.setOnClickListener(v -> {
             listener.onItemClick(medicine);
         });
+        if (longClickListener != null) {
+            holder.itemView.setOnLongClickListener(v -> {
+                longClickListener.onItemClick(medicine);
+                return true;
+            });
+        }
     }
 
     @Override

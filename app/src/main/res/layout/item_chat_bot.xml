@@ -1,25 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 챗봇 말풍선 (JE 챗봇 화면의 첫 인사 말풍선과 같은 모양). 제품 링크 버튼은 links_container에 붙는다 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="6dp"
-    android:paddingEnd="48dp">
+    android:gravity="top"
+    android:orientation="horizontal"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:layout_width="58dp"
+        android:layout_height="58dp"
+        android:importantForAccessibility="no"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_welcome_logo" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="24dp"
+        android:layout_weight="1"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/text_message"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_chat_bot"
-            android:padding="12dp"
-            android:textIsSelectable="true"
-            android:textSize="18sp"
-            tools:text="눈 건강에 도움이 될 수 있는 성분이에요." />
+            app:cardBackgroundColor="@color/medimate_sage_soft"
+            app:cardCornerRadius="17dp"
+            app:cardElevation="0dp">
+
+            <TextView
+                android:id="@+id/text_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="2dp"
+                android:paddingStart="15dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="15dp"
+                android:paddingBottom="12dp"
+                android:textColor="@color/medimate_text_main"
+                android:textIsSelectable="true"
+                android:textSize="16sp"
+                tools:text="눈 건강에 도움이 될 수 있는 성분이에요." />
+
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- 제품 링크 버튼 (README 8-9). 링크가 없으면 비어 있다 -->
         <LinearLayout
@@ -28,6 +55,15 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:importantForAccessibility="no"
+            android:text="@string/chat_bot_name"
+            android:textColor="@color/medimate_text_sub"
+            android:textSize="11sp" />
+
     </LinearLayout>
 
-</FrameLayout>
+</LinearLayout>

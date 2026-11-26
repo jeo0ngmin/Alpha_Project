@@ -3,6 +3,7 @@
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/medicine_detail_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/medimate_bg"
@@ -24,7 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginStart="5dp"
-            android:layout_marginTop="42dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="22dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -556,6 +557,43 @@
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- ========================= -->
+        <!-- 내 약 저장·복용 알림 -->
+        <!-- ========================= -->
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add_my_medicine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="22dp"
+            android:layout_marginEnd="22dp"
+            android:minHeight="58dp"
+            android:text="@string/detail_add_my_medicine"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/medimate_sage"
+            app:cornerRadius="17dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add_reminder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="22dp"
+            android:minHeight="58dp"
+            android:text="@string/detail_add_reminder"
+            android:textColor="@color/medimate_sage_dark"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/medimate_card"
+            app:cornerRadius="17dp"
+            app:strokeColor="@color/medimate_sage"
+            app:strokeWidth="1dp" />
 
     </LinearLayout>
 

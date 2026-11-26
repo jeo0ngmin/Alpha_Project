@@ -20,7 +20,7 @@ import com.medimate.medication.MedicationSchedule;
 import com.medimate.medication.Occurrences;
 import com.medimate.medication.TimeSlot;
 import com.medimate.ui.schedule.DoseText;
-import com.medimate.ui.schedule.MedicationScheduleActivity;
+import com.medimate.MedicationReminderActivity;
 
 import java.time.LocalDate;
 
@@ -52,7 +52,7 @@ public final class ReminderNotifier {
                 + " · 1회 " + schedule.dosage;
 
         // 누르면 그 날짜의 복약 화면만 연다. 복용 완료로 기록하지 않는다
-        Intent open = MedicationScheduleActivity.newIntent(context, date)
+        Intent open = MedicationReminderActivity.newIntent(context, date)
                 .setData(new Uri.Builder().scheme("medimate-dose").authority("open").appendPath(key).build());
         PendingIntent content = PendingIntent.getActivity(context, 0, open,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);

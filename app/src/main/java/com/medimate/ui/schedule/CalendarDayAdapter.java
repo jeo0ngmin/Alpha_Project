@@ -21,9 +21,9 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /** 주간·월간 달력의 날짜 칸. 오늘은 테두리, 선택한 날짜는 채운 원으로 구분한다. */
-class CalendarDayAdapter extends ListAdapter<CalendarDayAdapter.Day, CalendarDayAdapter.Holder> {
+public class CalendarDayAdapter extends ListAdapter<CalendarDayAdapter.Day, CalendarDayAdapter.Holder> {
 
-    static final class Day {
+    public static final class Day {
         final LocalDate date;
         final boolean today;
         final boolean selected;
@@ -73,7 +73,7 @@ class CalendarDayAdapter extends ListAdapter<CalendarDayAdapter.Day, CalendarDay
 
     private final Consumer<LocalDate> onClick;
 
-    CalendarDayAdapter(Consumer<LocalDate> onClick) {
+    public CalendarDayAdapter(Consumer<LocalDate> onClick) {
         super(DIFF);
         this.onClick = onClick;
     }

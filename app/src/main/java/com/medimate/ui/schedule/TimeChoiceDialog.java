@@ -15,16 +15,16 @@ import java.util.function.Consumer;
  * 알림 시간 고르기 (README 9-6). 시계 모양 대신 위아래로 돌리는 휠(오전/오후 · 시 · 분)로 고른다.
  * 열 때 지금 값을 읽어 주고, "확인"을 누르면 고른 시간을 읽어 준다.
  */
-final class TimeChoiceDialog {
+public final class TimeChoiceDialog {
 
-    interface Picked {
+    public interface Picked {
         void onPicked(LocalTime time);
     }
 
     private TimeChoiceDialog() {
     }
 
-    static void show(Context context, LocalTime initial, Consumer<String> speak, Picked picked) {
+    public static void show(Context context, LocalTime initial, Consumer<String> speak, Picked picked) {
         View view = LayoutInflater.from(context).inflate(R.layout.dialog_time_choice, null);
         TimePicker picker = view.findViewById(R.id.time_picker);
         picker.setIs24HourView(false);

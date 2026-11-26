@@ -23,7 +23,7 @@ import com.medimate.medication.SyncState;
 import java.util.function.Consumer;
 
 /** 알약 모양 복약 버튼. 상태는 색뿐 아니라 아이콘과 문구로도 구분하고, 일정 수정은 더보기 버튼으로 분리한다. */
-class DoseAdapter extends ListAdapter<DoseItem, DoseAdapter.Holder> {
+public class DoseAdapter extends ListAdapter<DoseItem, DoseAdapter.Holder> {
 
     /** 연속 터치로 "완료 → 취소 확인"이 바로 이어지지 않게 한다 */
     private static final long TAP_INTERVAL_MS = 800;
@@ -45,13 +45,13 @@ class DoseAdapter extends ListAdapter<DoseItem, DoseAdapter.Holder> {
     private long lastTapAt;
     private boolean notificationsBlocked;
 
-    DoseAdapter(Consumer<DoseItem> onTap, Consumer<DoseItem> onMore) {
+    public DoseAdapter(Consumer<DoseItem> onTap, Consumer<DoseItem> onMore) {
         super(DIFF);
         this.onTap = onTap;
         this.onMore = onMore;
     }
 
-    void setNotificationsBlocked(boolean blocked) {
+    public void setNotificationsBlocked(boolean blocked) {
         if (notificationsBlocked != blocked) {
             notificationsBlocked = blocked;
             notifyDataSetChanged();

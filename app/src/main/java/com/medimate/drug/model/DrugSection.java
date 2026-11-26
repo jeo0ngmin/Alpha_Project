@@ -20,6 +20,8 @@ public class DrugSection {
     public String text;
     /** 읽어 줄 문장. "주의사항입니다. …" */
     public String ttsText;
+    /** text가 긴 원문(허가정보 주의사항)에서 중요한 항목만 고른 것일 때의 원문 전체. 아니면 null */
+    public String fullText;
 
     public boolean hasText() {
         return text != null && !text.trim().isEmpty();

@@ -12,7 +12,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseUser;
-import com.medimate.MainActivity;
+import com.medimate.HomeActivity;
 import com.medimate.R;
 import com.medimate.auth.AuthCallback;
 import com.medimate.auth.AuthRepository;
@@ -90,7 +90,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void goToMain() {
-        startActivity(new Intent(this, MainActivity.class));
+        startActivity(new Intent(this, HomeActivity.class));
         finish();
     }
 

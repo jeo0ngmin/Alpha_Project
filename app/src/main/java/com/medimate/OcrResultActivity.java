@@ -12,14 +12,20 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.medimate.model.Drug;
 import com.medimate.tts.TtsManager;
+import com.medimate.ui.EdgeToEdgeHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** [JE 화면] 약봉투 분석 결과: 서버가 읽은 약 목록. 누르면 약 상세 화면. */
+/**
+ * [JE 화면] 분석 결과 약 목록. 누르면 약 상세 화면.
+ * 약봉투: 서버가 읽은 약들. 알약: 서버가 확신하지 못했을 때의 비슷한 후보들(candidatesIntent).
+ */
 public class OcrResultActivity extends AppCompatActivity {
 
     private static final String EXTRA_DRUGS = "drugs";
+    /** 알약 후보일 때 항목별 한 줄 안내(업체명). 약봉투면 없다 */
+    private static final String EXTRA_NOTES = "notes";
 
     private TtsManager tts;
 
@@ -27,26 +33,41 @@ public class OcrResultActivity extends AppCompatActivity {
         return new Intent(context, OcrResultActivity.class).putExtra(EXTRA_DRUGS, drugs);
     }
 
+    static Intent candidatesIntent(Context context, ArrayList<Drug> drugs, ArrayList<String> notes) {
+        return newIntent(context, drugs).putStringArrayListExtra(EXTRA_NOTES, notes);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_ocr_result);
+        EdgeToEdgeHelper.padForSystemBars(findViewById(R.id.ocr_result_root));
 
         RecyclerView recyclerMedicine = findViewById(R.id.recycler_medicine);
         TextView tvTotalCount = findViewById(R.id.tv_total_count);
         ImageButton btnBack = findViewById(R.id.btn_back);
+        tts = new TtsManager(this);
 
         List<Drug> drugs = readDrugs();
+        ArrayList<String> notes = getIntent().getStringArrayListExtra(EXTRA_NOTES);
+        boolean candidates = notes != null;
         List<Medicine> medicineList = new ArrayList<>();
-        for (Drug drug : drugs) {
-            medicineList.add(new Medicine(drug.getName(), drug.getDosage()));
+        for (int i = 0; i < drugs.size(); i++) {
+            Drug drug = drugs.get(i);
+            String info = candidates && i < notes.size() ? notes.get(i) : drug.getDosage();
+            medicineList.add(new Medicine(drug.getName(), info));
         }
 
-        // 총 약 개수 표시
         tvTotalCount.setText("총 " + medicineList.size() + "개");
-        tts = new TtsManager(this);
-        tts.speak("약 " + medicineList.size() + "개를 찾았어요. 약을 누르면 자세한 정보를 볼 수 있어요.");
+        if (candidates) {
+            TextView description = findViewById(R.id.tv_result_description);
+            description.setText(R.string.pill_candidates_description);
+            if (savedInstanceState == null) {
+                tts.speak(getString(R.string.pill_candidates_spoken, medicineList.size()));
+            }
+        } else if (savedInstanceState == null) {
+            tts.speak("약 " + medicineList.size() + "개를 찾았어요. 약을 누르면 자세한 정보를 볼 수 있어요.");
+        }
 
         recyclerMedicine.setLayoutManager(new LinearLayoutManager(this));
         MedicineAdapter adapter = new MedicineAdapter(medicineList, medicine -> {
@@ -55,7 +76,6 @@ public class OcrResultActivity extends AppCompatActivity {
         });
         recyclerMedicine.setAdapter(adapter);
 
-        // 뒤로가기 버튼
         btnBack.setOnClickListener(v -> finish());
     }
 

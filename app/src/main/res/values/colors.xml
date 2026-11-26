@@ -18,10 +18,10 @@
 
 
     <!-- 캘린더 -->
-    <color name="calendar_selected">#FF1F5FBF</color>
+    <color name="calendar_selected">#FF5D7567</color>
     <color name="calendar_on_selected">#FFFFFFFF</color>
-    <color name="calendar_today_ring">#FFB35900</color>
-    <color name="calendar_dot">#FF1F5FBF</color>
+    <color name="calendar_today_ring">#FF6E8979</color>
+    <color name="calendar_dot">#FF5D7567</color>
 
 
     <!-- JE 화면 색 -->

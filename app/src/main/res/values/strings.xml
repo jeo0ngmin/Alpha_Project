@@ -14,11 +14,6 @@
     <!-- 메인 -->
     <!-- ========================= -->
 
-    <string name="main_scan">약 찍기</string>
-    <string name="main_my_drugs">내 약</string>
-    <string name="main_recommend">영양제 추천</string>
-    <string name="main_profile">내 정보</string>
-    <string name="main_schedule">복약 스케줄</string>
 
 
     <!-- ========================= -->
@@ -63,26 +58,18 @@
     <!-- 내 약 -->
     <!-- ========================= -->
 
-    <string name="my_drugs_empty">저장한 약이 없어요.</string>
-    <string name="my_drugs_remove">%1$s 지우기</string>
 
 
     <!-- ========================= -->
     <!-- 영양제 추천 -->
     <!-- ========================= -->
 
-    <string name="recommend_title">영양제 추천</string>
-    <string name="recommend_hint">건강 고민을 적어 주세요</string>
-    <string name="recommend_send">보내기</string>
-    <string name="recommend_send_desc">보내기 버튼</string>
-    <string name="recommend_thinking">답변을 준비하고 있어요</string>
 
 
     <!-- ========================= -->
     <!-- 복약 스케줄 -->
     <!-- ========================= -->
 
-    <string name="schedule_title">복약 스케줄</string>
     <string name="schedule_today">오늘</string>
 
     <string name="schedule_month_expand_desc">%1$s. 누르면 달력을 한 달로 펼쳐요</string>
@@ -96,7 +83,6 @@
     <string name="schedule_summary">%1$s · 전체 %2$d회 중 %3$d회 복용 완료</string>
 
     <string name="schedule_empty">등록된 복약 일정이 없어요</string>
-    <string name="schedule_add">일정 추가</string>
     <string name="schedule_more_desc">%1$s %2$s 일정 더보기</string>
 
     <string name="schedule_menu_edit">일정 수정</string>
@@ -150,34 +136,22 @@
     <!-- 복약 일정 등록 / 수정 -->
     <!-- ========================= -->
 
-    <string name="schedule_add_title">복약 일정 등록</string>
     <string name="schedule_edit_title">복약 일정 수정</string>
 
-    <string name="schedule_drug_name">약 이름</string>
 
-    <string name="schedule_dosage">1회 복용량 (예: 1정)</string>
 
     <string name="schedule_dosage_ocr_hint">약봉투 복용법: %1$s</string>
 
     <string name="schedule_start_date">시작일: %1$s</string>
     <string name="schedule_end_date">종료일: %1$s</string>
 
-    <string name="schedule_edit_applies_today">수정 내용은 오늘부터 적용돼요. 지난 일정과 복용 기록은 바뀌지 않아요.</string>
 
-    <string name="schedule_no_end">종료일 없음</string>
 
-    <string name="schedule_repeat">반복</string>
-    <string name="schedule_every_day">매일</string>
-    <string name="schedule_selected_days">선택한 요일</string>
 
-    <string name="schedule_times">복용 시간</string>
-    <string name="schedule_add_time">시간 추가</string>
 
     <string name="schedule_time_change_desc">%1$s. 누르면 시간을 바꿔요</string>
     <string name="schedule_time_remove_desc">%1$s 삭제</string>
 
-    <string name="schedule_reminders">알림 받기</string>
-    <string name="schedule_save">저장</string>
 
 
     <!-- ========================= -->
@@ -270,11 +244,12 @@
 
     <string name="chatbot_title">Medimate 챗봇</string>
 
-    <string name="chatbot_intro_title">복약 관련 궁금한 점을 물어보세요</string>
+    <string name="chatbot_intro_title">건강 고민을 말해 주세요</string>
 
-    <string name="chatbot_intro_description">복용법, 부작용, 병용 여부 등\n복약에 대한 궁금증을 도와드릴게요.</string>
+    <string name="chatbot_intro_description">증상을 알려 주시면 도움이 될 수 있는
+영양제 성분을 알려 드려요.</string>
 
-    <string name="chat_input_hint">질문을 입력하세요</string>
+    <string name="chat_input_hint">증상을 입력하세요</string>
 
     <string name="chat_add">추가</string>
     <string name="chat_send">전송</string>
@@ -282,30 +257,26 @@
     <string name="chatbot_icon">챗봇</string>
     <string name="medimate_logo">Medimate 로고</string>
 
-    <string name="chat_chip_dose">복용 시간</string>
-    <string name="chat_chip_side_effect">부작용</string>
-    <string name="chat_chip_together">같이 먹어도 되나요?</string>
-    <string name="chat_chip_storage">보관 방법</string>
+    <string name="chat_chip_dose">피곤해요</string>
+    <string name="chat_chip_side_effect">눈이 침침해요</string>
+    <string name="chat_chip_together">잠을 못 자요</string>
+    <string name="chat_chip_storage">관절이 아파요</string>
 
-    <string name="chat_quick_dose_question">이 약은 언제 복용하는 게 좋나요?</string>
+    <string name="chat_quick_dose_question">요즘 자주 피곤해요</string>
 
-    <string name="chat_quick_side_effect_question">이 약의 대표적인 부작용은 무엇인가요?</string>
+    <string name="chat_quick_side_effect_question">눈이 침침하고 건조해요</string>
 
-    <string name="chat_quick_together_question">두 가지 약을 같이 먹어도 되나요?</string>
+    <string name="chat_quick_together_question">밤에 잠을 잘 못 자요</string>
 
-    <string name="chat_quick_storage_question">이 약은 어떻게 보관해야 하나요?</string>
+    <string name="chat_quick_storage_question">무릎 관절이 아파요</string>
 
-    <string name="chat_bot_welcome">안녕하세요! 복약과 관련해 궁금한 점을 편하게 물어보세요. 궁금한 약의 이름이나 복용 정보를 알려주시면 더 자세히 도와드릴게요.</string>
 
     <string name="chat_bot_name">Medimate 챗봇</string>
 
-    <string name="chat_sample_user_question">혈압약은 언제 먹는 게 좋아요?</string>
 
-    <string name="chat_sample_time">오전 9:42</string>
 
-    <string name="chat_empty_question">질문을 입력해 주세요.</string>
+    <string name="chat_empty_question">증상을 입력해 주세요.</string>
 
-    <string name="chat_question_sent">질문을 전송했습니다.</string>
 
 
     <!-- ========================= -->
@@ -429,5 +400,41 @@
 
     <string name="change_password_button">비밀번호 변경</string>
 
+
+
+    <!-- ========================= -->
+    <!-- 화면 연결 (홈·복약알림·내 약·알약 분석) -->
+    <!-- ========================= -->
+    <string name="home_profile">내 정보</string>
+    <string name="home_today_empty">오늘은 복용할 약이 없어요.</string>
+    <string name="home_my_medicine">내 약</string>
+    <string name="home_my_medicine_desc">저장한 약을 다시 봐요.</string>
+    <string name="home_progress_count">%1$d / %2$d 완료</string>
+    <string name="home_progress_desc">오늘 복용 %1$d회 중 %2$d회 완료</string>
+    <string name="home_dose_title">%s 복약</string>
+    <string name="home_dose_detail">%1$s · %2$s %3$s</string>
+    <string name="home_dose_take">복용하기</string>
+    <string name="home_dose_taken">복용완료</string>
+    <string name="home_dose_take_desc">%1$s, %2$s, %3$s. 누르면 복용 완료로 기록해요</string>
+    <string name="home_dose_taken_desc">%1$s, %2$s, %3$s. 누르면 복용 완료를 취소할 수 있어요</string>
+    <string name="reminder_screen_title">복약알림</string>
+    <string name="reminder_selected_title">선택한 날짜의 복용 일정</string>
+    <string name="reminder_add">+ 복용 알림 추가</string>
+    <string name="add_reminder_end_none_desc">종료일 없음. 누르면 종료일을 고를 수 있어요</string>
+    <string name="chat_loading">답변을 준비하고 있어요</string>
+    <string name="my_medicine_empty">저장한 약이 없어요.</string>
+    <string name="my_medicine_login_required">내 약은 구글이나 전화번호로 로그인하면 쓸 수 있어요.</string>
+    <string name="my_medicine_count">%d개</string>
+    <string name="my_medicine_spoken">내 약이 %d개 있어요. 누르면 자세히 볼 수 있고, 길게 누르면 지울 수 있어요.</string>
+    <string name="my_medicine_remove_title">내 약에서 지우기</string>
+    <string name="my_medicine_remove_message">%s, 내 약에서 지울까요?</string>
+    <string name="my_medicine_remove">지우기</string>
+    <string name="detail_add_my_medicine">내 약에 추가</string>
+    <string name="detail_add_reminder">복용 알림 만들기</string>
+    <string name="pill_analyzing_failed">분석하지 못했어요</string>
+    <string name="pill_analyzing_retake">다시 찍기</string>
+    <string name="pill_result_one">%s로 보여요. 약 설명과 주의사항을 확인해 보세요.</string>
+    <string name="pill_candidates_description">비슷한 약이에요. 알약 모양을 비교해 보세요</string>
+    <string name="pill_candidates_spoken">비슷한 약이 %d개 있어요. 하나씩 눌러 모양과 정보를 비교해 보세요. 확실하지 않으면 약사에게 확인해 주세요.</string>
 
 </resources>

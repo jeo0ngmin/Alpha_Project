@@ -5,11 +5,11 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.medimate.MainActivity;
+import com.medimate.HomeActivity;
 import com.medimate.auth.AuthRepository;
 import com.medimate.data.medication.MedicationRepository;
 
-/** 로그인 여부를 보고 Login 또는 Main으로 보낸다 (README 7-1). 화면은 그리지 않는다. */
+/** 로그인 여부를 보고 시작 화면 또는 홈으로 보낸다 (README 7-1). 화면은 그리지 않는다. */
 public class SplashActivity extends AppCompatActivity {
 
     @Override
@@ -23,7 +23,7 @@ public class SplashActivity extends AppCompatActivity {
             MedicationRepository.get(this).onAppStarted();
         }
         // 로그인 전이면 JE의 시작 화면(회원가입·로그인 고르기)으로
-        Class<?> next = auth.isSignedIn() ? MainActivity.class : com.medimate.WelcomeActivity.class;
+        Class<?> next = auth.isSignedIn() ? HomeActivity.class : com.medimate.WelcomeActivity.class;
         startActivity(new Intent(this, next));
         finish();
     }

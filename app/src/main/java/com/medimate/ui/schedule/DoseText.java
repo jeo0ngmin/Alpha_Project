@@ -22,19 +22,19 @@ public final class DoseText {
         return time.format(TIME);
     }
 
-    static String date(LocalDate date) {
+    public static String date(LocalDate date) {
         return date.format(DATE);
     }
 
-    static String fullDate(LocalDate date) {
+    public static String fullDate(LocalDate date) {
         return date.format(FULL_DATE);
     }
 
-    static String month(YearMonth month) {
+    public static String month(YearMonth month) {
         return month.format(MONTH);
     }
 
-    static String weekday(LocalDate date) {
+    public static String weekday(LocalDate date) {
         return date.format(WEEKDAY);
     }
 }

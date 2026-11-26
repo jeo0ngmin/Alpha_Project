@@ -15,7 +15,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
 import com.google.android.material.button.MaterialButton;
+import com.medimate.net.LocalNetworkPermission;
 import com.medimate.tts.TtsManager;
+import com.medimate.ui.EdgeToEdgeHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,6 +67,9 @@ public class PillCaptureActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pill_capture);
+        EdgeToEdgeHelper.padForSystemBars(findViewById(R.id.pill_capture_root));
+        // 같은 와이파이의 서버(PC)에 연결할 때 필요한 로컬 네트워크 권한을 묻는다
+        LocalNetworkPermission.requestIfNeeded(this);
         tts = new TtsManager(this);
 
         ImageButton btnBack = findViewById(R.id.btn_back);

@@ -4,6 +4,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/my_medicine_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/medimate_bg">
@@ -18,7 +19,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginStart="5dp"
-        android:layout_marginTop="42dp"
+        android:layout_marginTop="8dp"
         android:background="@android:color/transparent"
         android:contentDescription="@string/back"
         android:padding="12dp"
@@ -130,7 +131,7 @@
                 android:minWidth="54dp"
                 android:paddingStart="10dp"
                 android:paddingEnd="10dp"
-                android:text="2개"
+                android:text="0개"
                 android:textColor="@color/medimate_sage_dark"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -178,6 +179,25 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:itemCount="2"
         tools:listitem="@layout/item_medicine" />
+
+
+    <!-- 저장한 약이 없을 때·불러오지 못했을 때 안내 -->
+    <TextView
+        android:id="@+id/tv_my_medicine_empty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="22dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="22dp"
+        android:background="@drawable/bg_card_soft"
+        android:padding="18dp"
+        android:text="@string/my_medicine_empty"
+        android:textColor="@color/medimate_text_sub"
+        android:textSize="15sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_list_title" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

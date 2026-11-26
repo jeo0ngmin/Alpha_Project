@@ -17,10 +17,10 @@ import com.medimate.recommend.ProductLinks;
 import java.util.ArrayList;
 import java.util.List;
 
-class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.Holder> {
+public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.Holder> {
 
     /** 링크 버튼을 누르면 화면이 연다 */
-    interface LinkListener {
+    public interface LinkListener {
         void onLinkClick(ProductLinks.Link link);
     }
 
@@ -31,11 +31,11 @@ class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.Holder> {
     private final List<ChatMessage> messages = new ArrayList<>();
     private final LinkListener linkListener;
 
-    ChatAdapter(LinkListener linkListener) {
+    public ChatAdapter(LinkListener linkListener) {
         this.linkListener = linkListener;
     }
 
-    void submit(List<ChatMessage> newMessages) {
+    public void submit(List<ChatMessage> newMessages) {
         messages.clear();
         messages.addAll(newMessages);
         notifyDataSetChanged();

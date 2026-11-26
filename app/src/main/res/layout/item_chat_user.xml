@@ -1,20 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 사용자 말풍선 (JE 챗봇 화면의 질문 말풍선과 같은 모양) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="6dp"
-    android:paddingStart="48dp">
+    android:gravity="end"
+    android:orientation="vertical"
+    android:paddingStart="48dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
-    <TextView
-        android:id="@+id/text_message"
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:background="@drawable/bg_chat_user"
-        android:padding="12dp"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        tools:text="요즘 눈이 침침하고 피곤해요" />
+        app:cardBackgroundColor="@color/medimate_card"
+        app:cardCornerRadius="17dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/medimate_border"
+        app:strokeWidth="1dp">
 
-</FrameLayout>
+        <TextView
+            android:id="@+id/text_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="15dp"
+            android:paddingTop="11dp"
+            android:paddingEnd="15dp"
+            android:paddingBottom="11dp"
+            android:textColor="@color/medimate_text_main"
+            android:textSize="16sp"
+            tools:text="요즘 눈이 침침하고 피곤해요" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

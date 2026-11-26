@@ -16,10 +16,16 @@ public class Drug implements Serializable {
     private final String dosage;       // OCR 원문의 용법
     private final String storage;      // OCR 원문 우선, 없으면 e약은요 보관법
     private final String description;  // e약은요 효능
-    private final String warning;      // e약은요 경고 + 주의사항
+    private final String warning;      // e약은요 경고 + 주의사항 (허가정보면 중요한 항목만)
+    private final String warningFull;  // 허가정보 주의사항 원문 전체. 고른 것이 없으면 ""
 
     public Drug(String name, String entpName, String itemSeq, String dosage, String storage,
                 String description, String warning) {
+        this(name, entpName, itemSeq, dosage, storage, description, warning, "");
+    }
+
+    public Drug(String name, String entpName, String itemSeq, String dosage, String storage,
+                String description, String warning, String warningFull) {
         this.name = name;
         this.entpName = entpName;
         this.itemSeq = itemSeq;
@@ -27,6 +33,7 @@ public class Drug implements Serializable {
         this.storage = storage;
         this.description = description;
         this.warning = warning;
+        this.warningFull = warningFull == null ? "" : warningFull;
     }
 
     public String getName() {
@@ -55,6 +62,11 @@ public class Drug implements Serializable {
 
     public String getWarning() {
         return warning;
+    }
+
+    /** 주의사항 원문 전체("전체 보기"). 없으면 "" */
+    public String getWarningFull() {
+        return warningFull;
     }
 
     /** e약은요에서 찾았는지 */

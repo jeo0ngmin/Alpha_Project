@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
 import com.medimate.BuildConfig;
+import com.medimate.auth.AuthRepository;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -26,12 +27,13 @@ public final class ApiClient {
     private ApiClient() {
     }
 
-    /** BuildConfig.API_BASE_URL(app/build.gradle.kts)로 만든 기본 클라이언트. */
+    /** BuildConfig.API_BASE_URL(app/build.gradle.kts)로 만든 기본 클라이언트. 요청마다 로그인 토큰을 붙인다. */
     public static MedimateApi get() {
         if (instance == null) {
             synchronized (ApiClient.class) {
                 if (instance == null) {
-                    instance = create(BuildConfig.API_BASE_URL, BuildConfig.DEBUG);
+                    instance = create(BuildConfig.API_BASE_URL, BuildConfig.DEBUG,
+                            forceRefresh -> new AuthRepository().idTokenBlocking(forceRefresh));
                 }
             }
         }
@@ -39,11 +41,18 @@ public final class ApiClient {
     }
 
     public static MedimateApi create(String baseUrl, boolean logging) {
+        return create(baseUrl, logging, null);
+    }
+
+    /** tokens가 있으면 요청마다 Firebase 로그인 토큰을 붙인다 (서버 로그인 확인, README 7-5) */
+    public static MedimateApi create(String baseUrl, boolean logging, AuthTokenInterceptor.TokenSource tokens) {
         OkHttpClient.Builder http = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS); // 느린 망에서 사진 업로드
-        // TODO(인증): 로그인 연동 시 Authorization: Bearer 헤더를 붙이는 인터셉터 추가
+        if (tokens != null) {
+            http.addInterceptor(new AuthTokenInterceptor(tokens));
+        }
         if (logging) {
             // BODY로 두면 사진 바이트가 로그에 찍히므로 BASIC만 쓴다
             HttpLoggingInterceptor log = new HttpLoggingInterceptor();

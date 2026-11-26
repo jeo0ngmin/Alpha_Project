@@ -140,11 +140,16 @@ public class AuthRepository {
     @Nullable
     @WorkerThread
     public String idTokenBlocking() throws Exception {
+        return idTokenBlocking(false);
+    }
+
+    /** forceRefresh: 서버가 401(만료)로 답했을 때 새 토큰을 받는다. 백그라운드 스레드에서만 부른다 */
+    public String idTokenBlocking(boolean forceRefresh) throws Exception {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             return null;
         }
-        return Tasks.await(user.getIdToken(false), 20, TimeUnit.SECONDS).getToken();
+        return Tasks.await(user.getIdToken(forceRefresh), 20, TimeUnit.SECONDS).getToken();
     }
 
     /** 로그인 방식 (UserRepository.PROVIDER_*). 구글·전화번호가 아니면 "unknown" */

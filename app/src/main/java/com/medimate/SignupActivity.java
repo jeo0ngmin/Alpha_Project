@@ -74,7 +74,7 @@ public class SignupActivity extends AppCompatActivity {
             public void onSuccess(FirebaseUser user, boolean isNewUser) {
                 tts.speak(MSG_DONE);
                 ProfileSync.ensure(user, () -> {
-                    Intent intent = new Intent(SignupActivity.this, MainActivity.class);
+                    Intent intent = new Intent(SignupActivity.this, HomeActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     finish();
