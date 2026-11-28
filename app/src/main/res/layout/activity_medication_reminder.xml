@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    [JE 화면] 복약알림. 위쪽 달력 카드(주간·월간)에서 날짜를 고르면 그날의 복용 회차를 보여 준다.
-    날짜 칸·회차 목록은 MedicationReminderActivity가 채운다 (README 9-6).
+    [JE 화면] 복약알림.
+    위쪽 달력 카드에서 날짜를 고르면 그날의 복용 회차를 보여 준다.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -29,6 +29,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -39,14 +40,17 @@
             android:paddingBottom="30dp">
 
 
+            <!-- ========================= -->
             <!-- 상단 제목 -->
+            <!-- ========================= -->
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:accessibilityHeading="true"
                 android:fontFamily="sans-serif-medium"
-                android:minHeight="50dp"
                 android:gravity="center_vertical"
+                android:minHeight="50dp"
                 android:text="@string/reminder_screen_title"
                 android:textColor="@color/medimate_text_main"
                 android:textSize="25sp"
@@ -59,7 +63,11 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+
+                <!-- ========================= -->
                 <!-- 달력 카드 -->
+                <!-- ========================= -->
+
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -70,6 +78,7 @@
                     app:strokeColor="@color/medimate_border"
                     app:strokeWidth="1dp">
 
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -79,22 +88,27 @@
                         android:paddingEnd="10dp"
                         android:paddingBottom="12dp">
 
-                        <!-- 월 표시: 누르면 월간 달력을 펼친다 -->
+
+                        <!-- 월 이동 / 오늘 -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
+
+                            <!-- 이전 -->
                             <ImageButton
                                 android:id="@+id/button_previous"
                                 android:layout_width="48dp"
                                 android:layout_height="48dp"
                                 android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/schedule_previous_week_desc"
                                 android:src="@drawable/ic_chevron_left"
-                                app:tint="@color/medimate_sage_dark"
-                                tools:ignore="ContentDescription" />
+                                app:tint="@color/medimate_sage_dark" />
 
+
+                            <!-- 월 표시 -->
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/button_month"
                                 style="@style/Widget.Material3.Button.TextButton"
@@ -111,15 +125,19 @@
                                 app:iconTint="@color/medimate_sage_dark"
                                 tools:text="2026년 11월" />
 
+
+                            <!-- 다음 -->
                             <ImageButton
                                 android:id="@+id/button_next"
                                 android:layout_width="48dp"
                                 android:layout_height="48dp"
                                 android:background="?attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/schedule_next_week_desc"
                                 android:src="@drawable/ic_chevron_right"
-                                app:tint="@color/medimate_sage_dark"
-                                tools:ignore="ContentDescription" />
+                                app:tint="@color/medimate_sage_dark" />
 
+
+                            <!-- 오늘 -->
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/button_today"
                                 android:layout_width="wrap_content"
@@ -136,6 +154,8 @@
 
                         </LinearLayout>
 
+
+                        <!-- 요일 -->
                         <LinearLayout
                             android:id="@+id/weekday_header"
                             android:layout_width="match_parent"
@@ -144,6 +164,8 @@
                             android:orientation="horizontal"
                             android:visibility="gone" />
 
+
+                        <!-- 달력 -->
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/recycler_calendar"
                             android:layout_width="match_parent"
@@ -155,7 +177,10 @@
                 </com.google.android.material.card.MaterialCardView>
 
 
-                <!-- 알림 권한·저장 상태 안내 -->
+                <!-- ========================= -->
+                <!-- 알림 권한 안내 -->
+                <!-- ========================= -->
+
                 <LinearLayout
                     android:id="@+id/alarm_banner"
                     android:layout_width="match_parent"
@@ -167,6 +192,7 @@
                     android:visibility="gone"
                     tools:visibility="visible">
 
+
                     <TextView
                         android:id="@+id/text_alarm_banner"
                         android:layout_width="match_parent"
@@ -174,6 +200,7 @@
                         android:textColor="@color/dose_check_on"
                         android:textSize="16sp"
                         tools:text="@string/schedule_exact_alarm_needed" />
+
 
                     <Button
                         android:id="@+id/button_alarm_banner"
@@ -186,6 +213,11 @@
 
                 </LinearLayout>
 
+
+                <!-- ========================= -->
+                <!-- 동기화 안내 -->
+                <!-- ========================= -->
+
                 <LinearLayout
                     android:id="@+id/sync_banner"
                     android:layout_width="match_parent"
@@ -197,6 +229,7 @@
                     android:visibility="gone"
                     tools:visibility="visible">
 
+
                     <TextView
                         android:id="@+id/text_sync_banner"
                         android:layout_width="match_parent"
@@ -205,6 +238,7 @@
                         android:textColor="@color/dose_check_on"
                         android:textSize="16sp"
                         tools:text="동기화 대기 1건" />
+
 
                     <Button
                         android:id="@+id/button_sync_banner"
@@ -218,34 +252,45 @@
                 </LinearLayout>
 
 
-                <!-- 선택한 날짜 -->
+                <!-- ========================= -->
+                <!-- 선택한 날짜의 복용 일정 -->
+                <!-- ========================= -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="28dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="vertical">
 
+
+                    <!-- 제목 -->
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:fontFamily="sans-serif-medium"
                         android:text="@string/reminder_selected_title"
                         android:textColor="@color/medimate_text_main"
                         android:textSize="19sp"
                         android:textStyle="bold" />
 
+
+                    <!-- 날짜 / 복용 완료 요약 -->
                     <TextView
                         android:id="@+id/tv_selected_date"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
                         android:accessibilityLiveRegion="polite"
                         android:textColor="@color/medimate_text_sub"
                         android:textSize="13sp"
                         tools:text="11월 10일 화요일 · 3회 중 1회 완료" />
 
                 </LinearLayout>
+
+
+                <!-- ========================= -->
+                <!-- 복용 회차 목록 -->
+                <!-- ========================= -->
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recycler_doses"
@@ -256,6 +301,10 @@
 
             </LinearLayout>
 
+
+            <!-- ========================= -->
+            <!-- 일정 없음 -->
+            <!-- ========================= -->
 
             <TextView
                 android:id="@+id/text_empty"
@@ -271,7 +320,10 @@
                 android:visibility="gone" />
 
 
+            <!-- ========================= -->
             <!-- 복용 알림 추가 -->
+            <!-- ========================= -->
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_add_med_schedule"
                 android:layout_width="match_parent"
@@ -289,7 +341,10 @@
     </androidx.core.widget.NestedScrollView>
 
 
+    <!-- ========================= -->
     <!-- 하단 네비게이션 -->
+    <!-- ========================= -->
+
     <include
         android:id="@+id/include_bottom_nav"
         layout="@layout/layout_bottom_nav"

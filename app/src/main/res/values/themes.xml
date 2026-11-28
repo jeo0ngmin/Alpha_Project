@@ -1,26 +1,71 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+
+    <!-- ========================= -->
+    <!-- Medimate 기본 테마 -->
+    <!-- ========================= -->
+
     <style name="Base.Theme.Medimate" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+
+        <!-- JE 메인 세이지 -->
+        <item name="colorPrimary">@color/medimate_sage</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- 선택된 컨트롤의 연한 배경 -->
+        <item name="colorPrimaryContainer">@color/medimate_sage_soft</item>
+        <item name="colorOnPrimaryContainer">@color/medimate_sage_dark</item>
+
+        <!-- 보조 색상 -->
+        <item name="colorSecondary">@color/medimate_sage_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <item name="colorSecondaryContainer">@color/medimate_sage_soft2</item>
+        <item name="colorOnSecondaryContainer">@color/medimate_text_main</item>
+
+        <!-- Material3 일부 컨트롤에서 사용하는 포인트 색 -->
+        <item name="colorTertiary">@color/medimate_sage</item>
+        <item name="colorOnTertiary">@color/white</item>
+
+        <!-- 화면 / 다이얼로그 배경 -->
+        <item name="colorSurface">@color/medimate_bg</item>
+        <item name="colorOnSurface">@color/medimate_text_main</item>
+
+        <!-- 테두리 -->
+        <item name="colorOutline">@color/medimate_border</item>
+
+        <!-- 기본 Android 컨트롤 포인트 색 -->
+        <item name="android:colorAccent">@color/medimate_sage</item>
+
     </style>
 
-    <style name="Theme.Medimate" parent="Base.Theme.Medimate" />
 
-    <!-- 큰 글씨·큰 버튼 공통 스타일 (MM-mine 디버그 화면, 대화상자) -->
+    <style
+        name="Theme.Medimate"
+        parent="Base.Theme.Medimate" />
+
+
+    <!-- ========================= -->
+    <!-- 큰 글씨·큰 버튼 공통 스타일 -->
+    <!-- ========================= -->
+
     <style name="MediMate.Title" parent="">
         <item name="android:textSize">@dimen/text_title</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">?android:attr/textColorPrimary</item>
-        <item name="android:accessibilityHeading" tools:targetApi="28">true</item>
+        <item
+            name="android:accessibilityHeading"
+            tools:targetApi="28">true</item>
     </style>
+
 
     <style name="MediMate.Heading" parent="">
         <item name="android:textSize">@dimen/text_heading</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">?android:attr/textColorPrimary</item>
-        <item name="android:accessibilityHeading" tools:targetApi="28">true</item>
+        <item
+            name="android:accessibilityHeading"
+            tools:targetApi="28">true</item>
     </style>
+
 
     <style name="MediMate.Body" parent="">
         <item name="android:textSize">@dimen/text_body</item>
@@ -28,13 +73,41 @@
         <item name="android:lineSpacingMultiplier">1.2</item>
     </style>
 
-    <style name="MediMate.Button" parent="Widget.Material3.Button">
+
+    <style
+        name="MediMate.Button"
+        parent="Widget.Material3.Button">
+
         <item name="android:minHeight">@dimen/touch_target</item>
         <item name="android:textSize">@dimen/text_body</item>
+
     </style>
 
-    <style name="MediMate.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+
+    <style
+        name="MediMate.Button.Outlined"
+        parent="Widget.Material3.Button.OutlinedButton">
+
         <item name="android:minHeight">@dimen/touch_target</item>
         <item name="android:textSize">@dimen/text_body</item>
+
     </style>
+
+    <style name="Medimate.TimePickerTheme" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- 시간 숫자 / 오전·오후 글씨 -->
+        <item name="android:textColorPrimary">@color/medimate_sage_dark</item>
+
+        <!-- 보조 글씨 -->
+        <item name="android:textColorSecondary">@color/medimate_sage</item>
+
+        <!-- 선택 포인트 -->
+        <item name="android:colorAccent">@color/medimate_sage</item>
+
+        <!-- Material 포인트 -->
+        <item name="colorPrimary">@color/medimate_sage</item>
+        <item name="colorOnSurface">@color/medimate_sage_dark</item>
+
+    </style>
+
 </resources>

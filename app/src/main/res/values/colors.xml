@@ -27,8 +27,10 @@
     <!-- JE 화면 색 -->
     <color name="medimate_green">#727D73</color>
     <color name="medimate_icon_green">#60796D</color>
-    <color name="medimate_icon_background">#EFF5F0</color>
-    <color name="medimate_bottom_green">#EAF2EA</color>
+
+    <!-- 기존보다 밝게 -->
+    <color name="medimate_icon_background">#F6F9F6</color>
+    <color name="medimate_bottom_green">#F3F7F3</color>
 
     <color name="text_primary">#222222</color>
     <color name="text_secondary">#A7A7A7</color>
@@ -38,21 +40,21 @@
 
     <!-- 약 봉투 분석 -->
     <color name="medicine_bag_green">#4F6F5D</color>
-    <color name="medicine_bag_background">#DDE8E0</color>
-    <color name="medicine_bag_border">#BACDBF</color>
+    <color name="medicine_bag_background">#EEF3EF</color>
+    <color name="medicine_bag_border">#D5E0D8</color>
     <color name="medicine_bag_box_background">#60796D</color>
 
 
     <!-- 알약 분석 -->
     <color name="pill_analysis_green">#3F5D63</color>
-    <color name="pill_analysis_background">#D3E0E3</color>
-    <color name="pill_analysis_border">#AFC2C7</color>
+    <color name="pill_analysis_background">#EDF2F3</color>
+    <color name="pill_analysis_border">#D4E0E2</color>
 
 
-    <!-- 홈 / 복약알림 새 UI -->
+    <!-- 홈 / 복약알림 UI -->
 
     <!-- 전체 배경 -->
-    <color name="medimate_bg">#FDFCF9</color>
+    <color name="medimate_bg">#FFFFFF</color>
 
     <!-- 주요 포인트 세이지 -->
     <color name="medimate_sage">#6E8979</color>
@@ -60,17 +62,17 @@
     <!-- 진한 세이지 -->
     <color name="medimate_sage_dark">#5D7567</color>
 
-    <!-- 연한 카드 / 기능 배경 -->
-    <color name="medimate_sage_soft">#EEF2EC</color>
+    <!-- 기존보다 더 밝은 연한 배경 -->
+    <color name="medimate_sage_soft">#F5F8F5</color>
 
     <!-- 아주 연한 보조 배경 -->
-    <color name="medimate_sage_soft2">#F4F6F2</color>
+    <color name="medimate_sage_soft2">#FAFBF9</color>
 
     <!-- 일반 카드 -->
-    <color name="medimate_card">#FFFDFC</color>
+    <color name="medimate_card">#FFFFFF</color>
 
     <!-- 카드 테두리 -->
-    <color name="medimate_border">#E1E5DF</color>
+    <color name="medimate_border">#E7EBE7</color>
 
     <!-- 메인 글씨 -->
     <color name="medimate_text_main">#292D2A</color>
@@ -82,6 +84,6 @@
     <color name="medimate_nav_inactive">#909591</color>
 
     <!-- 진행률 배경 -->
-    <color name="medimate_progress_track">#E0E6DF</color>
+    <color name="medimate_progress_track">#EDF1ED</color>
 
 </resources>
